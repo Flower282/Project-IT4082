@@ -16,6 +16,8 @@ public class TaiKhoan {
     private String email;
     @Column(name = "mat_khau")
     private String matKhau;
+    @Column(name = "ho_ten")
+    private String hoTen;
     @Column(name = "vai_tro")
     private String vaiTro;
     @Column(name = "ngay_tao")
