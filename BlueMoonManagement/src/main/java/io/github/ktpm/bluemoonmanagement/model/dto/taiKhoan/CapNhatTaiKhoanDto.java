@@ -5,5 +5,6 @@ import lombok.Data;
 @Data
 public class CapNhatTaiKhoanDto {
     private String email;
+    private String hoTen;
     private String vaiTro;
 }
