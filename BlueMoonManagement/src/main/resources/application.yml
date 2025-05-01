@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: BlueMoonManagement
+
+  # PostgreSQL Configuration
+  datasource:
+    url: jdbc:postgresql://ep-morning-breeze-a121mip7-pooler.ap-southeast-1.aws.neon.tech:5432/bluemoon
+    username: bluemoon_owner
+    password: npg_s4HUaljD8XAf
+    driver-class-name: org.postgresql.Driver
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate # Chỉ thay đổi dữ liệu, không thay đổi cấu trúc bảng
+    properties:
+      hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    io.github.ktpm.bluemoonmanagement: INFO  # Changed from DEBUG to INFO

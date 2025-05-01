@@ -1,0 +1,32 @@
+package io.github.ktpm.bluemoonmanagement.model.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@Table(name = "hoa_don")
+@Entity
+public class HoaDon {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private String maHoaDon;
+
+    @ManyToOne
+    @JoinColumn(name = "ma_khoan_thu", referencedColumnName = "ma_khoan_thu")
+    private KhoanThu khoanThu;
+
+    @ManyToOne
+    @JoinColumn(name = "ma_can_ho", referencedColumnName = "ma_can_ho")
+    private CanHo canHo;
+
+    @Column(name = "so_tien")
+    private String soTien;
+
+    @Column(name = "ngay_nop")
+    private LocalDateTime ngayNop;
+    
+    @Column(name = "da_nop")
+    private boolean daNop;
+}
