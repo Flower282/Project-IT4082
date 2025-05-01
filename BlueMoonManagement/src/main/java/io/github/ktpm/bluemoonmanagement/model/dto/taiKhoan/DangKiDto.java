@@ -6,4 +6,5 @@ import lombok.Data;
 public class DangKiDto {
     private String email;
     private String matKhau;
+    private String hoTen;
 }
