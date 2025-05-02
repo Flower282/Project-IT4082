@@ -11,6 +11,14 @@ public interface TaiKhoanMapper {
 
     GuiOtpDto toGuiOtpDto(TaiKhoan taiKhoan);
 
+    @Mapping(target = "hoTen", ignore = true)
+    @Mapping(target = "vaiTro", ignore = true)
+    @Mapping(target = "ngayTao", ignore = true)
+    @Mapping(target = "ngayCapNhat", ignore = true)
+    @Mapping(target = "otp", ignore = true)
+    @Mapping(target = "thoiHanOtp", ignore = true)
+    TaiKhoan fromDangNhapDto(DangNhapDto dangNhapDto);
+
     @Mapping(target = "matKhau", ignore = true)
     @Mapping(target = "ngayTao", ignore = true)
     @Mapping(target = "ngayCapNhat", ignore = true)
