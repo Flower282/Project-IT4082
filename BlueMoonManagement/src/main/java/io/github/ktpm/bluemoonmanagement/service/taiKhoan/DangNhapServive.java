@@ -5,5 +5,5 @@ import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
 
 public interface DangNhapServive {
 
-    ThongTinTaiKhoanDto dangNhap(DangNhapDto dangNhapDto) throws Exception;
+    ThongTinTaiKhoanDto dangNhap(DangNhapDto dangNhapDto);
 }
