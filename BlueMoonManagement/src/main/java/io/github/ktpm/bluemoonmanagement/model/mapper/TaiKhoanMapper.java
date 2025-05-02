@@ -7,7 +7,7 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface TaiKhoanMapper {
-    CapNhatTaiKhoanDto toCapNhatTaiKhoanDto(TaiKhoan taiKhoan);
+    ThongTinTaiKhoanDto toCapNhatTaiKhoanDto(TaiKhoan taiKhoan);
 
     DangKiDto toDangKiDto(TaiKhoan taiKhoan);
 
@@ -29,7 +29,7 @@ public interface TaiKhoanMapper {
     @Mapping(target = "ngayCapNhat", ignore = true)
     @Mapping(target = "otp", ignore = true)
     @Mapping(target = "thoiHanOtp", ignore = true)
-    TaiKhoan fromCapNhatTaiKhoanDto(CapNhatTaiKhoanDto capNhatTaiKhoanDto);
+    TaiKhoan fromCapNhatTaiKhoanDto(ThongTinTaiKhoanDto capNhatTaiKhoanDto);
 
     @Mapping(target = "vaiTro", ignore = true)
     @Mapping(target = "ngayTao", ignore = true)
@@ -40,6 +40,7 @@ public interface TaiKhoanMapper {
 
     @Mapping(target = "email", ignore = true)
     @Mapping(target = "matKhau", source = "datLaiMatKhauDto.matKhauMoi")
+    @Mapping(target = "hoTen", ignore = true)
     @Mapping(target = "vaiTro", ignore = true)
     @Mapping(target = "ngayTao", ignore = true)
     @Mapping(target = "ngayCapNhat", ignore = true)
