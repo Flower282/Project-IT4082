@@ -1,11 +1,13 @@
 package io.github.ktpm.bluemoonmanagement.model.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
+@AllArgsConstructor
 @Table(name = "hoa_don")
 @Entity
 public class HoaDon {
