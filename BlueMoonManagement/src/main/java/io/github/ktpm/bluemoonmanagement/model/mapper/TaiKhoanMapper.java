@@ -9,12 +9,6 @@ import org.mapstruct.Mapping;
 public interface TaiKhoanMapper {
     ThongTinTaiKhoanDto toThongTinTaiKhoanDto(TaiKhoan taiKhoan);
 
-    DangKiDto toDangKiDto(TaiKhoan taiKhoan);
-
-    @Mapping(target = "xacNhanMatKhau", ignore = true)
-    @Mapping(target = "matKhauMoi", source = "taiKhoan.matKhau")
-    DatLaiMatKhauDto toDatLaiMatKhauDto(TaiKhoan taiKhoan);
-
     @Mapping(target = "matKhauMoi", ignore = true)
     @Mapping(target = "xacNhanMatKhauMoi", ignore = true)
     @Mapping(target = "matKhauCu", source = "taiKhoan.matKhau")
@@ -67,14 +61,4 @@ public interface TaiKhoanMapper {
     @Mapping(target = "otp", source = "guiOtpDto.otp")
     @Mapping(target = "thoiHanOtp", ignore = true)
     TaiKhoan fromGuiOtpDto(GuiOtpDto guiOtpDto);
-    
-    @Mapping(target = "email", ignore = true)
-    @Mapping(target = "matKhau", ignore = true)
-    @Mapping(target = "hoTen", ignore = true)
-    @Mapping(target = "vaiTro", ignore = true)
-    @Mapping(target = "ngayTao", ignore = true)
-    @Mapping(target = "ngayCapNhat", ignore = true)
-    @Mapping(target = "otp", source = "xacMinhOtpDto.otp")
-    @Mapping(target = "thoiHanOtp", source = "xacMinhOtpDto.thoiHanOtp")
-    TaiKhoan fromXacMinhOtpDto(XacMinhOtpDto xacMinhOtpDto);
 }
