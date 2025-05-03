@@ -11,7 +11,6 @@ import io.github.ktpm.bluemoonmanagement.repository.TaiKhoanRepository;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DangNhapServive;
 import io.github.ktpm.bluemoonmanagement.util.HashPasswordUtil;
 
-
 @Service
 public class DangNhapServiceImpl implements DangNhapServive {
 
@@ -26,19 +25,27 @@ public class DangNhapServiceImpl implements DangNhapServive {
         this.taiKhoanRepository = taiKhoanRepository;
     }
 
+    /**
+     * Kiểm tra email có tồn tại trong hệ thống không (bước 1)
+     */
+    @Override
+    public boolean kiemTraEmailTonTai(String email) {
+        return taiKhoanRepository.existsById(email);
+    }
+
+    /**
+     * Kiểm tra mật khẩu và trả về thông tin tài khoản nếu đúng (bước 2)
+     */
     @Override
     public ThongTinTaiKhoanDto dangNhap(DangNhapDto dangNhapDto) {
-        // Lấy user từ repository bằng email (khóa chính)
         TaiKhoan taiKhoan = taiKhoanRepository.findById(dangNhapDto.getEmail()).orElse(null);
         if (taiKhoan == null) {
-            return null; // Hoặc ném ra một ngoại lệ nếu không tìm thấy tài khoản
+            return null;
         }
-        // So sánh mật khẩu
         boolean isMatch = HashPasswordUtil.verifyPassword(dangNhapDto.getMatKhau(), taiKhoan.getMatKhau());
         if (!isMatch) {
-            return null; // Hoặc ném ra một ngoại lệ nếu mật khẩu không khớp
+            return null;
         }
-        // Trả về thông tin tài khoản DTO
         return taiKhoanMapper.toThongTinTaiKhoanDto(taiKhoan);
     }
 
