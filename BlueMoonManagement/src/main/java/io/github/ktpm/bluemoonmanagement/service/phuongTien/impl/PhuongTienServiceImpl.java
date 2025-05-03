@@ -1,5 +1,6 @@
 package io.github.ktpm.bluemoonmanagement.service.phuongTien.impl;
 
+import io.github.ktpm.bluemoonmanagement.model.dto.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.PhuongTienDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien;
@@ -7,6 +8,8 @@ import io.github.ktpm.bluemoonmanagement.model.mapper.PhuongTienMapper;
 import io.github.ktpm.bluemoonmanagement.repository.PhuongTienRepository;
 import io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +28,7 @@ public class PhuongTienServiceImpl implements PhuongTienService {
         if (phuongTienDto.getBienSo() != null && phuongTienRepository.existsByBienSo(phuongTienDto.getBienSo())) {
             return new ResponseDto(false, "Biển số xe đã tồn tại");
         }
+        phuongTienDto.setNgayDangKy(LocalDate.now());
         PhuongTien phuongTien = phuongTienMapper.fromPhuongTienDto(phuongTienDto);
         phuongTienRepository.save(phuongTien);
         return new ResponseDto(true, "Thêm phương tiện thành công");
@@ -33,6 +37,12 @@ public class PhuongTienServiceImpl implements PhuongTienService {
     @Override
     public ResponseDto capNhatPhuongTien(PhuongTienDto phuongTienDto) {
         PhuongTien phuongTien = phuongTienRepository.findById(phuongTienDto.getSoThuTu()).orElse(null);
+        // Kiểm tra biển số đã tồn tại ở phương tiện khác
+            boolean bienSoTrung = phuongTienRepository.existsByBienSo(phuongTienDto.getBienSo()) &&
+                (!phuongTien.getBienSo().equals(phuongTienDto.getBienSo()));
+            if (bienSoTrung) {
+                return new ResponseDto(false, "Biển số xe đã tồn tại ở phương tiện khác");
+            }
         phuongTien.setBienSo(phuongTienDto.getBienSo());
         phuongTienRepository.save(phuongTien);
         return new ResponseDto(true, "Cập nhật phương tiện thành công");
@@ -40,16 +50,16 @@ public class PhuongTienServiceImpl implements PhuongTienService {
 
     @Override
     public ResponseDto xoaPhuongTien(PhuongTienDto phuongTienDto) {
-        if (!phuongTienRepository.existsById(phuongTienDto.getSoThuTu())) {
-            return new ResponseDto(false, "Phương tiện không tồn tại");
-        }
-        phuongTienRepository.deleteById(phuongTienDto.getSoThuTu());
-        return new ResponseDto(true, "Xóa phương tiện thành công");
+        PhuongTien phuongTien = phuongTienRepository.findById(phuongTienDto.getSoThuTu()).orElse(null);
+        phuongTien.setNgayHuyDangKy(LocalDate.now());
+        phuongTienRepository.save(phuongTien);
+        return new ResponseDto(true, "Đã hủy đăng ký phương tiện thành công");
     }
 
     @Override
-    public List<PhuongTienDto> layDanhSachPhuongTien() {
-        return phuongTienRepository.findAll().stream()
+    public List<PhuongTienDto> layDanhSachPhuongTien(CanHoDto canHoDto) {
+        List<PhuongTien> phuongTienList = phuongTienRepository.findByCanHo_MaCanHo(canHoDto.getMaCanHo());
+        return phuongTienList.stream()
                 .map(phuongTienMapper::toPhuongTienDto)
                 .collect(Collectors.toList());
     }
