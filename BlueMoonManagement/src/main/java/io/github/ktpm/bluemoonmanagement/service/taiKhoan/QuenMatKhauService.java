@@ -5,9 +5,9 @@ import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.DatLaiMatKhauDto;
 
 public interface QuenMatKhauService {
 
-    ResponseDto guiMaOtp(String email);
+    ResponseDto guiMaOtp(DatLaiMatKhauDto datLaiMatKhauDto);
 
-    ResponseDto xacThucOtp(String otp);
+    ResponseDto xacThucOtp(DatLaiMatKhauDto datLaiMatKhauDto);
 
     ResponseDto datLaiMatKhau(DatLaiMatKhauDto datLaiMatKhauDto);
     

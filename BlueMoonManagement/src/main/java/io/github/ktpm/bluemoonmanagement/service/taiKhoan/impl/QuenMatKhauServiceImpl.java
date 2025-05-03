@@ -15,65 +15,56 @@ import java.util.Optional;
 @Service
 public class QuenMatKhauServiceImpl implements QuenMatKhauService {
     private final TaiKhoanRepository taiKhoanRepository;
-    private final OtpUtil otpUtil;
-    private final HashPasswordUtil hashPasswordUtil;
     private final EmailService emailService;
 
     public QuenMatKhauServiceImpl(TaiKhoanRepository taiKhoanRepository, OtpUtil otpUtil, HashPasswordUtil hashPasswordUtil, EmailService emailService) {
         this.taiKhoanRepository = taiKhoanRepository;
-        this.otpUtil = otpUtil;
-        this.hashPasswordUtil = hashPasswordUtil;
         this.emailService = emailService;
     }
 
     @Override
-    public ResponseDto guiMaOtp(String email) {
-        Optional<TaiKhoan> optionalTaiKhoan = taiKhoanRepository.findById(email);
-        if (optionalTaiKhoan.isEmpty()) {
+    public ResponseDto guiMaOtp(DatLaiMatKhauDto dto) {
+        TaiKhoan taiKhoan = taiKhoanRepository.findById(dto.getEmail()).orElse(null);
+        if (taiKhoan == null) {
             return new ResponseDto(false, "Tài khoản không tồn tại");
         }
-        TaiKhoan taiKhoan = optionalTaiKhoan.get();
-        String otp = otpUtil.generateOtp();
+        String otp = OtpUtil.generateOtp();
         taiKhoan.setOtp(otp);
-        taiKhoan.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        taiKhoan.setThoiHanOtp(LocalDateTime.now().plusMinutes(5));
         taiKhoanRepository.save(taiKhoan);
         // Gửi email OTP
         String subject = "Mã xác thực OTP"; // Có thể thay đổi sau
-        String content = "Mã OTP của bạn là: " + otp + " (có hiệu lực trong 5 phút)";
-        emailService.sendEmail(email, subject, content);
+        String content = "Mã OTP của bạn là: <b>" + otp + "</b> (có hiệu lực trong 5 phút)" +
+                "<br><br>Lưu ý: Đây là email được gửi tự động, vui lòng không phản hồi lại email này.";
+        emailService.sendEmail(dto.getEmail(), subject, content, true);
         return new ResponseDto(true, "OTP đã được gửi về email");
     }
 
     @Override
-    public ResponseDto xacThucOtp(String otp) {
-        Optional<TaiKhoan> optionalTaiKhoan = taiKhoanRepository.findAll().stream()
-            .filter(tk -> otp.equals(tk.getOtp()) && tk.getOtpExpiry() != null && tk.getOtpExpiry().isAfter(LocalDateTime.now()))
-            .findFirst();
-        if (optionalTaiKhoan.isEmpty()) {
-            return new ResponseDto(false, "OTP không hợp lệ hoặc đã hết hạn");
+    public ResponseDto xacThucOtp(DatLaiMatKhauDto datLaiMatKhauDto) {
+        TaiKhoan taiKhoan = taiKhoanRepository.findById(datLaiMatKhauDto.getEmail()).orElse(null);
+        if (taiKhoan == null) {
+            return new ResponseDto(false, "Tài khoản không tồn tại");
+        }
+        if (taiKhoan.getOtp() == null || !taiKhoan.getOtp().equals(datLaiMatKhauDto.getOtp())) {
+            return new ResponseDto(false, "OTP không hợp lệ");
+        }
+        if (taiKhoan.getThoiHanOtp() == null || LocalDateTime.now().isAfter(taiKhoan.getThoiHanOtp())) {
+            return new ResponseDto(false, "OTP đã hết hạn");
         }
         return new ResponseDto(true, "OTP hợp lệ");
     }
 
     @Override
     public ResponseDto datLaiMatKhau(DatLaiMatKhauDto dto) {
-        Optional<TaiKhoan> optionalTaiKhoan = taiKhoanRepository.findById(dto.getEmail());
-        if (optionalTaiKhoan.isEmpty()) {
-            return new ResponseDto(false, "Tài khoản không tồn tại");
-        }
-        TaiKhoan taiKhoan = optionalTaiKhoan.get();
-        if (taiKhoan.getOtp() == null || !taiKhoan.getOtp().equals(dto.getOtp())) {
-            return new ResponseDto(false, "OTP không đúng");
-        }
-        if (taiKhoan.getOtpExpiry() == null || taiKhoan.getOtpExpiry().isBefore(LocalDateTime.now())) {
-            return new ResponseDto(false, "OTP đã hết hạn");
-        }
+        TaiKhoan taiKhoan = taiKhoanRepository.findById(dto.getEmail()).orElse(null);
         if (!dto.getMatKhauMoi().equals(dto.getXacNhanMatKhauMoi())) {
             return new ResponseDto(false, "Mật khẩu mới và xác nhận mật khẩu không khớp");
         }
-        taiKhoan.setMatKhau(hashPasswordUtil.hashPassword(dto.getMatKhauMoi()));
+        taiKhoan.setMatKhau(HashPasswordUtil.hashPassword(dto.getMatKhauMoi()));
         taiKhoan.setOtp(null);
-        taiKhoan.setOtpExpiry(null);
+        taiKhoan.setThoiHanOtp(null);
+        taiKhoan.setNgayCapNhat(LocalDateTime.now());
         taiKhoanRepository.save(taiKhoan);
         return new ResponseDto(true, "Đặt lại mật khẩu thành công");
     }
