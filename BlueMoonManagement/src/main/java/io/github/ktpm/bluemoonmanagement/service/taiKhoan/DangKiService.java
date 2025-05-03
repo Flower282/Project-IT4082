@@ -5,5 +5,5 @@ import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.DangKiDto;
 
 public interface DangKiService {
 
-    ResponseDto dangKiTaiKhoan(DangKiDto dangKiDto) throws Exception;
+    ResponseDto dangKiTaiKhoan(DangKiDto dangKiDto);
 }
