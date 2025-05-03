@@ -7,7 +7,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class DangKiDto {
     private String email;
-    private String matKhau;
-    private String xacNhanMatKhau;
     private String hoTen;
 }
