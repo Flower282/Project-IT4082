@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class XacMinhOtpDto {
-    private String otp;
-    private String thoiHanOtp;
+public class DangNhapDto {
+    private String email;
+    private String matKhau;
 }

@@ -1,9 +1,11 @@
 package io.github.ktpm.bluemoonmanagement.model.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 @Table(name = "phuong_tien")
 @Entity
 public class PhuongTien {
