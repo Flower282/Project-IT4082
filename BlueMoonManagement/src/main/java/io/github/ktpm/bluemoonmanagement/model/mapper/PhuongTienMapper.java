@@ -9,6 +9,7 @@ import io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien;
 public interface PhuongTienMapper {
     PhuongTienDto toPhuongTienDto(PhuongTien phuongTien);
 
+    @Mapping(target = "ngayHuyDangKy", ignore = true)
     @Mapping(target = "canHo", ignore = true)
     PhuongTien fromPhuongTienDto(PhuongTienDto phuongTienDto);
 }
