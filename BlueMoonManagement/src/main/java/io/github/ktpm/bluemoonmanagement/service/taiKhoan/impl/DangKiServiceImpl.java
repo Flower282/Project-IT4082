@@ -7,6 +7,8 @@ import io.github.ktpm.bluemoonmanagement.model.mapper.TaiKhoanMapper;
 import io.github.ktpm.bluemoonmanagement.repository.TaiKhoanRepository;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DangKiService;
 import io.github.ktpm.bluemoonmanagement.util.HashPasswordUtil;
+import io.github.ktpm.bluemoonmanagement.util.GeneratePasswordUtil;
+import io.github.ktpm.bluemoonmanagement.service.taiKhoan.EmailService;
 
 import java.time.LocalDateTime;
 
@@ -16,10 +18,12 @@ import org.springframework.stereotype.Service;
 public class DangKiServiceImpl implements DangKiService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final TaiKhoanMapper taiKhoanMapper;
+    private final EmailService emailService;
 
-    public DangKiServiceImpl(TaiKhoanRepository taiKhoanRepository, TaiKhoanMapper taiKhoanMapper) {
+    public DangKiServiceImpl(TaiKhoanRepository taiKhoanRepository, TaiKhoanMapper taiKhoanMapper, EmailService emailService) {
         this.taiKhoanRepository = taiKhoanRepository;
         this.taiKhoanMapper = taiKhoanMapper;
+        this.emailService = emailService;
     }
 
     @Override
@@ -28,17 +32,38 @@ public class DangKiServiceImpl implements DangKiService {
         if (taiKhoanRepository.existsById(dangKiDto.getEmail())) {
             return new ResponseDto(false, "Email đã tồn tại");
         }
-        // Kiểm tra mật khẩu và xác nhận mật khẩu
-        if (!dangKiDto.getMatKhau().equals(dangKiDto.getXacNhanMatKhau())) {
-            return new ResponseDto(false, "Mật khẩu và xác nhận mật khẩu không khớp");
-        }
+        // Tạo mật khẩu ngẫu nhiên
+        String matKhau = GeneratePasswordUtil.generate();
         // Tạo tài khoản mới
         TaiKhoan taiKhoan = taiKhoanMapper.fromDangKiDto(dangKiDto);
-        taiKhoan.setMatKhau(HashPasswordUtil.hashPassword(dangKiDto.getMatKhau()));
+        taiKhoan.setMatKhau(HashPasswordUtil.hashPassword(matKhau));
         taiKhoan.setNgayTao(LocalDateTime.now());
         taiKhoan.setNgayCapNhat(LocalDateTime.now());
         taiKhoanRepository.save(taiKhoan);
+        // Gửi email thông tin tài khoản cho người dùng (HTML)
+        String subject = "Thông tin tài khoản BlueMoonManagement";
+        String content = String.format(
+            """
+            <div style='font-family:Arial,sans-serif;'>
+                <h2>Chào %s,</h2>
+                <p>Tài khoản của bạn đã được tạo thành công.</p>
+                <ul>
+                    <li><b>Họ tên:</b> %s</li>
+                    <li><b>Tên đăng nhập (Email):</b> %s</li>
+                    <li><b>Mật khẩu:</b> %s</li>
+                </ul>
+                <p style='color:red;'><b>Lưu ý:</b> Không cung cấp thông tin tài khoản cho bất kỳ ai. Không phản hồi email này.</p>
+                <p>Vui lòng đổi mật khẩu sau khi đăng nhập lần đầu.</p>
+                <p>Trân trọng!</p>
+            </div>
+            """,
+            dangKiDto.getHoTen(),
+            dangKiDto.getHoTen(),
+            dangKiDto.getEmail(),
+            matKhau
+        );
+        emailService.sendEmail(dangKiDto.getEmail(), subject, content, true);
         // Trả về phản hồi thành công
-        return new ResponseDto(true, "Đăng ký thành công");
+        return new ResponseDto(true, "Đăng kí thành công");
     }
 }
