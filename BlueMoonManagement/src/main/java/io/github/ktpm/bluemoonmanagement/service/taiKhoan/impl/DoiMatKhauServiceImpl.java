@@ -6,15 +6,17 @@ import io.github.ktpm.bluemoonmanagement.model.entity.TaiKhoan;
 import io.github.ktpm.bluemoonmanagement.repository.TaiKhoanRepository;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DoiMatKhauService;
 import io.github.ktpm.bluemoonmanagement.util.HashPasswordUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DoiMatKhauServiceImpl implements DoiMatKhauService {
-    @Autowired
-    private TaiKhoanRepository taiKhoanRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
+
+    public DoiMatKhauServiceImpl(TaiKhoanRepository taiKhoanRepository) {
+        this.taiKhoanRepository = taiKhoanRepository;
+    }
 
     @Override
     public ResponseDto doiMatKhau(DoiMatKhauDto doiMatKhauDto) {

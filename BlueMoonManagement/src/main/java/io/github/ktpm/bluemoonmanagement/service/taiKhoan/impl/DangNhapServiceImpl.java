@@ -1,6 +1,5 @@
 package io.github.ktpm.bluemoonmanagement.service.taiKhoan.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.DangNhapDto;
@@ -14,15 +13,12 @@ import io.github.ktpm.bluemoonmanagement.util.HashPasswordUtil;
 @Service
 public class DangNhapServiceImpl implements DangNhapServive {
 
-    @Autowired
-    private TaiKhoanRepository taiKhoanRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
+    private final TaiKhoanMapper taiKhoanMapper;
 
-    @Autowired
-    private TaiKhoanMapper taiKhoanMapper;
-
-    @Autowired
-    public DangNhapServiceImpl(TaiKhoanRepository taiKhoanRepository){
+    public DangNhapServiceImpl(TaiKhoanRepository taiKhoanRepository, TaiKhoanMapper taiKhoanMapper) {
         this.taiKhoanRepository = taiKhoanRepository;
+        this.taiKhoanMapper = taiKhoanMapper;
     }
 
     /**
