@@ -33,8 +33,6 @@ public class CanHo {
     private String trangThaiKiThuat;
     @Column(name = "trang_thai_su_dung")
     private String trangThaiSuDung;
-    @Column(name = "ma_chu_ho")
-    private String maChuHo;
 
     @OneToMany(mappedBy = "canHo")
     private List<PhuongTien> phuongTienList;
