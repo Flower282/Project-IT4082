@@ -1,6 +1,5 @@
 package io.github.ktpm.bluemoonmanagement.service.phuongTien.impl;
 
-import io.github.ktpm.bluemoonmanagement.model.dto.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.PhuongTienDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien;
@@ -10,9 +9,6 @@ import io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Service
 public class PhuongTienServiceImpl implements PhuongTienService {
     private final PhuongTienRepository phuongTienRepository;
@@ -54,13 +50,5 @@ public class PhuongTienServiceImpl implements PhuongTienService {
         phuongTien.setNgayHuyDangKy(LocalDate.now());
         phuongTienRepository.save(phuongTien);
         return new ResponseDto(true, "Đã hủy đăng ký phương tiện thành công");
-    }
-
-    @Override
-    public List<PhuongTienDto> layDanhSachPhuongTien(CanHoDto canHoDto) {
-        List<PhuongTien> phuongTienList = phuongTienRepository.findByCanHo_MaCanHo(canHoDto.getMaCanHo());
-        return phuongTienList.stream()
-                .map(phuongTienMapper::toPhuongTienDto)
-                .collect(Collectors.toList());
     }
 }
