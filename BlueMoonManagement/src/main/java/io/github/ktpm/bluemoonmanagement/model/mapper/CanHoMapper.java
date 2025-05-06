@@ -14,5 +14,5 @@ public interface CanHoMapper {
 
     CanHoChiTietDto toCanHoChiTietDto(CanHo canHo);
 
-    CanHo fromDto(CanHoDto canHoDto); // Chuyển đổi từ CanHoDto sang CanHo
+    //CanHo fromDto(CanHoDto canHoDto);
 }

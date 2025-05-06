@@ -3,7 +3,7 @@ package io.github.ktpm.bluemoonmanagement.model.dto.canHo;
 import io.github.ktpm.bluemoonmanagement.model.dto.HoaDonDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.PhuongTienDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.ChuHoDto;
-import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +23,6 @@ public class CanHoChiTietDto {
     private String trangThaiSuDung;
     private ChuHoDto chuHo;
     private List<PhuongTienDto> phuongTienList;
-    private List<CuDanDto> cuDanList;
+    private List<CuDanTrongCanHoDto> cuDanList;
     private List<HoaDonDto> hoaDonList;
 }

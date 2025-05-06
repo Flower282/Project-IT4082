@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CuDanDto {
+public class CuDanTrongCanHoDto {
     private String maDinhDanh;
     private String hoVaTen;
     private String gioiTinh;
