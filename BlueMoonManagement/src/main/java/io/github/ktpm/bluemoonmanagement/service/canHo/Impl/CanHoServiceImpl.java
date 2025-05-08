@@ -1,4 +1,4 @@
-package io.github.ktpm.bluemoonmanagement.service.canHo.Impl;
+package io.github.ktpm.bluemoonmanagement.service.canHo.impl;
 
 import java.util.List;
 import java.util.stream.Collectors;

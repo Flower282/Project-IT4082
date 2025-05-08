@@ -1,4 +1,4 @@
-package io.github.ktpm.bluemoonmanagement.model.dto;
+package io.github.ktpm.bluemoonmanagement.model.dto.hoaDon;
 
 import java.time.LocalDateTime;
 
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class HoaDonDto {
-    private String maHoaDon;
+    private Integer maHoaDon;
     private String tenKhoanThu;
     private String soTien;
     private LocalDateTime ngayNop;
