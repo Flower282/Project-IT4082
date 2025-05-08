@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class HoaDon {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String maHoaDon;
+    private Integer maHoaDon;
 
     @ManyToOne
     @JoinColumn(name = "ma_khoan_thu", referencedColumnName = "ma_khoan_thu")

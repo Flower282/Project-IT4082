@@ -1,9 +1,9 @@
 package io.github.ktpm.bluemoonmanagement.model.dto.canHo;
 
-import io.github.ktpm.bluemoonmanagement.model.dto.HoaDonDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.PhuongTienDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.ChuHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
