@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.entity.CanHo;
@@ -35,6 +36,18 @@ public class CanHoServiceImpl implements CanHoService {
     public CanHoChiTietDto getCanHoChiTiet(CanHoDto canHoDto) {
         CanHo canHo = canHoRepository.findById(canHoDto.getMaCanHo()).orElse(null);
         return canHoMapper.toCanHoChiTietDto(canHo);
+    }
+
+    @Override
+    public ResponseDto addCanHo(CanHoDto canHoDto) {
+        // Check if an apartment with this code already exists
+        if (canHoRepository.existsById(canHoDto.getMaCanHo())) {
+            return new ResponseDto(false, "Căn hộ đã tồn tại");
+        }
+        // Convert DTO to entity using the mapper
+        CanHo canHo = canHoMapper.fromCanHoDto(canHoDto);
+        canHoRepository.save(canHo);
+        return new ResponseDto(true, "Căn hộ đã được thêm thành công");
     }
 
     

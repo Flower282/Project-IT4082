@@ -30,6 +30,9 @@ public class KhoanThu {
     
     @Column(name = "so_tien")
     private int soTien;
+
+    @Column(name = "pham_vi")
+    private String phamVi;
     
     @Column(name = "ngay_tao")
     private LocalDate ngayTao;

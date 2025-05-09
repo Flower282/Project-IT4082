@@ -7,8 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class HoaDonDichVuDto {
+public class HoaDonTuNguyenDto {
+    private Integer maHoaDon;
     private String tenKhoanThu;
-    private Integer soTien;
     private String maCanHo;
+    private Integer soTien;    
 }
