@@ -1,6 +1,8 @@
 package io.github.ktpm.bluemoonmanagement.model.dto.canHo;
 
-import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.ChuHoDto;
+import java.util.List;
+
+import io.github.ktpm.bluemoonmanagement.model.dto.PhuongTienDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,14 +10,10 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CanHoDto {
+public class CanHoHoaDonDto {
     private String maCanHo;
-    private String toaNha;
-    private int tang;
-    private String soNha;
     private double dienTich;
-    private ChuHoDto chuHo;
     private boolean daBanChua;
-    private String trangThaiKiThuat;
-    private String trangThaiSuDung; 
+    private String trangThaiSuDung;
+    private List<PhuongTienDto> phuongTienList;
 }
