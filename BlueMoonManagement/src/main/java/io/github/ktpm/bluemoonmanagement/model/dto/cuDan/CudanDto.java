@@ -14,7 +14,6 @@ public class CudanDto {
     private String hoVaTen;
     private String gioiTinh;
     private LocalDate ngaySinh;
-    private String ngheNghiep;
     private String soDienThoai;
     private String email;
     private String trangThaiCuTru;
