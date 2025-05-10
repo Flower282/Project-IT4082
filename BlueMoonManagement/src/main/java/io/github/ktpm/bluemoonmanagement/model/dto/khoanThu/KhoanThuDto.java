@@ -1,7 +1,9 @@
 package io.github.ktpm.bluemoonmanagement.model.dto.khoanThu;
 
 import java.time.LocalDate;
+import java.util.List;
 
+import io.github.ktpm.bluemoonmanagement.model.dto.phiGuiXe.PhiGuiXeDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,4 +21,5 @@ public class KhoanThuDto {
     private LocalDate ngayTao;
     private LocalDate thoiHan;
     private String ghiChu;
+    private List<PhiGuiXeDto> phiGuiXeList;
 }

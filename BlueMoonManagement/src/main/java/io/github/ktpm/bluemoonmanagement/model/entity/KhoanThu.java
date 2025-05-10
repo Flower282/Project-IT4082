@@ -45,4 +45,7 @@ public class KhoanThu {
 
     @OneToMany(mappedBy = "khoanThu")
     private List<HoaDon> hoaDonList;
+
+    @OneToMany(mappedBy = "khoanThu")
+    private List<PhiGuiXe> phiGuiXeList;
 }

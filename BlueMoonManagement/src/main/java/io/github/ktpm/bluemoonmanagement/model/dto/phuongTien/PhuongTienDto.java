@@ -1,4 +1,4 @@
-package io.github.ktpm.bluemoonmanagement.model.dto;
+package io.github.ktpm.bluemoonmanagement.model.dto.phuongTien;
 
 import java.time.LocalDate;
 
