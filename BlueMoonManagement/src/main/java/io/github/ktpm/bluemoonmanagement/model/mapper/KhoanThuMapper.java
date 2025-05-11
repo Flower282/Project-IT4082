@@ -6,7 +6,7 @@ import org.mapstruct.Mapping;
 import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto;
 import io.github.ktpm.bluemoonmanagement.model.entity.KhoanThu;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = { PhiGuiXeMapper.class })
 public interface KhoanThuMapper {
     KhoanThuDto toKhoanThuDto(KhoanThu khoanThu);
 

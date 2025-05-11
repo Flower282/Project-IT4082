@@ -26,8 +26,6 @@ public class CuDan {
     private String gioiTinh;
     @Column(name = "ngay_sinh")
     private LocalDate ngaySinh;
-    @Column(name = "nghe_nghiep")
-    private String ngheNghiep;
     @Column(name = "so_dien_thoai")
     private String soDienThoai;
     @Column(name = "email")

@@ -71,23 +71,37 @@ public class HoaDonServiceImpl implements HoaDonService {
                         }
                     }
                     break;
-                case "Xe đạp":
+                case "Phương tiện":
                     int countXeDap = (int)canHo.getPhuongTienList().stream()
                                         .filter(phuongTien -> phuongTien.getLoaiPhuongTien().equals("Xe đạp"))
                                         .count();
-                    hoaDonDichVuDto.setSoTien(countXeDap * khoanThuDto.getSoTien());
-                    break;
-                case "Xe máy":
+                    int soTienXeDap = khoanThuDto.getPhiGuiXeList().stream()
+                                        .filter(phiGuiXe -> phiGuiXe.getLoaiXe().equals("Xe đạp"))
+                                        .findFirst()
+                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                        .orElse(0); 
+                    int tienGuiXeDap = countXeDap * soTienXeDap;
+
                     int countXeMay = (int)canHo.getPhuongTienList().stream()
                                         .filter(phuongTien -> phuongTien.getLoaiPhuongTien().equals("Xe máy"))
                                         .count();
-                    hoaDonDichVuDto.setSoTien(countXeMay * khoanThuDto.getSoTien());
-                    break;
-                case "Ô tô":
+                    int soTienXeMay = khoanThuDto.getPhiGuiXeList().stream()
+                                        .filter(phiGuiXe -> phiGuiXe.getLoaiXe().equals("Xe máy"))
+                                        .findFirst()
+                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                        .orElse(0);
+                    int tienGuiXeMay = countXeMay * soTienXeMay;
+
                     int countOto = (int)canHo.getPhuongTienList().stream()
                                         .filter(phuongTien -> phuongTien.getLoaiPhuongTien().equals("Ô tô"))
                                         .count();
-                    hoaDonDichVuDto.setSoTien(countOto * khoanThuDto.getSoTien());
+                    int soTienOto = khoanThuDto.getPhiGuiXeList().stream()
+                                        .filter(phiGuiXe -> phiGuiXe.getLoaiXe().equals("Ô tô"))
+                                        .findFirst()
+                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                        .orElse(0);
+                    int tienGuiOto = countOto * soTienOto;
+                    hoaDonDichVuDto.setSoTien(tienGuiXeDap + tienGuiXeMay + tienGuiOto);
                     break;
                 default:
                     return new ResponseDto(false, "Đơn vị tính không hợp lệ");

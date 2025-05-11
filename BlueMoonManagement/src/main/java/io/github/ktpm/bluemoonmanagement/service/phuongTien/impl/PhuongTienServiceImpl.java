@@ -1,7 +1,7 @@
 package io.github.ktpm.bluemoonmanagement.service.phuongTien.impl;
 
-import io.github.ktpm.bluemoonmanagement.model.dto.PhuongTienDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.phuongTien.PhuongTienDto;
 import io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien;
 import io.github.ktpm.bluemoonmanagement.model.mapper.PhuongTienMapper;
 import io.github.ktpm.bluemoonmanagement.repository.PhuongTienRepository;
