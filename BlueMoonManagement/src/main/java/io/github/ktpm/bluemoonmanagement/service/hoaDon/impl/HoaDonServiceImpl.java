@@ -140,26 +140,27 @@ public class HoaDonServiceImpl implements HoaDonService {
     @Override
     public int importFromExcel(MultipartFile file) {
         try {
-            File tempFile = File.createTempFile("hoadon_import", ".xlsx");
+            File tempFile = File.createTempFile("hoadondichvu_import", ".xlsx");
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
                 fos.write(file.getBytes());
             }
-            XlxsFileUtil<HoaDonDto> util = new XlxsFileUtil<>();
-            Function<Row, HoaDonDto> rowMapper = row -> {
+            XlxsFileUtil<HoaDonDichVuDto> util = new XlxsFileUtil<>();
+            Function<Row, HoaDonDichVuDto> rowMapper = row -> {
                 try {
-                    HoaDonDto dto = new HoaDonDto();
-                    dto.setMaHoaDon((int) row.getCell(0).getNumericCellValue());
-                    dto.setTenKhoanThu(row.getCell(1).getStringCellValue());
+                    HoaDonDichVuDto dto = new HoaDonDichVuDto();
+                    dto.setTenKhoanThu(row.getCell(0).getStringCellValue());
+                    dto.setMaCanHo(row.getCell(1).getStringCellValue());
                     dto.setSoTien((int) row.getCell(2).getNumericCellValue());
-                    dto.setNgayNop(row.getCell(3) != null ? row.getCell(3).getLocalDateTimeCellValue() : null);
-                    dto.setDaNop(row.getCell(4) != null && row.getCell(4).getBooleanCellValue());
+                    // Add more fields if needed
                     return dto;
                 } catch (Exception e) {
                     return null;
                 }
             };
-            List<HoaDonDto> hoaDonDtoList = util.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
-            List<HoaDon> hoaDonList = hoaDonDtoList.stream().map(hoaDonMapper::fromHoaDonDto).collect(Collectors.toList());
+            List<HoaDonDichVuDto> hoaDonDichVuDtoList = util.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
+            List<HoaDon> hoaDonList = hoaDonDichVuDtoList.stream()
+                .map(hoaDonMapper::fromHoaDonDichVuDto)
+                .collect(Collectors.toList());
             hoaDonRepository.saveAll(hoaDonList);
             tempFile.delete();
             return hoaDonList.size();
