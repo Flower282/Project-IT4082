@@ -21,6 +21,12 @@ import io.github.ktpm.bluemoonmanagement.model.mapper.HoaDonMapper;
 import io.github.ktpm.bluemoonmanagement.repository.CanHoRepository;
 import io.github.ktpm.bluemoonmanagement.repository.HoaDonRepository;
 import io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService;
+import io.github.ktpm.bluemoonmanagement.util.XlxsFileUtil;
+import org.apache.poi.ss.usermodel.Row;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.function.Function;
 
 @Service
 public class HoaDonServiceImpl implements HoaDonService {
@@ -129,5 +135,36 @@ public class HoaDonServiceImpl implements HoaDonService {
         hoaDon.setDaNop(true);
         hoaDonRepository.save(hoaDon);
         return new ResponseDto(true, "Hóa đơn đã được thêm thành công");
+    }
+
+    @Override
+    public int importFromExcel(MultipartFile file) {
+        try {
+            File tempFile = File.createTempFile("hoadon_import", ".xlsx");
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                fos.write(file.getBytes());
+            }
+            XlxsFileUtil<HoaDonDto> util = new XlxsFileUtil<>();
+            Function<Row, HoaDonDto> rowMapper = row -> {
+                try {
+                    HoaDonDto dto = new HoaDonDto();
+                    dto.setMaHoaDon((int) row.getCell(0).getNumericCellValue());
+                    dto.setTenKhoanThu(row.getCell(1).getStringCellValue());
+                    dto.setSoTien((int) row.getCell(2).getNumericCellValue());
+                    dto.setNgayNop(row.getCell(3) != null ? row.getCell(3).getLocalDateTimeCellValue() : null);
+                    dto.setDaNop(row.getCell(4) != null && row.getCell(4).getBooleanCellValue());
+                    return dto;
+                } catch (Exception e) {
+                    return null;
+                }
+            };
+            List<HoaDonDto> hoaDonDtoList = util.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
+            List<HoaDon> hoaDonList = hoaDonDtoList.stream().map(hoaDonMapper::fromHoaDonDto).collect(Collectors.toList());
+            hoaDonRepository.saveAll(hoaDonList);
+            tempFile.delete();
+            return hoaDonList.size();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to import HoaDon from Excel", e);
+        }
     }
 }
