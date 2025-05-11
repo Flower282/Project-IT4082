@@ -26,4 +26,8 @@ public interface HoaDonMapper {
     @Mapping(target = "canHo.maCanHo", source = "hoaDonTuNguyenDto.maCanHo")
     HoaDon fromHoaDonTuNguyenDto(HoaDonTuNguyenDto hoaDonTuNguyenDto);
 
+    // MapStruct mapping from HoaDonDto to HoaDon (for import)
+    @Mapping(target = "khoanThu", ignore = true) // Set manually if needed
+    @Mapping(target = "canHo", ignore = true)   // Set manually if needed
+    HoaDon fromHoaDonDto(HoaDonDto hoaDonDto);
 }

@@ -7,9 +7,11 @@ import io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonTuNguyenDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuTuNguyenDto;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface HoaDonService {
     ResponseDto generateHoaDon(KhoanThuDto khoanThuDto);
     List<HoaDonDto> getAllHoaDon();
     ResponseDto addHoaDonTuNguyen(HoaDonTuNguyenDto hoaDonTuNguyenDto, KhoanThuTuNguyenDto khoanThuTuNguyenDto);
+    int importFromExcel(MultipartFile file);
 }

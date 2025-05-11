@@ -1,4 +1,4 @@
-package io.github.ktpm.bluemoonmanagement.service.khoanThu.impl;
+package io.github.ktpm.bluemoonmanagement.service.khoanThu.Impl;
 
 import java.util.List;
 import java.time.LocalDate;
