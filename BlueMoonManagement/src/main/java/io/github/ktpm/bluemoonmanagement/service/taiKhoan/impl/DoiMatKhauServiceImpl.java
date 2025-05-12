@@ -6,8 +6,7 @@ import io.github.ktpm.bluemoonmanagement.model.entity.TaiKhoan;
 import io.github.ktpm.bluemoonmanagement.repository.TaiKhoanRepository;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DoiMatKhauService;
 import io.github.ktpm.bluemoonmanagement.util.HashPasswordUtil;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,11 +19,10 @@ public class DoiMatKhauServiceImpl implements DoiMatKhauService {
 
     @Override
     public ResponseDto doiMatKhau(DoiMatKhauDto doiMatKhauDto) {
-        // Lấy email từ phiên đăng nhập
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+        // Lấy email từ phiên đăng nhập (Session)
+        String email = Session.getCurrentUser().getEmail();
         // Truy vấn tài khoản (không cần kiểm tra null vì đã đăng nhập)
-        TaiKhoan taiKhoan = taiKhoanRepository.findById(email).get();
+        TaiKhoan taiKhoan = taiKhoanRepository.findById(email).orElse(null);
         // So sánh mật khẩu cũ
         if (!HashPasswordUtil.verifyPassword(doiMatKhauDto.getMatKhauCu(), taiKhoan.getMatKhau())) {
             return new ResponseDto(false, "Mật khẩu hiện tại không đúng");

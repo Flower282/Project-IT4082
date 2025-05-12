@@ -6,6 +6,7 @@ import io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien;
 import io.github.ktpm.bluemoonmanagement.model.mapper.PhuongTienMapper;
 import io.github.ktpm.bluemoonmanagement.repository.PhuongTienRepository;
 import io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,6 +22,9 @@ public class PhuongTienServiceImpl implements PhuongTienService {
 
     @Override
     public ResponseDto themPhuongTien(PhuongTienDto phuongTienDto) {
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền thêm phương tiện. Chỉ Tổ phó mới được phép.");
+        }
         if (phuongTienDto.getBienSo() != null && phuongTienRepository.existsByBienSo(phuongTienDto.getBienSo())) {
             return new ResponseDto(false, "Biển số xe đã tồn tại");
         }
@@ -32,13 +36,16 @@ public class PhuongTienServiceImpl implements PhuongTienService {
 
     @Override
     public ResponseDto capNhatPhuongTien(PhuongTienDto phuongTienDto) {
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền cập nhật phương tiện. Chỉ Tổ phó mới được phép.");
+        }
         PhuongTien phuongTien = phuongTienRepository.findById(phuongTienDto.getSoThuTu()).orElse(null);
         // Kiểm tra biển số đã tồn tại ở phương tiện khác
-            boolean bienSoTrung = phuongTienRepository.existsByBienSo(phuongTienDto.getBienSo()) &&
-                (!phuongTien.getBienSo().equals(phuongTienDto.getBienSo()));
-            if (bienSoTrung) {
-                return new ResponseDto(false, "Biển số xe đã tồn tại ở phương tiện khác");
-            }
+        boolean bienSoTrung = phuongTienRepository.existsByBienSo(phuongTienDto.getBienSo()) &&
+            (!phuongTien.getBienSo().equals(phuongTienDto.getBienSo()));
+        if (bienSoTrung) {
+            return new ResponseDto(false, "Biển số xe đã tồn tại ở phương tiện khác");
+        }
         phuongTien.setBienSo(phuongTienDto.getBienSo());
         phuongTienRepository.save(phuongTien);
         return new ResponseDto(true, "Cập nhật phương tiện thành công");
@@ -46,6 +53,9 @@ public class PhuongTienServiceImpl implements PhuongTienService {
 
     @Override
     public ResponseDto xoaPhuongTien(PhuongTienDto phuongTienDto) {
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền xóa phương tiện. Chỉ Tổ phó mới được phép.");
+        }
         PhuongTien phuongTien = phuongTienRepository.findById(phuongTienDto.getSoThuTu()).orElse(null);
         phuongTien.setNgayHuyDangKy(LocalDate.now());
         phuongTienRepository.save(phuongTien);

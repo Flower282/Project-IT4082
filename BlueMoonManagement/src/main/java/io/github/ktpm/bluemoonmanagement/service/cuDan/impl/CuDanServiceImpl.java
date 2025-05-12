@@ -11,6 +11,7 @@ import io.github.ktpm.bluemoonmanagement.model.entity.CuDan;
 import io.github.ktpm.bluemoonmanagement.model.mapper.CuDanMapper;
 import io.github.ktpm.bluemoonmanagement.repository.CuDanRepository;
 import io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 
 @Service
 public class CuDanServiceImpl implements CuDanService {
@@ -33,6 +34,9 @@ public class CuDanServiceImpl implements CuDanService {
 
     @Override
     public ResponseDto addCuDan(CudanDto cudanDto) {
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền thêm cư dân. Chỉ Tổ phó mới được phép.");
+        }
         if (cuDanRepository.existsById(cudanDto.getMaDinhDanh())) {
             return new ResponseDto(false, "Cư dân đã tồn tại");
         }
@@ -44,6 +48,9 @@ public class CuDanServiceImpl implements CuDanService {
 
     @Override
     public ResponseDto updateCuDan(CudanDto cudanDto) {
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền cập nhật cư dân. Chỉ Tổ phó mới được phép.");
+        }
         if (!cuDanRepository.existsById(cudanDto.getMaDinhDanh())) {
             return new ResponseDto(false, "Không tìm thấy cư dân");
         }
@@ -55,6 +62,9 @@ public class CuDanServiceImpl implements CuDanService {
 
     @Override
     public ResponseDto deleteCuDan(CudanDto cudanDto) {
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền xóa cư dân. Chỉ Tổ phó mới được phép.");
+        }
         if (!cuDanRepository.existsById(cudanDto.getMaDinhDanh())) {
             return new ResponseDto(false, "Không tìm thấy cư dân");
         }

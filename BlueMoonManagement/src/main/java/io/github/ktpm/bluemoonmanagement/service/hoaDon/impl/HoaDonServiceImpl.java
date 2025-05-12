@@ -16,11 +16,14 @@ import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuTuNguyenDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDichVuDto;
 import io.github.ktpm.bluemoonmanagement.model.entity.CanHo;
 import io.github.ktpm.bluemoonmanagement.model.entity.HoaDon;
+import io.github.ktpm.bluemoonmanagement.model.entity.KhoanThu;
 import io.github.ktpm.bluemoonmanagement.model.mapper.CanHoMapper;
 import io.github.ktpm.bluemoonmanagement.model.mapper.HoaDonMapper;
 import io.github.ktpm.bluemoonmanagement.repository.CanHoRepository;
 import io.github.ktpm.bluemoonmanagement.repository.HoaDonRepository;
+import io.github.ktpm.bluemoonmanagement.repository.KhoanThuRepository;
 import io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.XlxsFileUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,14 +36,16 @@ public class HoaDonServiceImpl implements HoaDonService {
     
     private final HoaDonRepository hoaDonRepository;
     private final CanHoRepository canHoRepository;
+    private final KhoanThuRepository khoanThuRepository;
     private final HoaDonMapper hoaDonMapper;
     private final CanHoMapper canHoMapper;
     
-    public HoaDonServiceImpl(HoaDonRepository hoaDonRepository, HoaDonMapper hoaDonMapper, CanHoRepository canHoRepository, CanHoMapper canHoMapper) {
+    public HoaDonServiceImpl(HoaDonRepository hoaDonRepository, HoaDonMapper hoaDonMapper, CanHoRepository canHoRepository, CanHoMapper canHoMapper, KhoanThuRepository khoanThuRepository) {
         this.hoaDonRepository = hoaDonRepository;
         this.canHoRepository = canHoRepository;
         this.hoaDonMapper = hoaDonMapper;
         this.canHoMapper = canHoMapper;
+        this.khoanThuRepository = khoanThuRepository;
     }
     
 
@@ -53,8 +58,15 @@ public class HoaDonServiceImpl implements HoaDonService {
 
     @Override
     public ResponseDto generateHoaDon(KhoanThuDto khoanThuDto) {
+        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền tạo hóa đơn. Chỉ Kế toán mới được phép.");
+        }
         if(!khoanThuDto.isBatBuoc()) {
             return new ResponseDto(false, "Đây là khoản thu tự nguyện");
+        }
+        KhoanThu khoanThu = khoanThuRepository.findById(khoanThuDto.getMaKhoanThu()).orElse(null);
+        if(khoanThu.isTaoHoaDon()) {
+            return new ResponseDto(false, "Hóa đơn cho khoản thu này đã được tạo");
         }
         HoaDonDichVuDto hoaDonDichVuDto = new HoaDonDichVuDto();
         List<HoaDonDichVuDto> hoaDonList = new ArrayList<>();
@@ -114,6 +126,8 @@ public class HoaDonServiceImpl implements HoaDonService {
             }
             hoaDonList.add(hoaDonDichVuDto);
         }
+        khoanThu.setTaoHoaDon(true);
+        khoanThuRepository.save(khoanThu);
         return new ResponseDto(true, "Hóa đơn đã được thêm thành công");
     }
     
@@ -129,11 +143,17 @@ public class HoaDonServiceImpl implements HoaDonService {
 
     @Override
     public ResponseDto addHoaDonTuNguyen(HoaDonTuNguyenDto hoaDonTuNguyenDto, KhoanThuTuNguyenDto khoanThuTuNguyenDto) {
+        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền thêm hóa đơn tự nguyện. Chỉ Kế toán mới được phép.");
+        }
         hoaDonTuNguyenDto.setTenKhoanThu(khoanThuTuNguyenDto.getTenKhoanThu());
         HoaDon hoaDon = hoaDonMapper.fromHoaDonTuNguyenDto(hoaDonTuNguyenDto);
         hoaDon.setNgayNop(LocalDateTime.now());
         hoaDon.setDaNop(true);
         hoaDonRepository.save(hoaDon);
+        KhoanThu khoanThu = khoanThuRepository.findById(khoanThuTuNguyenDto.getMaKhoanThu()).orElse(null);
+        khoanThu.setTaoHoaDon(true);
+        khoanThuRepository.save(khoanThu);
         return new ResponseDto(true, "Hóa đơn đã được thêm thành công");
     }
 

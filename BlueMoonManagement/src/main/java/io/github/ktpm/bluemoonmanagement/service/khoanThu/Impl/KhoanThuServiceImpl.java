@@ -1,4 +1,4 @@
-package io.github.ktpm.bluemoonmanagement.service.khoanThu.Impl;
+package io.github.ktpm.bluemoonmanagement.service.khoanThu.impl;
 
 import java.util.List;
 import java.time.LocalDate;
@@ -12,6 +12,7 @@ import io.github.ktpm.bluemoonmanagement.model.mapper.KhoanThuMapper;
 import io.github.ktpm.bluemoonmanagement.repository.KhoanThuRepository;
 import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 
 @Service
 public class KhoanThuServiceImpl implements KhoanThuService {
@@ -33,17 +34,17 @@ public class KhoanThuServiceImpl implements KhoanThuService {
 
     @Override
     public ResponseDto addKhoanThu(KhoanThuDto khoanThuDto) {
+        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền thêm khoản thu. Chỉ Kế toán mới được phép.");
+        }
         // Tạo mã khoản thu tự động theo định dạng mới: TN/BB-YYYYMM-XXX
         String maKhoanThu = generateMaKhoanThu(khoanThuDto);
-        
-        // Kiểm tra mã khoản thu đã tồn tại chưa
-        while (khoanThuRepository.existsById(maKhoanThu)) {
-            maKhoanThu = generateMaKhoanThu(khoanThuDto);
+        // Kiểm tra mã khoản thu đã tồn tại
+        if (khoanThuRepository.existsById(maKhoanThu)) {
+            return new ResponseDto(false, "Mã khoản thu đã tồn tại. Vui lòng thử lại.");
         }
-        
         // Gán mã khoản thu mới vào DTO
         khoanThuDto.setMaKhoanThu(maKhoanThu);
-        
         // Chuyển đổi DTO thành entity và lưu
         KhoanThu khoanThu = khoanThuMapper.fromKhoanThuDto(khoanThuDto);
         khoanThuRepository.save(khoanThu);
@@ -90,18 +91,27 @@ public class KhoanThuServiceImpl implements KhoanThuService {
 
     @Override
     public ResponseDto updateKhoanThu(KhoanThuDto khoanThuDto) {
-        if (!khoanThuRepository.existsById(khoanThuDto.getMaKhoanThu())) {
-            return new ResponseDto(false, "Khoản thu không tồn tại");
+        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền cập nhật khoản thu. Chỉ Kế toán mới được phép.");
         }
-        KhoanThu khoanThu = khoanThuMapper.fromKhoanThuDto(khoanThuDto);
+
+        KhoanThu khoanThu = khoanThuRepository.findById(khoanThuDto.getMaKhoanThu()).orElse(null);
+        if (khoanThu != null && khoanThu.isTaoHoaDon()) {
+            return new ResponseDto(false, "Khoản thu đã tạo hóa đơn, không thể cập nhật");
+        }
+        khoanThu = khoanThuMapper.fromKhoanThuDto(khoanThuDto);
         khoanThuRepository.save(khoanThu);
         return new ResponseDto(true, "Cập nhật khoản thu thành công");
     }
 
     @Override
     public ResponseDto deleteKhoanThu(String maKhoanThu) {
-        if (!khoanThuRepository.existsById(maKhoanThu)) {
-            return new ResponseDto(false, "Khoản thu không tồn tại");
+        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền xóa khoản thu. Chỉ Kế toán mới được phép.");
+        }
+        KhoanThu khoanThu = khoanThuRepository.findById(maKhoanThu).orElse(null);
+        if (khoanThu != null && khoanThu.isTaoHoaDon()) {
+            return new ResponseDto(false, "Khoản thu đã tạo hóa đơn, không thể xóa");
         }
         khoanThuRepository.deleteById(maKhoanThu);
         return new ResponseDto(true, "Xóa khoản thu thành công");

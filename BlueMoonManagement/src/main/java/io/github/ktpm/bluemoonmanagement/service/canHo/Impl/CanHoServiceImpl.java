@@ -12,6 +12,7 @@ import io.github.ktpm.bluemoonmanagement.model.entity.CanHo;
 import io.github.ktpm.bluemoonmanagement.model.mapper.CanHoMapper;
 import io.github.ktpm.bluemoonmanagement.repository.CanHoRepository;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 
 @Service
 public class CanHoServiceImpl implements CanHoService {
@@ -40,6 +41,10 @@ public class CanHoServiceImpl implements CanHoService {
 
     @Override
     public ResponseDto addCanHo(CanHoDto canHoDto) {
+        // Kiểm tra quyền: chỉ 'Tổ phó' mới được thêm căn hộ
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền thêm căn hộ. Chỉ Tổ phó mới được phép.");
+        }
         // Check if an apartment with this code already exists
         if (canHoRepository.existsById(canHoDto.getMaCanHo())) {
             return new ResponseDto(false, "Căn hộ đã tồn tại");
