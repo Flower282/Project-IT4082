@@ -11,5 +11,6 @@ public interface KhoanThuMapper {
     KhoanThuDto toKhoanThuDto(KhoanThu khoanThu);
 
     @Mapping(target = "hoaDonList", ignore = true)
+    @Mapping(target = "taoHoaDon", ignore = true)
     KhoanThu fromKhoanThuDto(KhoanThuDto khoanThuDto);
 }
