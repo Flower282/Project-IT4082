@@ -9,6 +9,7 @@ import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DangKiService;
 import io.github.ktpm.bluemoonmanagement.util.HashPasswordUtil;
 import io.github.ktpm.bluemoonmanagement.util.GeneratePasswordUtil;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.EmailService;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 
 import java.time.LocalDateTime;
 
@@ -28,6 +29,10 @@ public class DangKiServiceImpl implements DangKiService {
 
     @Override
     public ResponseDto dangKiTaiKhoan(DangKiDto dangKiDto) {
+        // Kiểm tra quyền: chỉ 'Tổ trưởng' mới được đăng ký tài khoản
+        if (Session.getCurrentUser() == null || !"Tổ trưởng".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền đăng ký tài khoản. Chỉ Tổ trưởng mới được phép.");
+        }
         // Kiểm tra email đã tồn tại chưa
         if (taiKhoanRepository.existsById(dangKiDto.getEmail())) {
             return new ResponseDto(false, "Email đã tồn tại");

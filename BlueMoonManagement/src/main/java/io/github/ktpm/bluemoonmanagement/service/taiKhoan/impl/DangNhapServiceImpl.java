@@ -9,6 +9,8 @@ import io.github.ktpm.bluemoonmanagement.model.mapper.TaiKhoanMapper;
 import io.github.ktpm.bluemoonmanagement.repository.TaiKhoanRepository;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DangNhapServive;
 import io.github.ktpm.bluemoonmanagement.util.HashPasswordUtil;
+import io.github.ktpm.bluemoonmanagement.session.Session;
+import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 
 @Service
 public class DangNhapServiceImpl implements DangNhapServive {
@@ -21,28 +23,19 @@ public class DangNhapServiceImpl implements DangNhapServive {
         this.taiKhoanMapper = taiKhoanMapper;
     }
 
-    /**
-     * Kiểm tra email có tồn tại trong hệ thống không (bước 1)
-     */
     @Override
-    public boolean kiemTraEmailTonTai(String email) {
-        return taiKhoanRepository.existsById(email);
-    }
-
-    /**
-     * Kiểm tra mật khẩu và trả về thông tin tài khoản nếu đúng (bước 2)
-     */
-    @Override
-    public ThongTinTaiKhoanDto dangNhap(DangNhapDto dangNhapDto) {
+    public ResponseDto dangNhap(DangNhapDto dangNhapDto) {
         TaiKhoan taiKhoan = taiKhoanRepository.findById(dangNhapDto.getEmail()).orElse(null);
         if (taiKhoan == null) {
-            return null;
+            return new ResponseDto(false, "Tài khoản không tồn tại");
         }
         boolean isMatch = HashPasswordUtil.verifyPassword(dangNhapDto.getMatKhau(), taiKhoan.getMatKhau());
         if (!isMatch) {
-            return null;
+            return new ResponseDto(false, "Mật khẩu không đúng");
         }
-        return taiKhoanMapper.toThongTinTaiKhoanDto(taiKhoan);
+        ThongTinTaiKhoanDto thongTinTaiKhoanDto = taiKhoanMapper.toThongTinTaiKhoanDto(taiKhoan);
+        Session.setCurrentUser(thongTinTaiKhoanDto);
+        return new ResponseDto(true, "Đăng nhập thành công");
     }
 
 }

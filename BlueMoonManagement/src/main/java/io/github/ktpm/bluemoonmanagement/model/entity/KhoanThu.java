@@ -43,6 +43,9 @@ public class KhoanThu {
     @Column(name = "ghi_chu")
     private String ghiChu;
 
+    @Column(name = "tao_hoa_don")
+    private boolean taoHoaDon;
+
     @OneToMany(mappedBy = "khoanThu")
     private List<HoaDon> hoaDonList;
 
