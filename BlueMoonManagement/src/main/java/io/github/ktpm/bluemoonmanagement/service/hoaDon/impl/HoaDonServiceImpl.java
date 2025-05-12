@@ -164,7 +164,6 @@ public class HoaDonServiceImpl implements HoaDonService {
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
                 fos.write(file.getBytes());
             }
-            XlxsFileUtil<HoaDonDichVuDto> util = new XlxsFileUtil<>();
             Function<Row, HoaDonDichVuDto> rowMapper = row -> {
                 try {
                     HoaDonDichVuDto dto = new HoaDonDichVuDto();
@@ -177,10 +176,8 @@ public class HoaDonServiceImpl implements HoaDonService {
                     return null;
                 }
             };
-            List<HoaDonDichVuDto> hoaDonDichVuDtoList = util.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
-            List<HoaDon> hoaDonList = hoaDonDichVuDtoList.stream()
-                .map(hoaDonMapper::fromHoaDonDichVuDto)
-                .collect(Collectors.toList());
+            List<HoaDonDichVuDto> hoaDonDichVuDtoList = XlxsFileUtil.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
+            List<HoaDon> hoaDonList = hoaDonDichVuDtoList.stream().map(hoaDonMapper::fromHoaDonDichVuDto).collect(Collectors.toList());
             hoaDonRepository.saveAll(hoaDonList);
             tempFile.delete();
             return hoaDonList.size();
