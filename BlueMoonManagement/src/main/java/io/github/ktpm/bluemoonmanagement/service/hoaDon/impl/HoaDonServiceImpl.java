@@ -158,9 +158,7 @@ public class HoaDonServiceImpl implements HoaDonService {
                 }
             };
             List<HoaDonDichVuDto> hoaDonDichVuDtoList = util.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
-            List<HoaDon> hoaDonList = hoaDonDichVuDtoList.stream()
-                .map(hoaDonMapper::fromHoaDonDichVuDto)
-                .collect(Collectors.toList());
+            List<HoaDon> hoaDonList = hoaDonDichVuDtoList.stream().map(hoaDonMapper::fromHoaDonDichVuDto).collect(Collectors.toList());
             hoaDonRepository.saveAll(hoaDonList);
             tempFile.delete();
             return hoaDonList.size();
