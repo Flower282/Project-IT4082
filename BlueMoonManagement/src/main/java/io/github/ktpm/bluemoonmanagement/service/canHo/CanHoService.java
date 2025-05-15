@@ -1,6 +1,7 @@
 package io.github.ktpm.bluemoonmanagement.service.canHo;
 
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
@@ -12,4 +13,6 @@ public interface CanHoService {
     ResponseDto addCanHo(CanHoDto canHoDto);
 
     CanHoChiTietDto getCanHoChiTiet(CanHoDto canHoDto);
+
+    ResponseDto importFromExcel(MultipartFile file);
 }
