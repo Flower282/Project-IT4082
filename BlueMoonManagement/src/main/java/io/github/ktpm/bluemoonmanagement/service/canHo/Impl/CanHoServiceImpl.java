@@ -1,9 +1,14 @@
 package io.github.ktpm.bluemoonmanagement.service.canHo.Impl;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.Row;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
@@ -13,6 +18,7 @@ import io.github.ktpm.bluemoonmanagement.model.mapper.CanHoMapper;
 import io.github.ktpm.bluemoonmanagement.repository.CanHoRepository;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
+import io.github.ktpm.bluemoonmanagement.util.XlxsFileUtil;
 
 @Service
 public class CanHoServiceImpl implements CanHoService {
@@ -55,5 +61,39 @@ public class CanHoServiceImpl implements CanHoService {
         return new ResponseDto(true, "Căn hộ đã được thêm thành công");
     }
 
+    @Override
+    public ResponseDto importFromExcel(MultipartFile file) {
+        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền thêm hóa đơn tự nguyện. Chỉ Kế toán mới được phép.");
+        }
+        try {
+            File tempFile = File.createTempFile("canho_temp", ".xlsx");
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                fos.write(file.getBytes());
+            }
+            Function<Row, CanHoDto> rowMapper = row -> {
+                CanHoDto canHoDto = new CanHoDto();
+                canHoDto.setMaCanHo(row.getCell(0).getStringCellValue());
+                canHoDto.setToaNha(row.getCell(1).getStringCellValue());
+                canHoDto.setTang(Integer.parseInt(row.getCell(2).getStringCellValue()));
+                canHoDto.setSoNha(row.getCell(3).getStringCellValue());
+                canHoDto.setDienTich(row.getCell(4).getNumericCellValue());
+                canHoDto.setChuHo(null);
+                canHoDto.setDaBanChua(row.getCell(6).getBooleanCellValue());
+                canHoDto.setTrangThaiKiThuat(row.getCell(7).getStringCellValue());
+                canHoDto.setTrangThaiSuDung(row.getCell(8).getStringCellValue());
+                return canHoDto;
+            };
+            List<CanHoDto> canHoDtoList = XlxsFileUtil.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
+            List<CanHo> canHoList = canHoDtoList.stream()
+                    .map(canHoMapper::fromCanHoDto)
+                    .collect(Collectors.toList());
+            canHoRepository.saveAll(canHoList);
+            tempFile.delete();
+            return new ResponseDto(true, "Thêm căn hộ thành công" + canHoDtoList.size() + " căn hộ");
+        } catch (Exception e) {
+            return new ResponseDto(false, "Thêm căn hộ thất bại: " + e.getMessage());
+        }
+    }
     
 }
