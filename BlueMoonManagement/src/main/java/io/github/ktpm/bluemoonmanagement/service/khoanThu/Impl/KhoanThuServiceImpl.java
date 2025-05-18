@@ -136,7 +136,6 @@ public class KhoanThuServiceImpl implements KhoanThuService {
                 fos.write(file.getBytes());
             }
             Function<Row, KhoanThuDto> rowMapper = row -> {
-                try {
                     KhoanThuDto dto = new KhoanThuDto();
                     dto.setMaKhoanThu(row.getCell(0).getStringCellValue());
                     dto.setTenKhoanThu(row.getCell(1).getStringCellValue());
@@ -151,9 +150,6 @@ public class KhoanThuServiceImpl implements KhoanThuService {
                     dto.setGhiChu(row.getCell(8).getStringCellValue());
                     dto.setPhiGuiXeList(null);
                     return dto;
-                } catch (Exception e) {
-                    return null;
-                }
             };
             List<KhoanThuDto> khoanThuDtoList = XlxsFileUtil.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
             List<KhoanThu> khoanThuList = khoanThuDtoList.stream()
