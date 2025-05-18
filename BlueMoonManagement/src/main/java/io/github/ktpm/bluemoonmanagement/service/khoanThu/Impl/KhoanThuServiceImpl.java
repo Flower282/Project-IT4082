@@ -1,4 +1,4 @@
-package io.github.ktpm.bluemoonmanagement.service.khoanThu.impl;
+package io.github.ktpm.bluemoonmanagement.service.khoanThu.Impl;
 
 import java.util.List;
 import java.time.LocalDate;
@@ -13,6 +13,7 @@ import io.github.ktpm.bluemoonmanagement.repository.KhoanThuRepository;
 import org.springframework.stereotype.Service;
 import java.util.stream.Collectors;
 import io.github.ktpm.bluemoonmanagement.session.Session;
+import io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil;
 import io.github.ktpm.bluemoonmanagement.util.XlxsFileUtil;
 
 import org.springframework.web.multipart.MultipartFile;
@@ -163,6 +164,30 @@ public class KhoanThuServiceImpl implements KhoanThuService {
             return new ResponseDto(true, "Thêm khoản thu thành công " + khoanThuList.size() + " khoản thu");
         } catch (Exception e) {
             return new ResponseDto(false, "Thêm khoản thu thất bại: " + e.getMessage());
+        }
+    }
+    @Override
+    public ResponseDto exportToExcel(String filePath) {
+        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền xuất khoản thu. Chỉ Kế toán mới được phép.");
+        }
+        List<KhoanThu> khoanThuList = khoanThuRepository.findAll();
+        String[] headers = {"Mã khoản thu", "Tên khoản thu", "Bắt buộc", "Đơn vị tính", "Số tiền", "Phạm vi", "Ngày tạo", "Thời hạn", "Ghi chú"};
+        try {
+            XlsxExportUtil.exportToExcel(filePath, headers, khoanThuList, (row, khoanThu) -> {
+                row.createCell(0).setCellValue(khoanThu.getMaKhoanThu());
+                row.createCell(1).setCellValue(khoanThu.getTenKhoanThu());
+                row.createCell(2).setCellValue(khoanThu.isBatBuoc());
+                row.createCell(3).setCellValue(khoanThu.getDonViTinh());
+                row.createCell(4).setCellValue(khoanThu.getSoTien());
+                row.createCell(5).setCellValue(khoanThu.getPhamVi());
+                row.createCell(6).setCellValue(java.sql.Date.valueOf(khoanThu.getNgayTao()));
+                row.createCell(7).setCellValue(java.sql.Date.valueOf(khoanThu.getThoiHan()));
+                row.createCell(8).setCellValue(khoanThu.getGhiChu());
+            });
+            return new ResponseDto(true, "Xuất file thành công");
+        } catch (Exception e) {
+            return new ResponseDto(false, "Xuất khoản thu thất bại: " + e.getMessage());
         }
     }
 }

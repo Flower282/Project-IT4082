@@ -19,6 +19,7 @@ import io.github.ktpm.bluemoonmanagement.repository.CanHoRepository;
 import io.github.ktpm.bluemoonmanagement.repository.CuDanRepository;
 import io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
+import io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil;
 import io.github.ktpm.bluemoonmanagement.util.XlxsFileUtil;
 
 @Service
@@ -132,6 +133,31 @@ public class CuDanServiceImpl implements CuDanService {
             return new ResponseDto(true, "Thêm cư dân thành công " + cuDanList.size() + " cư dân");
         } catch (Exception e) {
             return new ResponseDto(false, "Thêm cư dân thất bại: " + e.getMessage());
+        }
+    }
+    @Override
+    public ResponseDto exportToExcel(String filePath) {
+        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền xuất khoản thu. Chỉ Kế toán mới được phép.");
+        }
+        List<CudanDto> cudanDtoList = getAllCuDan();
+        String[] headers = {"Mã định danh", "Họ và tên", "Giới tính", "Ngày sinh", "Số điện thoại", "Email", "Trạng thái cư trú", "Ngày chuyển đến", "Ngày chuyển đi", "Mã căn hộ"};
+        try {
+            XlsxExportUtil.exportToExcel(filePath, headers, cudanDtoList, (row, cudanDto) -> {
+                row.createCell(0).setCellValue(cudanDto.getMaDinhDanh());
+                row.createCell(1).setCellValue(cudanDto.getHoVaTen());
+                row.createCell(2).setCellValue(cudanDto.getGioiTinh());
+                row.createCell(3).setCellValue(java.sql.Date.valueOf(cudanDto.getNgaySinh()));
+                row.createCell(4).setCellValue(cudanDto.getSoDienThoai());
+                row.createCell(5).setCellValue(cudanDto.getEmail());
+                row.createCell(6).setCellValue(cudanDto.getTrangThaiCuTru());
+                row.createCell(7).setCellValue(java.sql.Date.valueOf(cudanDto.getNgayChuyenDen()));
+                row.createCell(8).setCellValue(java.sql.Date.valueOf(cudanDto.getNgayChuyenDi()));
+                row.createCell(9).setCellValue(cudanDto.getMaCanHo());
+            });
+            return new ResponseDto(true, "Xuất cư dân thành công");
+        } catch (Exception e) {
+            return new ResponseDto(false, "Xuất cư dân thất bại: " + e.getMessage());
         }
     }
 }
