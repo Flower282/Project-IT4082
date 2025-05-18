@@ -11,5 +11,5 @@ public interface KhoanThuService {
     ResponseDto updateKhoanThu(KhoanThuDto khoanThuDto);
     ResponseDto deleteKhoanThu(String maKhoanThu);
     ResponseDto importFromExcel(MultipartFile file);
-    
+    ResponseDto exportToExcel(String filePath);
 }

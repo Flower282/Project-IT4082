@@ -19,4 +19,6 @@ public interface CanHoService {
     CanHoChiTietDto getCanHoChiTiet(CanHoDto canHoDto);
 
     ResponseDto importFromExcel(MultipartFile file);
+
+    ResponseDto exportToExcel(String filePath);
 }

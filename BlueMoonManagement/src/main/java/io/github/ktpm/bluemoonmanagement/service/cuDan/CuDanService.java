@@ -12,4 +12,5 @@ public interface CuDanService {
     ResponseDto updateCuDan(CudanDto cudanDto);
     ResponseDto deleteCuDan(CudanDto cudanDto);    
     ResponseDto importFromExcel(MultipartFile file);
+    ResponseDto exportToExcel(String filePath);
 }
