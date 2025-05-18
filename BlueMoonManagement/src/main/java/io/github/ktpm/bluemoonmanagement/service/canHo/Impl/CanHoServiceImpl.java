@@ -2,6 +2,7 @@ package io.github.ktpm.bluemoonmanagement.service.canHo.impl;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -55,6 +56,9 @@ public class CanHoServiceImpl implements CanHoService {
         if (canHoRepository.existsById(canHoDto.getMaCanHo())) {
             return new ResponseDto(false, "Căn hộ đã tồn tại");
         }
+        if(canHoDto.getChuHo().getTrangThaiCuTru() == "Cư trú" && canHoDto.getChuHo().getNgayChuyenDen() == null) {
+            canHoDto.getChuHo().setNgayChuyenDen(LocalDate.now());
+        }
         // Convert DTO to entity using the mapper
         CanHo canHo = canHoMapper.fromCanHoDto(canHoDto);
         canHoRepository.save(canHo);
@@ -97,7 +101,7 @@ public class CanHoServiceImpl implements CanHoService {
                 CanHoDto canHoDto = new CanHoDto();
                 canHoDto.setMaCanHo(row.getCell(0).getStringCellValue());
                 canHoDto.setToaNha(row.getCell(1).getStringCellValue());
-                canHoDto.setTang(Integer.parseInt(row.getCell(2).getStringCellValue()));
+                canHoDto.setTang(row.getCell(2).getStringCellValue());
                 canHoDto.setSoNha(row.getCell(3).getStringCellValue());
                 canHoDto.setDienTich(row.getCell(4).getNumericCellValue());
                 canHoDto.setChuHo(null);
