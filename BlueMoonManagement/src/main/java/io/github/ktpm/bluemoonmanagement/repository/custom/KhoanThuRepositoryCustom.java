@@ -1,8 +1,5 @@
 package io.github.ktpm.bluemoonmanagement.repository.custom;
 
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
 /**
  * Custom repository interface cho KhoanThu với các truy vấn phức tạp
  */
@@ -16,9 +13,5 @@ public interface KhoanThuRepositoryCustom {
      * @param year Năm tạo
      * @return Số lượng khoản thu thỏa mãn điều kiện
      */
-    @Query("SELECT COUNT(k) FROM KhoanThu k WHERE k.batBuoc = :batBuoc AND MONTH(k.ngayTao) = :month AND YEAR(k.ngayTao) = :year")
-    long countByBatBuocAndMonthAndYear(
-            @Param("batBuoc") boolean batBuoc,
-            @Param("month") int month,
-            @Param("year") int year);
+    long countByBatBuocAndMonthAndYear(boolean batBuoc, int month, int year);
 } 
