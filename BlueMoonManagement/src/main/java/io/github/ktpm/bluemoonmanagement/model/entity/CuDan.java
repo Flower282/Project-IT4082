@@ -5,20 +5,20 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
+import lombok.NoArgsConstructor;
 import java.time.LocalDate;
-import java.util.List;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "cu_dan")
 @Entity
 public class CuDan {
     @Id
+    @Column(name = "ma_dinh_danh")
     private String maDinhDanh;
     @Column(name = "ho_va_ten")
     private String hoVaTen;
@@ -40,8 +40,5 @@ public class CuDan {
     @ManyToOne
     @JoinColumn(name = "ma_can_ho", referencedColumnName = "ma_can_ho")
     private CanHo canHo;
-
-    @OneToMany(mappedBy = "cuDan")
-    private List<CanHo> canHoList;
 
 }

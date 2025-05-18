@@ -11,18 +11,20 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
+import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "can_ho")
 @Entity
 public class CanHo {
     @Id
+    @Column(name = "ma_can_ho")
     private String maCanHo;
     @Column(name = "toa_nha")
     private String toaNha;
     @Column(name = "tang")
-    private int tang;
+    private String tang;
     @Column(name = "so_nha")
     private String soNha;
     @Column(name = "dien_tich")

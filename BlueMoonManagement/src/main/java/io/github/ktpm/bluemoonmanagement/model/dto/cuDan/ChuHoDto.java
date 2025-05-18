@@ -1,5 +1,7 @@
 package io.github.ktpm.bluemoonmanagement.model.dto.cuDan;
 
+import java.time.LocalDate;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,4 +15,5 @@ public class ChuHoDto {
     private String soDienThoai;
     private String email;
     private String trangThaiCuTru;
+    private LocalDate ngayChuyenDen;
 }

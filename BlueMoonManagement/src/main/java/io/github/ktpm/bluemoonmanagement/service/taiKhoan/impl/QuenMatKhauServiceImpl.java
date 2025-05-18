@@ -16,7 +16,7 @@ public class QuenMatKhauServiceImpl implements QuenMatKhauService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final EmailService emailService;
 
-    public QuenMatKhauServiceImpl(TaiKhoanRepository taiKhoanRepository, OtpUtil otpUtil, HashPasswordUtil hashPasswordUtil, EmailService emailService) {
+    public QuenMatKhauServiceImpl(TaiKhoanRepository taiKhoanRepository, EmailService emailService) {
         this.taiKhoanRepository = taiKhoanRepository;
         this.emailService = emailService;
     }

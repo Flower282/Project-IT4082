@@ -6,10 +6,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "tai_khoan")
 @Entity
 public class TaiKhoan {

@@ -18,12 +18,9 @@ public interface CuDanMapper {
     ChuHoDto toChuHoDto(CuDan cuDan);
 
     @Mapping(target = "canHo.maCanHo", source = "cudanDto.maCanHo")
-    @Mapping(target = "canHoList", ignore = true)
     CuDan fromCudanDto(CudanDto cudanDto);
 
-    @Mapping(target = "canHoList", ignore = true)
     @Mapping(target = "canHo", ignore = true)
-    @Mapping(target = "ngayChuyenDen", ignore = true)
     @Mapping(target = "ngayChuyenDi", ignore = true)
     @Mapping(target = "gioiTinh", ignore = true)
     @Mapping(target = "ngaySinh", ignore = true)
