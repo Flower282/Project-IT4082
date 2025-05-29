@@ -6,8 +6,7 @@ import io.github.ktpm.bluemoonmanagement.model.entity.TaiKhoan;
 import io.github.ktpm.bluemoonmanagement.model.mapper.TaiKhoanMapper;
 import io.github.ktpm.bluemoonmanagement.repository.TaiKhoanRepository;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DangKiService;
-import io.github.ktpm.bluemoonmanagement.util.HashPasswordUtil;
-import io.github.ktpm.bluemoonmanagement.util.GeneratePasswordUtil;
+import io.github.ktpm.bluemoonmanagement.util.PasswordUtil;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.EmailService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 
@@ -38,10 +37,10 @@ public class DangKiServiceImpl implements DangKiService {
             return new ResponseDto(false, "Email đã tồn tại");
         }
         // Tạo mật khẩu ngẫu nhiên
-        String matKhau = GeneratePasswordUtil.generate();
+        String matKhau = PasswordUtil.generatePassword();
         // Tạo tài khoản mới
         TaiKhoan taiKhoan = taiKhoanMapper.fromDangKiDto(dangKiDto);
-        taiKhoan.setMatKhau(HashPasswordUtil.hashPassword(matKhau));
+        taiKhoan.setMatKhau(PasswordUtil.hashPassword(matKhau));
         taiKhoan.setNgayTao(LocalDateTime.now());
         taiKhoan.setNgayCapNhat(LocalDateTime.now());
         taiKhoanRepository.save(taiKhoan);
