@@ -1,11 +1,15 @@
-package hometech.controller;
+package io.github.ktpm.bluemoonmanagement.controller;
+
+import java.net.URL;
+import java.time.LocalDate;
+import java.util.ResourceBundle;
 
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
-import hometech.model.dto.ResponseDto;
-import hometech.model.dto.canHo.CanHoDto;
-import hometech.model.dto.cuDan.ChuHoDto;
-import hometech.service.canHo.CanHoService;
-import hometech.session.Session;
+import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.ChuHoDto;
+import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -18,10 +22,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-
-import java.net.URL;
-import java.time.LocalDate;
-import java.util.ResourceBundle;
 
 public class ThemCanHoButton implements Initializable {
 
@@ -316,7 +316,7 @@ public class ThemCanHoButton implements Initializable {
         
         // Validate thông tin chủ sở hữu nếu được chọn
         if (choiceBoxThemChuSoHuu.isSelected()) {
-            System.out.println("🔍 Validate thông tin chủ sở hữu...");
+            System.out.println("Validate thông tin chủ sở hữu...");
             
             if (isBlank(textFieldMaDinhDanh.getText())) {
                 showErrorMessage("Vui lòng nhập mã định danh chủ sở hữu");
@@ -371,9 +371,9 @@ public class ThemCanHoButton implements Initializable {
                 return false;
             }
             
-            System.out.println("✅ Validation chủ sở hữu thành công");
+            System.out.println("Validation chủ sở hữu thành công");
         } else {
-            System.out.println("ℹ️ Không có chủ sở hữu - bỏ qua validation");
+            System.out.println("Không có chủ sở hữu - bỏ qua validation");
         }
         
         return true;
@@ -425,7 +425,7 @@ public class ThemCanHoButton implements Initializable {
         
         // Tạo ChuHoDto nếu được chọn
         if (choiceBoxThemChuSoHuu.isSelected()) {
-            System.out.println("🏠 Tạo thông tin chủ hộ...");
+            System.out.println("Tạo thông tin chủ hộ...");
             ChuHoDto chuHoDto = createChuHoDto();
             
             if (chuHoDto != null) {
@@ -434,13 +434,13 @@ public class ThemCanHoButton implements Initializable {
                     java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
                     chuHoField.setAccessible(true);
                     chuHoField.set(canHoDto, chuHoDto);
-                    System.out.println("✅ Đã thêm chủ hộ vào căn hộ: " + getFieldValue(chuHoDto, "hoVaTen", String.class));
+                    System.out.println("Đã thêm chủ hộ vào căn hộ: " + getFieldValue(chuHoDto, "hoVaTen", String.class));
                 } catch (Exception e) {
                     System.err.println("Lỗi khi set chuHo cho CanHoDto: " + e.getMessage());
                 }
             }
         } else {
-            System.out.println("ℹ️ Không thêm chủ hộ cho căn hộ này");
+            System.out.println("Không thêm chủ hộ cho căn hộ này");
         }
         
         return canHoDto;
@@ -481,7 +481,7 @@ public class ThemCanHoButton implements Initializable {
                 }
             }
             
-            System.out.println("✅ Tạo ChuHoDto thành công:");
+            System.out.println("Tạo ChuHoDto thành công:");
             System.out.println("   - Mã định danh: " + textFieldMaDinhDanh.getText().trim());
             System.out.println("   - Họ và tên: " + textFieldHoVaTen.getText().trim());
             System.out.println("   - SĐT: " + textFieldSoDienThoai.getText().trim());

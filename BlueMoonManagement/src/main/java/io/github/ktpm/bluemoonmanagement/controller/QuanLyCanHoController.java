@@ -1,20 +1,39 @@
-package hometech.controller;
+package io.github.ktpm.bluemoonmanagement.controller;
 
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
+import java.io.File;
+import java.net.URL;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
+import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
-import java.net.URL;
-import java.util.ResourceBundle;
-import java.io.File;
 
 /**
  * Controller cho trang quản lý căn hộ
  */
+@Component
 public class QuanLyCanHoController implements Initializable {
 
     // Filter components
@@ -47,6 +66,11 @@ public class QuanLyCanHoController implements Initializable {
 
     // Data
     private ObservableList<CanHoTableData> canHoList;
+    private ObservableList<CanHoTableData> filteredList;
+
+    // Service dependency injection
+    @Autowired
+    private CanHoService canHoService;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -54,7 +78,7 @@ public class QuanLyCanHoController implements Initializable {
         
         setupTable();
         setupComboBoxes();
-        loadSampleData();
+        loadData();
     }
 
     /**
@@ -128,21 +152,51 @@ public class QuanLyCanHoController implements Initializable {
     }
 
     /**
-     * Load dữ liệu mẫu
+     * Load dữ liệu từ service
+     */
+    private void loadData() {
+        try {
+            if (canHoService != null) {
+                List<CanHoDto> canHoDtoList = canHoService.getAllCanHo();
+                canHoList = FXCollections.observableArrayList();
+                
+                for (CanHoDto dto : canHoDtoList) {
+                    String chuHoName = dto.getChuHo() != null ? dto.getChuHo().getHoVaTen() : "";
+                    CanHoTableData tableData = new CanHoTableData(
+                        dto.getMaCanHo(),
+                        dto.getToaNha(),
+                        dto.getTang(),
+                        dto.getSoNha(),
+                        dto.getDienTich() + " m²",
+                        chuHoName,
+                        dto.getTrangThaiSuDung(),
+                        dto.getTrangThaiKiThuat()
+                    );
+                    canHoList.add(tableData);
+                }
+                
+                filteredList = FXCollections.observableArrayList(canHoList);
+                tableViewCanHo.setItems(filteredList);
+                updateKetQuaLabel();
+            } else {
+                // Fallback to sample data nếu service chưa có
+                loadSampleData();
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi tải dữ liệu từ service: " + e.getMessage());
+            // Fallback to sample data
+            loadSampleData();
+        }
+    }
+
+    /**
+     * Load dữ liệu mẫu khi service chưa sẵn sàng
      */
     private void loadSampleData() {
         canHoList = FXCollections.observableArrayList();
         
-        // Thêm dữ liệu mẫu
-        canHoList.addAll(
-            new CanHoTableData("CH001", "Tòa A", "1", "101", "75.5 m²", "Nguyễn Văn A", "Đang sử dụng", "Tốt"),
-            new CanHoTableData("CH002", "Tòa A", "1", "102", "80.0 m²", "Trần Thị B", "Đang sử dụng", "Tốt"),
-            new CanHoTableData("CH003", "Tòa A", "2", "201", "75.5 m²", "", "Trống", "Cần sửa chữa"),
-            new CanHoTableData("CH004", "Tòa B", "1", "101", "90.0 m²", "Lê Văn C", "Đang sử dụng", "Tốt"),
-            new CanHoTableData("CH005", "Tòa B", "2", "202", "85.0 m²", "Phạm Thị D", "Đang sử dụng", "Tốt")
-        );
-        
-        tableViewCanHo.setItems(canHoList);
+        filteredList = FXCollections.observableArrayList(canHoList);
+        tableViewCanHo.setItems(filteredList);
         updateKetQuaLabel();
     }
 
@@ -150,7 +204,7 @@ public class QuanLyCanHoController implements Initializable {
      * Cập nhật label kết quả
      */
     private void updateKetQuaLabel() {
-        int total = canHoList.size();
+        int total = filteredList != null ? filteredList.size() : 0;
         labelKetQua.setText(String.format("Hiển thị 1 - %d trên tổng số %d căn hộ", total, total));
     }
 
@@ -162,17 +216,17 @@ public class QuanLyCanHoController implements Initializable {
             
             // Load FXML cho form thêm căn hộ
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
-                getClass().getResource("/HomeTech/them_can_ho.fxml")
+                getClass().getResource("/view/them_can_ho.fxml")
             );
             javafx.scene.Parent root = loader.load();
             
             // Lấy controller từ FXML loader
             ThemCanHoButton controller = loader.getController();
             
-            // TODO: Inject real service - hiện tại dùng mock service
-            // Tạo mock service để test (trong thực tế sẽ inject service thật)
-            hometech.service.canHo.CanHoService mockService = createMockCanHoService();
-            controller.setCanHoService(mockService);
+            // Inject service nếu có
+            if (canHoService != null) {
+                controller.setCanHoService(canHoService);
+            }
             
             // Tạo modal dialog
             javafx.stage.Stage dialogStage = new javafx.stage.Stage();
@@ -189,7 +243,7 @@ public class QuanLyCanHoController implements Initializable {
             dialogStage.setMinHeight(600);
             dialogStage.setMaxWidth(800);
             dialogStage.setMaxHeight(700);
-            dialogStage.setResizable(true); // Cho phép resize trong giới hạn
+            dialogStage.setResizable(true);
             
             // Căn giữa cửa sổ
             dialogStage.centerOnScreen();
@@ -197,78 +251,223 @@ public class QuanLyCanHoController implements Initializable {
             // Hiển thị dialog và chờ đóng
             dialogStage.showAndWait();
             
-            // Sau khi đóng form, reload dữ liệu (nếu có thay đổi)
+            // Sau khi đóng form, reload dữ liệu
             System.out.println("Form thêm căn hộ đã đóng, reload dữ liệu...");
-            loadSampleData(); // Reload để hiển thị căn hộ mới (nếu có)
+            loadData();
             
         } catch (Exception e) {
-            System.err.println("Lỗi khi mở form thêm căn hộ: " + e.getMessage());
+            showError("Lỗi khi mở form thêm căn hộ", "Chi tiết: " + e.getMessage());
             e.printStackTrace();
-            
-            // Hiển thị alert lỗi
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Lỗi");
-            alert.setHeaderText("Không thể mở form thêm căn hộ");
-            alert.setContentText("Chi tiết lỗi: " + e.getMessage());
-            alert.showAndWait();
         }
     }
 
     @FXML
     private void handleTimKiem(ActionEvent event) {
-        System.out.println("Tìm kiếm căn hộ: " + textFieldTimKiem.getText());
-        // TODO: Implement search functionality
+        String searchText = textFieldTimKiem.getText().toLowerCase().trim();
+        String selectedToaNha = comboBoxToaNha.getValue();
+        String selectedTang = comboBoxTang.getValue();
+        String selectedTrangThai = comboBoxTrangThai.getValue();
+        
+        if (canHoList == null) return;
+        
+        List<CanHoTableData> filtered = canHoList.stream()
+            .filter(canHo -> {
+                // Filter by search text
+                boolean matchesSearch = searchText.isEmpty() || 
+                    canHo.getMaCanHo().toLowerCase().contains(searchText) ||
+                    canHo.getSoNha().toLowerCase().contains(searchText) ||
+                    canHo.getChuHo().toLowerCase().contains(searchText);
+                
+                // Filter by toa nha
+                boolean matchesToaNha = "Tất cả".equals(selectedToaNha) || 
+                    canHo.getToaNha().equals(selectedToaNha);
+                
+                // Filter by tang
+                boolean matchesTang = "Tất cả".equals(selectedTang) || 
+                    canHo.getTang().equals(selectedTang);
+                
+                // Filter by trang thai
+                boolean matchesTrangThai = "Tất cả".equals(selectedTrangThai) || 
+                    canHo.getTrangThaiSuDung().equals(selectedTrangThai);
+                
+                return matchesSearch && matchesToaNha && matchesTang && matchesTrangThai;
+            })
+            .collect(Collectors.toList());
+        
+        filteredList = FXCollections.observableArrayList(filtered);
+        tableViewCanHo.setItems(filteredList);
+        updateKetQuaLabel();
     }
 
     @FXML
     private void handleNhapExcel(ActionEvent event) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Chọn file Excel để nhập");
-        fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Excel Files", "*.xlsx", "*.xls")
-        );
-        
-        File selectedFile = fileChooser.showOpenDialog(buttonNhapExcel.getScene().getWindow());
-        if (selectedFile != null) {
-            System.out.println("Nhập từ file: " + selectedFile.getPath());
-            // TODO: Implement Excel import
+        try {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Chọn file Excel để nhập");
+            fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Excel Files", "*.xlsx", "*.xls")
+            );
+            
+            File selectedFile = fileChooser.showOpenDialog(buttonNhapExcel.getScene().getWindow());
+            if (selectedFile != null && canHoService != null) {
+                // Tạo MultipartFile từ File
+                try {
+                    byte[] fileBytes = java.nio.file.Files.readAllBytes(selectedFile.toPath());
+                    
+                    // Tạo một MultipartFile implementation đơn giản
+                    org.springframework.web.multipart.MultipartFile multipartFile = new org.springframework.web.multipart.MultipartFile() {
+                        @Override
+                        public String getName() { return "file"; }
+                        
+                        @Override
+                        public String getOriginalFilename() { return selectedFile.getName(); }
+                        
+                        @Override
+                        public String getContentType() { 
+                            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; 
+                        }
+                        
+                        @Override
+                        public boolean isEmpty() { return fileBytes.length == 0; }
+                        
+                        @Override
+                        public long getSize() { return fileBytes.length; }
+                        
+                        @Override
+                        public byte[] getBytes() { return fileBytes; }
+                        
+                        @Override
+                        public java.io.InputStream getInputStream() { 
+                            return new java.io.ByteArrayInputStream(fileBytes); 
+                        }
+                        
+                        @Override
+                        public void transferTo(java.io.File dest) throws java.io.IOException {
+                            java.nio.file.Files.write(dest.toPath(), fileBytes);
+                        }
+                    };
+                    
+                    ResponseDto response = canHoService.importFromExcel(multipartFile);
+                    
+                    if (response.isSuccess()) {
+                        showSuccess("Thành công", response.getMessage());
+                        loadData(); // Reload data
+                    } else {
+                        showError("Lỗi nhập file", response.getMessage());
+                    }
+                } catch (Exception e) {
+                    showError("Lỗi đọc file", "Chi tiết: " + e.getMessage());
+                }
+            } else if (selectedFile != null) {
+                showInfo("Thông báo", "Chức năng nhập Excel sẽ được triển khai khi service sẵn sàng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi nhập Excel", "Chi tiết: " + e.getMessage());
         }
     }
 
     @FXML
     private void handleXuatExcel(ActionEvent event) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Lưu file Excel");
-        fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
-        );
-        
-        File selectedFile = fileChooser.showSaveDialog(buttonXuatExcel.getScene().getWindow());
-        if (selectedFile != null) {
-            System.out.println("Xuất ra file: " + selectedFile.getPath());
-            // TODO: Implement Excel export
+        try {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Lưu file Excel");
+            fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+            );
+            
+            File selectedFile = fileChooser.showSaveDialog(buttonXuatExcel.getScene().getWindow());
+            if (selectedFile != null && canHoService != null) {
+                ResponseDto response = canHoService.exportToExcel(selectedFile.getAbsolutePath());
+                
+                if (response.isSuccess()) {
+                    showSuccess("Thành công", response.getMessage());
+                } else {
+                    showError("Lỗi xuất file", response.getMessage());
+                }
+            } else if (selectedFile != null) {
+                showInfo("Thông báo", "Chức năng xuất Excel sẽ được triển khai khi service sẵn sàng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
         }
     }
 
     @FXML
     private void handleLamMoi(ActionEvent event) {
         System.out.println("Làm mới dữ liệu");
-        loadSampleData();
+        loadData();
+        
+        // Reset filters
+        textFieldTimKiem.clear();
+        comboBoxToaNha.setValue("Tất cả");
+        comboBoxTang.setValue("Tất cả");
+        comboBoxTrangThai.setValue("Tất cả");
     }
 
     private void handleXemChiTiet(CanHoTableData canHo) {
-        System.out.println("Xem chi tiết căn hộ: " + canHo.getMaCanHo());
-        // TODO: Mở trang chi tiết căn hộ
+        try {
+            if (canHoService != null) {
+                CanHoDto canHoDto = new CanHoDto();
+                canHoDto.setMaCanHo(canHo.getMaCanHo());
+                
+                CanHoChiTietDto chiTiet = canHoService.getCanHoChiTiet(canHoDto);
+                
+                if (chiTiet != null) {
+                    // Mở trang chi tiết căn hộ
+                    openChiTietCanHo(chiTiet);
+                } else {
+                    showError("Lỗi", "Không tìm thấy thông tin chi tiết căn hộ");
+                }
+            } else {
+                // Tạo dữ liệu mẫu cho chi tiết căn hộ
+                CanHoChiTietDto chiTietMau = createSampleChiTiet(canHo);
+                openChiTietCanHo(chiTietMau);
+            }
+        } catch (Exception e) {
+            showError("Lỗi khi xem chi tiết", "Chi tiết: " + e.getMessage());
+        }
+    }
+
+    private void openChiTietCanHo(CanHoChiTietDto chiTiet) {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/view/chi_tiet_can_ho.fxml")
+            );
+            javafx.scene.Parent root = loader.load();
+            
+            ChiTietCanHoController controller = loader.getController();
+            controller.setCanHoData(chiTiet);
+            
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("Chi tiết căn hộ - " + chiTiet.getMaCanHo());
+            stage.setScene(new javafx.scene.Scene(root, 1000, 700));
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            stage.initOwner(tableViewCanHo.getScene().getWindow());
+            stage.show();
+        } catch (Exception e) {
+            showError("Lỗi mở chi tiết", "Không thể mở trang chi tiết căn hộ: " + e.getMessage());
+        }
+    }
+
+    private CanHoChiTietDto createSampleChiTiet(CanHoTableData canHo) {
+        CanHoChiTietDto chiTiet = new CanHoChiTietDto();
+        chiTiet.setMaCanHo(canHo.getMaCanHo());
+        chiTiet.setToaNha(canHo.getToaNha());
+        chiTiet.setTang(canHo.getTang());
+        chiTiet.setSoNha(canHo.getSoNha());
+        chiTiet.setDienTich(Double.parseDouble(canHo.getDienTich().replace(" m²", "")));
+        chiTiet.setTrangThaiKiThuat(canHo.getTrangThaiKiThuat());
+        chiTiet.setTrangThaiSuDung(canHo.getTrangThaiSuDung());
+        return chiTiet;
     }
 
     private void handleSuaCanHo(CanHoTableData canHo) {
         System.out.println("Sửa căn hộ: " + canHo.getMaCanHo());
-        // TODO: Mở dialog sửa căn hộ
+        // TODO: Mở dialog sửa căn hộ với service thật
+        showInfo("Thông báo", "Chức năng sửa căn hộ sẽ được triển khai sau");
     }
 
     private void handleXoaCanHo(CanHoTableData canHo) {
-        System.out.println("Xóa căn hộ: " + canHo.getMaCanHo());
-        
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Xác nhận xóa");
         alert.setHeaderText("Bạn có chắc chắn muốn xóa căn hộ này?");
@@ -276,136 +475,61 @@ public class QuanLyCanHoController implements Initializable {
         
         alert.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
-                canHoList.remove(canHo);
-                updateKetQuaLabel();
-                System.out.println("Đã xóa căn hộ: " + canHo.getMaCanHo());
+                if (canHoService != null) {
+                    try {
+                        CanHoDto canHoDto = new CanHoDto();
+                        canHoDto.setMaCanHo(canHo.getMaCanHo());
+                        
+                        ResponseDto result = canHoService.deleteCanHo(canHoDto);
+                        
+                        if (result.isSuccess()) {
+                            showSuccess("Thành công", result.getMessage());
+                            loadData(); // Reload data
+                        } else {
+                            showError("Lỗi khi xóa", result.getMessage());
+                        }
+                    } catch (Exception e) {
+                        showError("Lỗi khi xóa căn hộ", "Chi tiết: " + e.getMessage());
+                    }
+                } else {
+                    // Xóa từ danh sách local khi không có service
+                    canHoList.remove(canHo);
+                    filteredList.remove(canHo);
+                    updateKetQuaLabel();
+                    showSuccess("Thành công", "Đã xóa căn hộ: " + canHo.getMaCanHo());
+                }
             }
         });
     }
 
-    /**
-     * Tạo mock service để test form thêm căn hộ
-     * TODO: Thay thế bằng dependency injection thực sự
-     */
-    private hometech.service.canHo.CanHoService createMockCanHoService() {
-        return new hometech.service.canHo.CanHoService() {
-            @Override
-            public java.util.List<hometech.model.dto.canHo.CanHoDto> getAllCanHo() {
-                return new java.util.ArrayList<>();
-            }
-            
-            @Override
-            public hometech.model.dto.canHo.CanHoChiTietDto getCanHoChiTiet(hometech.model.dto.canHo.CanHoDto canHoDto) {
-                return null;
-            }
-            
-            @Override
-            public hometech.model.dto.ResponseDto addCanHo(hometech.model.dto.canHo.CanHoDto canHoDto) {
-                try {
-                    // Mock implementation
-                    System.out.println("=== MOCK THÊM CĂN HỘ ===");
-                    
-                    // Dùng reflection để lấy dữ liệu từ DTO
-                    String maCanHo = getFieldValue(canHoDto, "maCanHo", String.class);
-                    String toaNha = getFieldValue(canHoDto, "toaNha", String.class);
-                    String tang = getFieldValue(canHoDto, "tang", String.class);
-                    String soNha = getFieldValue(canHoDto, "soNha", String.class);
-                    Double dienTich = getFieldValue(canHoDto, "dienTich", Double.class);
-                    String trangThaiKiThuat = getFieldValue(canHoDto, "trangThaiKiThuat", String.class);
-                    String trangThaiSuDung = getFieldValue(canHoDto, "trangThaiSuDung", String.class);
-                    
-                    System.out.println("Mã căn hộ: " + maCanHo);
-                    System.out.println("Tòa nhà: " + toaNha);
-                    System.out.println("Tầng: " + tang);
-                    System.out.println("Số nhà: " + soNha);
-                    System.out.println("Diện tích: " + dienTich);
-                    System.out.println("Trạng thái kỹ thuật: " + trangThaiKiThuat);
-                    System.out.println("Trạng thái sử dụng: " + trangThaiSuDung);
-                    
-                    // Kiểm tra chủ hộ
-                    hometech.model.dto.cuDan.ChuHoDto chuHo = getFieldValue(canHoDto, "chuHo", hometech.model.dto.cuDan.ChuHoDto.class);
-                    if (chuHo != null) {
-                        System.out.println("=== THÔNG TIN CHỦ HỘ ===");
-                        System.out.println("Mã định danh: " + getFieldValue(chuHo, "maDinhDanh", String.class));
-                        System.out.println("Họ và tên: " + getFieldValue(chuHo, "hoVaTen", String.class));
-                        System.out.println("SĐT: " + getFieldValue(chuHo, "soDienThoai", String.class));
-                        System.out.println("Email: " + getFieldValue(chuHo, "email", String.class));
-                        System.out.println("Trạng thái: " + getFieldValue(chuHo, "trangThaiCuTru", String.class));
-                    }
-                    
-                    // Giả lập thêm vào danh sách (trong thực tế sẽ lưu vào DB)
-                    String chuHoName = chuHo != null ? getFieldValue(chuHo, "hoVaTen", String.class) : "";
-                    
-                    CanHoTableData newCanHo = new CanHoTableData(
-                        maCanHo, toaNha, tang, soNha, 
-                        dienTich + " m²", chuHoName, 
-                        trangThaiSuDung, trangThaiKiThuat
-                    );
-                    
-                    // Thêm vào danh sách hiện tại
-                    canHoList.add(newCanHo);
-                    
-                    return createResponseDto(true, "Thêm căn hộ thành công (Mock)");
-                    
-                } catch (Exception e) {
-                    return createResponseDto(false, "Lỗi: " + e.getMessage());
-                }
-            }
-            
-            @Override
-            public hometech.model.dto.ResponseDto updateCanHo(hometech.model.dto.canHo.CanHoDto canHoDto) {
-                return createResponseDto(true, "Cập nhật thành công");
-            }
-            
-            @Override
-            public hometech.model.dto.ResponseDto deleteCanHo(hometech.model.dto.canHo.CanHoDto canHoDto) {
-                return createResponseDto(true, "Xóa thành công");
-            }
-            
-            @Override
-            public hometech.model.dto.ResponseDto importFromExcel(org.springframework.web.multipart.MultipartFile file) {
-                return createResponseDto(true, "Import thành công");
-            }
-            
-            @Override
-            public hometech.model.dto.ResponseDto exportToExcel(String filePath) {
-                return createResponseDto(true, "Export thành công");
-            }
-            
-            // Helper method để lấy field value bằng reflection
-            @SuppressWarnings("unchecked")
-            private <T> T getFieldValue(Object obj, String fieldName, Class<T> fieldType) {
-                try {
-                    java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
-                    field.setAccessible(true);
-                    return (T) field.get(obj);
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-            
-            // Helper method để tạo ResponseDto bằng reflection
-            private hometech.model.dto.ResponseDto createResponseDto(boolean success, String message) {
-                try {
-                    hometech.model.dto.ResponseDto response = new hometech.model.dto.ResponseDto();
-                    
-                    // Set success field
-                    java.lang.reflect.Field successField = hometech.model.dto.ResponseDto.class.getDeclaredField("success");
-                    successField.setAccessible(true);
-                    successField.set(response, success);
-                    
-                    // Set message field  
-                    java.lang.reflect.Field messageField = hometech.model.dto.ResponseDto.class.getDeclaredField("message");
-                    messageField.setAccessible(true);
-                    messageField.set(response, message);
-                    
-                    return response;
-                } catch (Exception e) {
-                    System.err.println("Lỗi khi tạo ResponseDto: " + e.getMessage());
-                    return null;
-                }
-            }
-        };
+    // Utility methods for showing alerts
+    private void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showSuccess(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showInfo(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    // Setter for dependency injection
+    public void setCanHoService(CanHoService canHoService) {
+        this.canHoService = canHoService;
     }
 
     /**

@@ -1,6 +1,14 @@
-package hometech.controller;
+package io.github.ktpm.bluemoonmanagement.controller;
 
+import java.net.URL;
+import java.util.ResourceBundle;
+
+import io.github.ktpm.bluemoonmanagement.util.NavigationUtil;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
+import javafx.scene.Parent;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.Button;
@@ -12,15 +20,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import java.io.IOException;
-import javafx.fxml.FXMLLoader;
-import hometech.util.NavigationUtil;
-import javafx.event.ActionEvent;
-import javafx.fxml.Initializable;
-import java.net.URL;
-import java.util.ResourceBundle;
 
 public class Home_list implements Initializable {
 
@@ -383,8 +382,8 @@ public class Home_list implements Initializable {
             javafx.scene.Node root = gridPaneTrangChu.getScene().getRoot();
             if (root instanceof javafx.scene.layout.BorderPane) {
                 // Load chi tiết căn hộ vào center area
-                javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/HomeTech/chi_tiet_can_ho.fxml"));
-                javafx.scene.Parent chiTietContent = loader.load();
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/chi_tiet_can_ho.fxml"));
+                Parent chiTietContent = loader.load();
                 
                 ((javafx.scene.layout.BorderPane) root).setCenter(chiTietContent);
                 
@@ -417,8 +416,8 @@ public class Home_list implements Initializable {
                     
                     // Tìm label có fx:id="labelScreenName"
                     javafx.scene.Node labelNode = headerPane.lookup("#labelScreenName");
-                    if (labelNode instanceof javafx.scene.control.Label) {
-                        ((javafx.scene.control.Label) labelNode).setText(screenName);
+                    if (labelNode instanceof Label) {
+                        ((Label) labelNode).setText(screenName);
                         System.out.println("Đã cập nhật tên màn hình: " + screenName);
                     }
                 }
@@ -457,8 +456,8 @@ public class Home_list implements Initializable {
             javafx.scene.Node root = gridPaneTrangChu.getScene().getRoot();
             if (root instanceof javafx.scene.layout.BorderPane) {
                 // Load trang quản lý căn hộ vào center area
-                javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/HomeTech/quan_ly_can_ho.fxml"));
-                javafx.scene.Parent canHoContent = loader.load();
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/quan_ly_can_ho.fxml"));
+                Parent canHoContent = loader.load();
                 
                 ((javafx.scene.layout.BorderPane) root).setCenter(canHoContent);
                 
@@ -487,8 +486,8 @@ public class Home_list implements Initializable {
             if (root instanceof javafx.scene.layout.BorderPane) {
                 // TODO: Thay đổi đường dẫn khi có trang quản lý căn hộ riêng
                 // Hiện tại chuyển đến chi tiết căn hộ
-                javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/HomeTech/chi_tiet_can_ho.fxml"));
-                javafx.scene.Parent content = loader.load();
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/chi_tiet_can_ho.fxml"));
+                Parent content = loader.load();
                 
                 ((javafx.scene.layout.BorderPane) root).setCenter(content);
                 System.out.println("Đã chuyển đến trang quản lý căn hộ");

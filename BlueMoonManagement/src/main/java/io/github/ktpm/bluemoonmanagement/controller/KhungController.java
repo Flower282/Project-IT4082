@@ -1,4 +1,8 @@
-package hometech.controller;
+package io.github.ktpm.bluemoonmanagement.controller;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ResourceBundle;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -8,9 +12,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
 
 /**
  * Controller cho khung chính của ứng dụng (khung.fxml)
@@ -61,7 +62,7 @@ public class KhungController implements Initializable {
      */
     private void loadTrangChuDanhSach() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/HomeTech/trang_chu_danh_sach.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/trang_chu_danh_sach.fxml"));
             Parent trangChuContent = loader.load();
             
             // Set content vào center của BorderPane
@@ -88,7 +89,7 @@ public class KhungController implements Initializable {
     @FXML
     public void goToCanHo(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/HomeTech/quan_ly_can_ho.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/quan_ly_can_ho.fxml"));
             Parent content = loader.load();
             mainBorderPane.setCenter(content);
             
@@ -188,7 +189,7 @@ public class KhungController implements Initializable {
      * Load chi tiết căn hộ vào center
      */
     public void loadChiTietCanHo() {
-        loadPageToCenter("/HomeTech/chi_tiet_can_ho.fxml");
+        loadPageToCenter("/view/chi_tiet_can_ho.fxml");
         updateScreenLabel("Chi tiết căn hộ");
     }
     

@@ -1,6 +1,6 @@
-package hometech.controller;
+package io.github.ktpm.bluemoonmanagement.controller;
 
-import hometech.util.NavigationUtil;
+import io.github.ktpm.bluemoonmanagement.util.NavigationUtil;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;

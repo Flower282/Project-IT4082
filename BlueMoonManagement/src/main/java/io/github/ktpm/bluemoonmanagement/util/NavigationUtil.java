@@ -1,4 +1,4 @@
-package hometech.util;
+package io.github.ktpm.bluemoonmanagement.util;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;

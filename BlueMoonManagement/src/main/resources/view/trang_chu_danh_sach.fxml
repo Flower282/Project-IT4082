@@ -24,7 +24,8 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<StackPane fx:controller="hometech.controller.Home_list" prefHeight="620.0" prefWidth="1080.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+
+<StackPane fx:controller="io.github.ktpm.bluemoonmanagement.controller.Home_list" prefHeight="620.0" prefWidth="1080.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <GridPane fx:id="gridPaneTrangChu">
          <StackPane.margin>
