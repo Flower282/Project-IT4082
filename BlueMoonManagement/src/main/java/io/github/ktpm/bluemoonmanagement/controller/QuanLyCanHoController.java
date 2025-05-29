@@ -230,7 +230,11 @@ public class QuanLyCanHoController implements Initializable {
             
             // Tạo modal dialog
             javafx.stage.Stage dialogStage = new javafx.stage.Stage();
-            dialogStage.setTitle("Thêm căn hộ mới");
+            
+            // Thiết lập style để bỏ khung viền cửa sổ (undecorated)
+            dialogStage.initStyle(javafx.stage.StageStyle.UNDECORATED);
+            
+            // Thiết lập modal
             dialogStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             dialogStage.initOwner(buttonThemCanHo.getScene().getWindow());
             
@@ -243,7 +247,7 @@ public class QuanLyCanHoController implements Initializable {
             dialogStage.setMinHeight(600);
             dialogStage.setMaxWidth(800);
             dialogStage.setMaxHeight(700);
-            dialogStage.setResizable(true);
+            dialogStage.setResizable(false); // Tắt resize vì không có khung cửa sổ
             
             // Căn giữa cửa sổ
             dialogStage.centerOnScreen();
