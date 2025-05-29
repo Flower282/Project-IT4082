@@ -1,4 +1,7 @@
 package io.github.ktpm.bluemoonmanagement.controller;
+import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.DoiMatKhauDto;
+import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DoiMatKhauService;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -7,6 +10,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
+import org.apache.catalina.connector.Response;
 
 public class DoiMatKhauController {
 
@@ -36,7 +40,11 @@ public class DoiMatKhauController {
 
     @FXML
     private TextField textFieldXacNhanMatKhau;
+    private final DoiMatKhauService doiMatKhauService;
 
+    public DoiMatKhauController(DoiMatKhauService doiMatKhauService) {
+        this.doiMatKhauService = doiMatKhauService;
+    }
     @FXML
     void showPassword(ActionEvent event) {
         if (checkBoxHienMatKhau.isSelected()) {
@@ -56,41 +64,25 @@ public class DoiMatKhauController {
         // Lấy mật khẩu mới và xác nhận mật khẩu từ các trường nhập liệu
         String matKhau = passwordFieldMatKhau.getText().trim();
         String xacNhanMatKhau = passwordFieldXacNhanMatKhau.getText().trim();
+        String matKhauCu = "";
+        DoiMatKhauDto doiMatKhauDto = new DoiMatKhauDto(matKhauCu,matKhau, xacNhanMatKhau);
+        ResponseDto response = doiMatKhauService.doiMatKhau(doiMatKhauDto);
+        if(response.isSuccess()){
 
-        // Kiểm tra xem mật khẩu và xác nhận mật khẩu có khớp không
-        if (!matKhau.equals(xacNhanMatKhau)) {
-            textError.setText("Mật khẩu và xác nhận mật khẩu không khớp.");
-            textError.setVisible(true);
-            return;
         }
-
-        // Kiểm tra độ dài mật khẩu (ví dụ: mật khẩu phải có ít nhất 6 ký tự)
-        if (matKhau.length() < 6) {
-            textError.setText("Mật khẩu phải có ít nhất 6 ký tự.");
-            textError.setVisible(true);
-            return;
-        }
-
-        // Giả sử bạn lưu mật khẩu vào cơ sở dữ liệu hoặc một nơi lưu trữ an toàn nào đó
-        // Ví dụ: lưu mật khẩu thành công
-        boolean isPasswordSaved = saveNewPassword(matKhau);  // Giả sử hàm saveNewPassword() lưu mật khẩu
-
-        if (isPasswordSaved) {
-            // Nếu lưu mật khẩu thành công
-            textError.setText("Mật khẩu đã được lưu thành công.");
-            textError.setStyle("-fx-fill: green;");
-            textError.setVisible(true);
-        } else {
-            // Nếu có lỗi khi lưu mật khẩu
-            textError.setText("Có lỗi xảy ra khi lưu mật khẩu.");
-            textError.setStyle("-fx-fill: red;");
+        else if(response.getMessage().equals("Mật khẩu hiện tại không đúng")){
+            textError.setText("Mật khẩu hiện tại không đúng");
             textError.setVisible(true);
         }
-    }
+        else if(response.getMessage().equals("Mật khẩu mới và xác nhận không khớp")){
+            textError.setText("Mật khẩu mới và xác nhận không khớp");
+            textError.setVisible(true);
+        }
+        else{
+            textError.setText("Đổi mật khẩu thất bại");
+            textError.setVisible(true);
+        }
 
-    private boolean saveNewPassword(String newPassword) {
-        // hàm thay đôi mật khẩu trong database
-        return true;  // Trả về true nếu lưu thành công, false nếu có lỗi
     }
 
 }
