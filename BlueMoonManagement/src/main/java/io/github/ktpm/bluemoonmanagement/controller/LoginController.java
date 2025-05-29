@@ -1,5 +1,4 @@
 package io.github.ktpm.bluemoonmanagement.controller;
-
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -102,6 +101,29 @@ public class LoginController implements Initializable {
             textError.setVisible(true);
         }
     }
+    @FXML
+    void DangNhapBangOTPClicked(ActionEvent event) {
+        try {
+            // Tải file FXML của màn hình OTP
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/HomeTech/dang_nhap_otp.fxml"));
+            Parent root = loader.load();
 
+            // Tạo cửa sổ mới (Stage) cho màn hình OTP
+            Stage newStage = new Stage();
+            Scene newScene = new Scene(root);
+            newStage.setScene(newScene);
 
+            // Hiển thị cửa sổ OTP
+            newStage.show();
+
+            // Đóng cửa sổ hiện tại (cửa sổ đăng nhập)
+            Stage currentStage = (Stage) stackRoot.getScene().getWindow();
+            currentStage.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Xử lý lỗi nếu không thể tải file FXML của màn hình OTP
+            textError.setText("Có lỗi xảy ra khi chuyển đến màn hình OTP.");
+            textError.setVisible(true);
+        }
+    }
 }
