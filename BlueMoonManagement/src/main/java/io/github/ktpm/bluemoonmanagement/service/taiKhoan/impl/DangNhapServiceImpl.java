@@ -8,8 +8,8 @@ import io.github.ktpm.bluemoonmanagement.model.entity.TaiKhoan;
 import io.github.ktpm.bluemoonmanagement.model.mapper.TaiKhoanMapper;
 import io.github.ktpm.bluemoonmanagement.repository.TaiKhoanRepository;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DangNhapServive;
-import io.github.ktpm.bluemoonmanagement.util.HashPasswordUtil;
 import io.github.ktpm.bluemoonmanagement.session.Session;
+import io.github.ktpm.bluemoonmanagement.util.PasswordUtil;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 
 @Service
@@ -29,7 +29,7 @@ public class DangNhapServiceImpl implements DangNhapServive {
         if (taiKhoan == null) {
             return new ResponseDto(false, "Tài khoản không tồn tại");
         }
-        boolean isMatch = HashPasswordUtil.verifyPassword(dangNhapDto.getMatKhau(), taiKhoan.getMatKhau());
+        boolean isMatch = PasswordUtil.verifyPassword(dangNhapDto.getMatKhau(), taiKhoan.getMatKhau());
         if (!isMatch) {
             return new ResponseDto(false, "Mật khẩu không đúng");
         }
