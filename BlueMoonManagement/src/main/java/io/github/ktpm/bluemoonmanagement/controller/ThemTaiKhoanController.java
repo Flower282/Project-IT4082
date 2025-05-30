@@ -16,7 +16,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 
-public class DangKyController {
+public class ThemTaiKhoanController {
 
     @FXML
     private Button buttonChinhSua;
@@ -65,7 +65,7 @@ public class DangKyController {
 
     private final DangKiService dangKiService;
 
-    public DangKyController(DangKiService dangKiService) {
+    public ThemTaiKhoanController(DangKiService dangKiService) {
         this.dangKiService = dangKiService;
     }
 
@@ -92,9 +92,9 @@ public class DangKyController {
         String matKhau = passwordFieldMatKhau.getText().trim();
         String vaiTro = comboBoxVaiTro.getValue() != null ? comboBoxVaiTro.getValue().toString() : "Chưa chọn vai trò";
 
-
         DangKiDto dangKiDto = new DangKiDto(email,hoVaTen);
         ResponseDto response = dangKiService.dangKiTaiKhoan(dangKiDto);
+
         if (response.isSuccess()) {
             textError.setText("Đăng ký thành công");
             textError.setVisible(true);
@@ -103,7 +103,11 @@ public class DangKyController {
             textFieldEmail.clear();
             passwordFieldMatKhau.clear();
             comboBoxVaiTro.getSelectionModel().clearSelection();
-        } else {
+        } else if(response.getMessage().equals("Email đã tồn tại")){
+            textError.setText(response.getMessage());
+            textError.setVisible(true);
+        }
+        else if(response.getMessage().equals("Bạn không có quyền đăng ký tài khoản. Chỉ Tổ trưởng mới được phép.")){
             textError.setText(response.getMessage());
             textError.setVisible(true);
         }
