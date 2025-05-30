@@ -3,30 +3,17 @@ package io.github.ktpm.bluemoonmanagement.model.mapper;
 import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.*;
 import io.github.ktpm.bluemoonmanagement.model.entity.TaiKhoan;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface TaiKhoanMapper {
-    CapNhatTaiKhoanDto toCapNhatTaiKhoanDto(TaiKhoan taiKhoan);
+    ThongTinTaiKhoanDto toThongTinTaiKhoanDto(TaiKhoan taiKhoan);
 
-    DangKiDto toDangKiDto(TaiKhoan taiKhoan);
-
-    DatLaiMatKhauDto toDatLaiMatKhauDto(TaiKhoan taiKhoan);
-
-    DoiMatKhauDto toDoiMatKhauDto(TaiKhoan taiKhoan);
-
-    GuiOtpDto toGuiOtpDto(TaiKhoan taiKhoan);
-
-    XacMinhOtpDto toXacMinhOtpDto(TaiKhoan taiKhoan);
-
-    TaiKhoan fromCapNhatTaiKhoanDto(CapNhatTaiKhoanDto capNhatTaiKhoanDto);
-
-    TaiKhoan fromDangKiDto(DangKiDto dangKiDto);
-
-    TaiKhoan fromDatLaiMatKhauDto(DatLaiMatKhauDto datLaiMatKhauDto);
-
-    TaiKhoan fromDoiMatKhauDto(DoiMatKhauDto doiMatKhauDto);
-
-    TaiKhoan fromGuiOtpDto(GuiOtpDto guiOtpDto);
-
-    TaiKhoan fromXacMinhOtpDto(XacMinhOtpDto xacMinhOtpDto);
+    @Mapping(target = "matKhau", ignore = true)
+    @Mapping(target = "vaiTro", ignore = true)
+    @Mapping(target = "ngayTao", ignore = true)
+    @Mapping(target = "ngayCapNhat", ignore = true)
+    @Mapping(target = "otp", ignore = true)
+    @Mapping(target = "thoiHanOtp", ignore = true)
+    TaiKhoan fromDangKiDto(DangKiDto dto);
 }
