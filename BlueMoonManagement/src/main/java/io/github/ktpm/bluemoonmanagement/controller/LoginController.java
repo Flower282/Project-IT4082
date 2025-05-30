@@ -1,19 +1,22 @@
 package io.github.ktpm.bluemoonmanagement.controller;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ResourceBundle;
+
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-
-import java.io.IOException;
-import java.net.URL;
-import java.util.ResourceBundle;
 
 public class LoginController implements Initializable {
 
@@ -77,7 +80,7 @@ public class LoginController implements Initializable {
         if (email.equals("abcde") && password.equals("12345")) {
             try {
                 // Tải file FXML mới (khung.fxml)
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/HomeTech/khung.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/khung.fxml"));
                 Parent root = loader.load();
 
                 // Tạo cửa sổ mới (Stage)
@@ -105,7 +108,7 @@ public class LoginController implements Initializable {
     void DangNhapBangOTPClicked(ActionEvent event) {
         try {
             // Tải file FXML của màn hình OTP
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/HomeTech/dang_nhap_otp.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/dang_nhap_otp.fxml"));
             Parent root = loader.load();
 
             // Tạo cửa sổ mới (Stage) cho màn hình OTP

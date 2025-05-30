@@ -94,7 +94,7 @@
                            </styleClass>
                         </CheckBox>
                         <Region HBox.hgrow="ALWAYS" />
-                        <Button fx:id="buttonQuenMatKhau" mnemonicParsing="false" styleClass="button-textlike" text="Quên mật khẩu?" />
+                        <Button fx:id="buttonQuenMatKhau" mnemonicParsing="false" onAction="#DangNhapBangOTPClicked" styleClass="button-textlike" text="Quên mật khẩu?" />
                      </children>
                   </HBox>
                   <VBox spacing="10.0">
@@ -108,7 +108,7 @@
                               </Text>
                            </children>
                         </TextFlow>
-                        <Button fx:id="buttonDangNhap" mnemonicParsing="false" prefHeight="55.0" prefWidth="600.0" styleClass="action-button" text="Đăng nhập">
+                        <Button fx:id="buttonDangNhap" mnemonicParsing="false" onAction="#dangNhapPressed" prefHeight="55.0" prefWidth="600.0" styleClass="action-button" text="Đăng nhập">
                            <font>
                               <Font name="Arial Bold" size="20.0" />
                            </font>

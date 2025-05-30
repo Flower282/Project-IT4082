@@ -16,17 +16,17 @@ public class KhungLauncher extends Application {
     public void start(Stage primaryStage) {
         try {
             // Load file khung.fxml
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/khung.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/dang_nhap.fxml"));
             Parent root = loader.load();
             
-            Scene scene = new Scene(root, 1280, 720); // Set kích thước cố định 1280x720
+            Scene scene = new Scene(root, 1300, 757); // Set kích thước cố định 1280x720
             primaryStage.setScene(scene);
             primaryStage.setTitle("Blue Moon- Hệ Thống Quản Lý Chung Cư");
             
             // Lock kích thước cửa sổ
             primaryStage.setResizable(false); // Không cho phép resize
-            primaryStage.setWidth(1280);
-            primaryStage.setHeight(720);
+            primaryStage.setWidth(1300);
+            primaryStage.setHeight(757);
             primaryStage.centerOnScreen(); // Căn giữa màn hình
             
             primaryStage.show();
