@@ -77,7 +77,7 @@ public class LoginController implements Initializable {
         if (email.equals("abcde") && password.equals("12345")) {
             try {
                 // Tải file FXML mới (khung.fxml)
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/HomeTech/khung.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/khung.fxml"));
                 Parent root = loader.load();
 
                 // Tạo cửa sổ mới (Stage)
@@ -105,7 +105,7 @@ public class LoginController implements Initializable {
     void DangNhapBangOTPClicked(ActionEvent event) {
         try {
             // Tải file FXML của màn hình OTP
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/HomeTech/dang_nhap_otp.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/dang_nhap_otp.fxml"));
             Parent root = loader.load();
 
             // Tạo cửa sổ mới (Stage) cho màn hình OTP
