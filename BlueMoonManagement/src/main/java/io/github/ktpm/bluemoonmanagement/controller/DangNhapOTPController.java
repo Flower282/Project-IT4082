@@ -37,7 +37,7 @@ public class DangNhapOTPController {
     void QuayLaiDangNhapClicked(ActionEvent event) {
         try {
             // Tải lại file fxml của màn hình đăng nhập
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/path/to/dang_nhap.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/dang_nhap.fxml"));
             Scene scene = new Scene(loader.load());
 
             // Lấy Stage hiện tại (cửa sổ đang hiển thị OTP)
@@ -55,6 +55,7 @@ public class DangNhapOTPController {
             textError.setText("Có lỗi xảy ra khi quay lại màn hình đăng nhập.");
         }
     }
+
 
 }
 
