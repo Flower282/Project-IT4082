@@ -343,6 +343,10 @@ public class ChiTietCanHoController implements Initializable {
         }
     }
 
+
+
+    
+
     /**
      * Xóa tất cả dữ liệu khi có lỗi
      */
