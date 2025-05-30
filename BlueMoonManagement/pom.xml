@@ -87,15 +87,20 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>17.0.12</version> <!-- Thay đổi phiên bản phù hợp -->
+
+            <version>21.0.1</version>
+
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>17.0.12</version> <!-- Thay đổi phiên bản phù hợp -->
+
+            <version>21.0.1</version>
         </dependency>
 
     </dependencies>
+
+    
 
     <build>
         <plugins>
@@ -131,17 +136,20 @@
                     </excludes>
                 </configuration>
             </plugin>
-
-
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
                     <mainClass>io.github.ktpm.bluemoonmanagement.KhungLauncher</mainClass>
+                    <arguments>
+                        <argument>--module-path</argument>
+                        <argument>C:/javafx-sdk-21.0.2/lib</argument>
+                        <argument>--add-modules</argument>
+                        <argument>javafx.controls,javafx.fxml</argument>
+                    </arguments>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
