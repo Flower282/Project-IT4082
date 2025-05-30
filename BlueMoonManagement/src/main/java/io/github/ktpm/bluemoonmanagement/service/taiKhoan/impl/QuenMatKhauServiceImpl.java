@@ -3,7 +3,7 @@ package io.github.ktpm.bluemoonmanagement.service.taiKhoan.impl;
 import io.github.ktpm.bluemoonmanagement.model.entity.TaiKhoan;
 import io.github.ktpm.bluemoonmanagement.repository.TaiKhoanRepository;
 import io.github.ktpm.bluemoonmanagement.util.OtpUtil;
-import io.github.ktpm.bluemoonmanagement.util.HashPasswordUtil;
+import io.github.ktpm.bluemoonmanagement.util.PasswordUtil;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.DatLaiMatKhauDto;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuenMatKhauService;
@@ -74,7 +74,7 @@ public class QuenMatKhauServiceImpl implements QuenMatKhauService {
         if (!dto.getMatKhauMoi().equals(dto.getXacNhanMatKhauMoi())) {
             return new ResponseDto(false, "Mật khẩu mới và xác nhận mật khẩu không khớp");
         }
-        taiKhoan.setMatKhau(HashPasswordUtil.hashPassword(dto.getMatKhauMoi()));
+        taiKhoan.setMatKhau(PasswordUtil.hashPassword(dto.getMatKhauMoi()));
         taiKhoan.setOtp(null);
         taiKhoan.setThoiHanOtp(null);
         taiKhoan.setNgayCapNhat(LocalDateTime.now());
