@@ -21,7 +21,7 @@ public class KhungLauncher extends Application {
             
             Scene scene = new Scene(root, 1280, 720); // Set kích thước cố định 1280x720
             primaryStage.setScene(scene);
-            primaryStage.setTitle("HomeTech - Hệ Thống Quản Lý Chung Cư");
+            primaryStage.setTitle("Blue Moon- Hệ Thống Quản Lý Chung Cư");
             
             // Lock kích thước cửa sổ
             primaryStage.setResizable(false); // Không cho phép resize
