@@ -96,8 +96,11 @@ public class ThemTaiKhoanController {
         ResponseDto response = dangKiService.dangKiTaiKhoan(dangKiDto);
 
         if (response.isSuccess()) {
-            textError.setText("Đăng ký thành công");
+            textError.setText(response.getMessage());
             textError.setVisible(true);
+
+
+
             // Reset các trường nhập liệu
             textFieldHoVaTen.clear();
             textFieldEmail.clear();

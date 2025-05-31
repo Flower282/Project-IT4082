@@ -3,6 +3,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.DangNhapDto;
+import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DangNhapServive;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -17,6 +20,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import org.apache.catalina.connector.Response;
 
 public class LoginController implements Initializable {
 
@@ -48,6 +52,17 @@ public class LoginController implements Initializable {
     private TextField textFieldMatKhau;
     @FXML
     private Label labelScreenName;
+    public LoginController(){
+        // Constructor mặc định
+        this.dangNhapServive = dangNhapDto -> null;
+    }
+    private DangNhapServive dangNhapServive;
+    public LoginController(DangNhapServive dangNhapServive) {
+        this.dangNhapServive = dangNhapServive;
+    }
+
+
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         System.out.println("Login được khởi tạo");
@@ -75,6 +90,46 @@ public class LoginController implements Initializable {
         // Lấy tài khoản và mật khẩu từ các TextField
         String email = textFieldEmail.getText().trim();
         String password = passwordFieldMatKhau.getText().trim();
+
+        DangNhapDto dangNhapDto = new DangNhapDto(email, password);
+        ResponseDto response = dangNhapServive.dangNhap(dangNhapDto);
+
+        if(response.isSuccess()) {
+            try {
+                // Tải file FXML mới (khung.fxml)
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/khung.fxml"));
+                Parent root = loader.load();
+
+                // Tạo cửa sổ mới (Stage)
+                Stage newStage = new Stage();
+                Scene newScene = new Scene(root);
+                newStage.setScene(newScene);
+
+                // Hiển thị cửa sổ mới
+                newStage.show();
+
+                // Đóng cửa sổ hiện tại (cửa sổ đăng nhập)
+                Stage currentStage = (Stage) stackRoot.getScene().getWindow();
+                currentStage.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+                // Xử lý lỗi nếu không thể tải file FXML
+            }
+
+        }
+        else if(response.getMessage().equals("Tài khoản không tồn tại")) {
+            textError.setText("Tài khoản không tồn tại");
+            textError.setVisible(true);
+        }
+        else if(response.getMessage().equals("Mật khẩu không đúng")) {
+            textError.setText("Mật khẩu không đúng");
+            textError.setVisible(true);
+        }
+        else {
+            textError.setText("Đăng nhập thất bại");
+            textError.setVisible(true);
+        }
+
 
         // Kiểm tra tài khoản và mật khẩu
         if (email.equals("abcde") && password.equals("12345")) {
