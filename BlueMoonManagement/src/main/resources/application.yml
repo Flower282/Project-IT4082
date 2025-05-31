@@ -1,3 +1,5 @@
+sever:
+  port: 8081
 spring:
   application:
     name: BlueMoonManagement
@@ -20,8 +22,8 @@ spring:
   mail:
     host: smtp.gmail.com           # Thay bằng host của dịch vụ email
     port: 587
-    username: your_email@gmail.com # Thay bằng email gửi
-    password: your_app_password    # Thay bằng mật khẩu ứng dụng
+    username: bluemoon24012005@gmail.com # Thay bằng email gửi
+    password: Admin12345@   # Thay bằng mật khẩu ứng dụng
     properties:
       mail:
         smtp:

@@ -12,11 +12,13 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import org.springframework.stereotype.Component;
 
 /**
  * Controller cho khung chính của ứng dụng (khung.fxml)
  * Quản lý navigation và load các trang con vào center area
  */
+@Component
 public class KhungController implements Initializable {
 
     @FXML

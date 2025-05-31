@@ -87,9 +87,7 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-
             <version>21.0.1</version>
-
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -155,7 +153,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>io.github.ktpm.bluemoonmanagement.KhungLauncher</mainClass>
+                    <mainClass>io.github.ktpm.bluemoonmanagement.BlueMoonManagementApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
