@@ -5,6 +5,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.DangKiDto;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.DangKiService;
+import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -16,6 +17,11 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+@Component
 public class ThemTaiKhoanController {
 
     @FXML
@@ -63,11 +69,10 @@ public class ThemTaiKhoanController {
     @FXML
     private TextField textFieldMatKhau;
 
-    private final DangKiService dangKiService;
-
-    public ThemTaiKhoanController(DangKiService dangKiService) {
-        this.dangKiService = dangKiService;
-    }
+    @Autowired
+    private DangKiService dangKiService;
+    @Autowired
+    private FxViewLoader fxViewLoader;
 
 
     @FXML
@@ -96,8 +101,11 @@ public class ThemTaiKhoanController {
         ResponseDto response = dangKiService.dangKiTaiKhoan(dangKiDto);
 
         if (response.isSuccess()) {
-            textError.setText("Đăng ký thành công");
+            textError.setText(response.getMessage());
             textError.setVisible(true);
+
+
+
             // Reset các trường nhập liệu
             textFieldHoVaTen.clear();
             textFieldEmail.clear();

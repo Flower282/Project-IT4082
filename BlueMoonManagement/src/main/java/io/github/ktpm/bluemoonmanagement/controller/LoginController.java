@@ -116,35 +116,6 @@ public class LoginController implements Initializable {
             textError.setText(response.getMessage());
             textError.setVisible(true);
         }
-
-
-        // Kiểm tra tài khoản và mật khẩu
-        if (email.equals("abcde") && password.equals("12345")) {
-            try {
-                // Tải file FXML mới (khung.fxml)
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/khung.fxml"));
-                Parent root = loader.load();
-
-                // Tạo cửa sổ mới (Stage)
-                Stage newStage = new Stage();
-                Scene newScene = new Scene(root);
-                newStage.setScene(newScene);
-
-                // Hiển thị cửa sổ mới
-                newStage.show();
-
-                // Đóng cửa sổ hiện tại (cửa sổ đăng nhập)
-                Stage currentStage = (Stage) stackRoot.getScene().getWindow();
-                currentStage.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-                // Xử lý lỗi nếu không thể tải file FXML
-            }
-        } else {
-            // Hiển thị thông báo sai tài khoản hoặc mật khẩu
-            textError.setText("Sai tài khoản hoặc mật khẩu");
-            textError.setVisible(true);
-        }
     }
     @FXML
     void DangNhapBangOTPClicked(ActionEvent event) {
