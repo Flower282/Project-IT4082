@@ -11,7 +11,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import org.apache.catalina.connector.Response;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class DoiMatKhauController {
 
     @FXML
@@ -40,11 +43,10 @@ public class DoiMatKhauController {
 
     @FXML
     private TextField textFieldXacNhanMatKhau;
-    private final DoiMatKhauService doiMatKhauService;
 
-    public DoiMatKhauController(DoiMatKhauService doiMatKhauService) {
-        this.doiMatKhauService = doiMatKhauService;
-    }
+    @Autowired
+    private DoiMatKhauService doiMatKhauService;
+
     @FXML
     void showPassword(ActionEvent event) {
         if (checkBoxHienMatKhau.isSelected()) {

@@ -1,17 +1,22 @@
 package io.github.ktpm.bluemoonmanagement.controller;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
+import io.github.ktpm.bluemoonmanagement.util.FxView;
+import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.Alert;
@@ -25,7 +30,12 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+@Component
 public class Home_list implements Initializable {
     @FXML
     private BarChart<?, ?> barChartDanCu;
@@ -652,4 +662,35 @@ public class Home_list implements Initializable {
         public void setTrangThaiSuDung(String trangThaiSuDung) { this.trangThaiSuDung = trangThaiSuDung; }
         public void setTrangThaiKiThuat(String trangThaiKiThuat) { this.trangThaiKiThuat = trangThaiKiThuat; }
     }
+
+    @Autowired
+    private FxViewLoader fxViewLoader;
+    @FXML
+    public void themTaiKhoanClick(ActionEvent event) {
+        try {
+            // Load view + controller
+            FxView<?> fxView = fxViewLoader.loadFxView("/view/them_tai_khoan.fxml");
+
+            // Tạo cửa sổ mới
+            Stage newStage = new Stage();
+            newStage.setScene(new Scene(fxView.getView()));
+            newStage.setTitle("Thêm tài khoản");
+
+            // Tuỳ chọn: không cho tương tác cửa sổ cha khi đang mở
+            newStage.initModality(Modality.APPLICATION_MODAL);
+
+            // Tuỳ chọn: gán owner là cửa sổ hiện tại (giúp bố cục và quản lý tốt hơn)
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            newStage.initOwner(currentStage);
+
+            // Hiển thị cửa sổ mới
+            newStage.show();
+
+        } catch (IOException e) {
+            System.err.println("Không thể mở cửa sổ Thêm tài khoản:");
+            e.printStackTrace();
+        }
+    }
+
+
 }

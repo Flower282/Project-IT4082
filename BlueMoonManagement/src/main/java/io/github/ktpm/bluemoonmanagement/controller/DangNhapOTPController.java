@@ -9,6 +9,8 @@ import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -65,20 +67,11 @@ public class DangNhapOTPController {
     @FXML
     void QuayLaiDangNhapClicked(ActionEvent event) {
         try {
-            // Tải lại file fxml của màn hình đăng nhập
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/dang_nhap.fxml"));
-            Scene scene = new Scene(loader.load());
-
-            // Lấy Stage hiện tại (cửa sổ đang hiển thị OTP)
-            Stage stage = (Stage) buttonQuayLaiDangNhap.getScene().getWindow();
-
-            // Đóng cửa sổ OTP hiện tại
-            stage.close();
-
-            // Tạo cửa sổ mới cho màn hình đăng nhập
-            Stage newStage = new Stage();
-            newStage.setScene(scene);
-            newStage.show();
+            Parent mainView = fxViewLoader.loadView("/view/dang_nhap.fxml");
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(mainView));
+            stage.setTitle("Trang chính");
+            stage.show();
         } catch (Exception e) {
             e.printStackTrace();
             textError.setText("Có lỗi xảy ra khi quay lại màn hình đăng nhập.");
@@ -114,16 +107,19 @@ public class DangNhapOTPController {
             return;
         }
         DatLaiMatKhauDto datLaiMatKhauDto = new DatLaiMatKhauDto(email, otp, "", "");
-        ResponseDto response2 = quenMatKhauService.guiMaOtp(datLaiMatKhauDto);
+        ResponseDto response2 = quenMatKhauService.xacThucOtp(datLaiMatKhauDto);
 
         if (response2.isSuccess()) {
-            textError.setText("OTP đã được gửi đến email của bạn.");
+            textError.setText("OTP xác thực thành công. Vui lòng nhập mật khẩu mới.");
             textError.setVisible(true);
 
             emailR = email;
 
             lable_email.setText("Nhập mật khẩu mới");
             lable_OTP.setText("Xác nhận mật khẩu mới");
+
+            textFieldEmail.clear();
+            textFieldOTP.clear();
 
             textFieldEmail.setPromptText("Mật khẩu mới");
             textFieldOTP.setPromptText("Xác nhận mật khẩu mới");
@@ -133,25 +129,15 @@ public class DangNhapOTPController {
             buttonTiepTheo.setVisible(false);
 
             buttonXacNhan.setDisable(false);
-
-
-        } else if (response2.getMessage().equals("Tai khoản không tồn tại")) {
-            textError.setText(response2.getMessage());
-            textError.setVisible(true);
-        } else if (response2.getMessage().equals("OTP khong hợp lệ")) {
-            textError.setText(response2.getMessage());
-            textError.setVisible(true);
-        } else if (response2.getMessage().equals("OTP đã hết hạn")) {
-            textError.setText(response2.getMessage());
-            textError.setVisible(true);
         } else {
-            textError.setText("Có lỗi xảy ra khi gửi OTP.");
+            textError.setText(response2.getMessage());
             textError.setVisible(true);
         }
 
     }
     @FXML
     void XacNhanClicked(ActionEvent event) {
+        buttonXacNhan.setDisable(true);
         String matkhau = textFieldEmail.getText().trim();
         String xacnhanmatkhau = textFieldOTP.getText().trim();
 
@@ -170,11 +156,11 @@ public class DangNhapOTPController {
         if(response.isSuccess()) {
             textError.setText("Mật khẩu đã được cập nhật thành công. Vui lòng đăng nhập lại.");
             textError.setVisible(true);
-            buttonXacNhan.setDisable(true);
         }
         else{
             textError.setText(response.getMessage());
             textError.setVisible(true);
+            buttonXacNhan.setDisable(false);
         }
     }
 }

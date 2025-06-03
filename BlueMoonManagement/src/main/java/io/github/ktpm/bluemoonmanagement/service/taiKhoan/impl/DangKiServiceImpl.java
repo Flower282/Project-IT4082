@@ -40,6 +40,7 @@ public class DangKiServiceImpl implements DangKiService {
         // Tạo tài khoản mới
         TaiKhoan taiKhoan = taiKhoanMapper.fromDangKiDto(dangKiDto);
         taiKhoan.setMatKhau(PasswordUtil.hashPassword(matKhau));
+        taiKhoan.setVaiTro("Kế toán"); // Mặc định vai trò là 'Kế toán'
         taiKhoan.setNgayTao(LocalDateTime.now());
         taiKhoan.setNgayCapNhat(LocalDateTime.now());
         taiKhoanRepository.save(taiKhoan);

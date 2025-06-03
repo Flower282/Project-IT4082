@@ -4,14 +4,17 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import io.github.ktpm.bluemoonmanagement.util.FxView;
+import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -53,25 +56,22 @@ public class KhungController implements Initializable{
 
     private Home_list centerController;
 
+    @Autowired
+    private FxViewLoader fxViewLoader;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         System.out.println("KhungController được khởi tạo");
 
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/trang_chu_danh_sach.fxml"));
-            Parent trangChuContent = loader.load();
-
-            // Set content vào center của BorderPane
-            mainBorderPane.setCenter(trangChuContent);
-            centerController = loader.getController();
-            centerController.setParentController(this);
+            FxView<Home_list> fxView = fxViewLoader.loadFxView("/view/trang_chu_danh_sach.fxml");
+            mainBorderPane.setCenter(fxView.getView());
+            this.centerController = fxView.getController(); // Gán đúng controller
             updateScreenLabel("Trang chủ");
-
         } catch (IOException e) {
-            System.err.println("Không thể load trang chủ danh sách: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Không thể load trang chủ: " + e.getMessage());
         }
+
     }
 
     public void updateScreenLabel(String screenName) {
@@ -130,5 +130,6 @@ public class KhungController implements Initializable{
     void handleDangXuat(ActionEvent event) {
 
     }
+
 
 }
