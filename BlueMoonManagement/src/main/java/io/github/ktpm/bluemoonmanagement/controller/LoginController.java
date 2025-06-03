@@ -22,7 +22,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -120,21 +119,12 @@ public class LoginController implements Initializable {
     @FXML
     void DangNhapBangOTPClicked(ActionEvent event) {
         try {
-            // Tải file FXML của màn hình OTP
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/dang_nhap_otp.fxml"));
-            Parent root = loader.load();
-
-            // Tạo cửa sổ mới (Stage) cho màn hình OTP
-            Stage newStage = new Stage();
-            Scene newScene = new Scene(root);
-            newStage.setScene(newScene);
-
-            // Hiển thị cửa sổ OTP
-            newStage.show();
-
-            // Đóng cửa sổ hiện tại (cửa sổ đăng nhập)
-            Stage currentStage = (Stage) stackRoot.getScene().getWindow();
-            currentStage.close();
+            // Tải file FXML mới (khung.fxml)
+            Parent mainView = fxViewLoader.loadView("/view/dang_nhap_otp.fxml");
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(mainView));
+            stage.setTitle("Trang chính");
+            stage.show();
         } catch (IOException e) {
             e.printStackTrace();
             // Xử lý lỗi nếu không thể tải file FXML của màn hình OTP
