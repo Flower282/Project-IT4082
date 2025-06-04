@@ -4,16 +4,19 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.FxView;
 import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Stage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -62,7 +65,8 @@ public class KhungController implements Initializable{
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         System.out.println("KhungController được khởi tạo");
-
+        String name = Session.getCurrentUser().getHoTen();
+        setAccountName(name);
         try {
             FxView<Home_list> fxView = fxViewLoader.loadFxView("/view/trang_chu_danh_sach.fxml");
             mainBorderPane.setCenter(fxView.getView());
@@ -100,6 +104,8 @@ public class KhungController implements Initializable{
 
     @FXML
     void goToHoSo(ActionEvent event) {
+        centerController.show("HoSo");
+        updateScreenLabel("Hồ sơ");
     }
 
     @FXML
@@ -128,7 +134,17 @@ public class KhungController implements Initializable{
 
     @FXML
     void handleDangXuat(ActionEvent event) {
-
+        try {
+            // Tải file FXML mới (khung.fxml)
+            Parent mainView = fxViewLoader.loadView("/view/dang_nhap.fxml");
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(mainView));
+            stage.setTitle("Trang chính");
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Xử lý lỗi nếu không thể tải file FXML
+        }
     }
 
 

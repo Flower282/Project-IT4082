@@ -10,7 +10,6 @@ public interface TaiKhoanMapper {
     ThongTinTaiKhoanDto toThongTinTaiKhoanDto(TaiKhoan taiKhoan);
 
     @Mapping(target = "matKhau", ignore = true)
-    @Mapping(target = "vaiTro", ignore = true)
     @Mapping(target = "ngayTao", ignore = true)
     @Mapping(target = "ngayCapNhat", ignore = true)
     @Mapping(target = "otp", ignore = true)

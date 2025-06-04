@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.FxView;
 import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
 import javafx.collections.FXCollections;
@@ -41,6 +42,9 @@ import javafx.stage.Stage;
 public class Home_list implements Initializable {
     @FXML
     private BarChart<?, ?> barChartDanCu;
+
+    @FXML
+    private Button buttonDoiMatKhau;
 
     @FXML
     private Button buttonNhapExcelCanHo;
@@ -145,10 +149,14 @@ public class Home_list implements Initializable {
     private ComboBox<?> comboBoxVaiTro;
 
     @FXML
+    private ComboBox<?> comboBoxVaiTroHoSo;
+
+    @FXML
     private DatePicker datePickerNgayNop;
 
     @FXML
     private GridPane gridPaneTrangChu;
+
 
     @FXML
     private Label labelBienDongDanCu;
@@ -215,6 +223,9 @@ public class Home_list implements Initializable {
 
     @FXML
     private ScrollPane scrollPaneCanHo;
+
+    @FXML
+    private ScrollPane scrollPaneCanHo1;
 
     @FXML
     private ScrollPane scrollPaneCuDan;
@@ -367,7 +378,13 @@ public class Home_list implements Initializable {
     private TextField textFieldEmail;
 
     @FXML
+    private TextField textFieldEmailHoSo;
+
+    @FXML
     private TextField textFieldHoVaTen;
+
+    @FXML
+    private TextField textFieldHoVaTenHoSo;
 
     @FXML
     private TextField textFieldHoVaTenTaiKhoan;
@@ -396,6 +413,15 @@ public class Home_list implements Initializable {
     @FXML
     private TextField textFieldTenKhoanThu1;
 
+    @FXML
+    private Label hoTenLabel;
+
+    @FXML
+    private Label emailLabel;
+
+    @FXML
+    private Label vaiTroLabel;
+
     @Autowired
     private CanHoService canHoService;
 
@@ -412,12 +438,16 @@ public class Home_list implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         System.out.println("Home_list controller được khởi tạo");
-        allPanes = List.of(gridPaneTrangChu, scrollPaneCanHo, scrollPaneCuDan, scrollPaneTaiKhoan, scrollPaneKhoanThu, scrollPaneLichSuThu);
+        allPanes = List.of(gridPaneTrangChu, scrollPaneCanHo, scrollPaneCuDan, scrollPaneTaiKhoan, scrollPaneKhoanThu, scrollPaneLichSuThu, scrollPaneCanHo1);
         
         // Setup table căn hộ ngay từ đầu
         setupCanHoTable();
         
         show("TrangChu");
+
+        hoTenLabel.setText("Họ Tên: " + Session.getCurrentUser().getHoTen());
+        emailLabel.setText("Email: " + Session.getCurrentUser().getEmail());
+        vaiTroLabel.setText("Vai Trò: " + Session.getCurrentUser().getVaiTro());
     }
 
     public void setParentController(KhungController controller) {
@@ -436,6 +466,7 @@ public class Home_list implements Initializable {
             case "KhoanThu" -> scrollPaneKhoanThu.setVisible(true);
             case "LichSuThu" -> scrollPaneLichSuThu.setVisible(true);
             case "TaiKhoan" -> scrollPaneTaiKhoan.setVisible(true);
+            case "HoSo" -> scrollPaneCanHo1.setVisible(true);
         }
     }
     @FXML
@@ -448,6 +479,12 @@ public class Home_list implements Initializable {
         // Setup table và load dữ liệu
         setupCanHoTable();
         loadData();
+    }
+
+    @FXML
+    void goToHoSo(ActionEvent event) {
+        show("HoSo");
+        parentController.updateScreenLabel("HoSo");
     }
 
     @FXML
@@ -708,6 +745,31 @@ public class Home_list implements Initializable {
 
         } catch (IOException e) {
             System.err.println("Không thể mở cửa sổ Thêm tài khoản:");
+            e.printStackTrace();
+        }
+    }
+    public void DoiMatKhauClicked(ActionEvent event){
+        try {
+            // Load view + controller
+            FxView<?> fxView = fxViewLoader.loadFxView("/view/doi_mat_khau_ho_so.fxml");
+
+            // Tạo cửa sổ mới
+            Stage newStage = new Stage();
+            newStage.setScene(new Scene(fxView.getView()));
+            newStage.setTitle("Đổi mật khẩu");
+
+            // Tuỳ chọn: không cho tương tác cửa sổ cha khi đang mở
+            newStage.initModality(Modality.APPLICATION_MODAL);
+
+            // Tuỳ chọn: gán owner là cửa sổ hiện tại (giúp bố cục và quản lý tốt hơn)
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            newStage.initOwner(currentStage);
+
+            // Hiển thị cửa sổ mới
+            newStage.show();
+
+        } catch (IOException e) {
+            System.err.println("Không thể mở cửa sổ Đổi mật khẩu:");
             e.printStackTrace();
         }
     }

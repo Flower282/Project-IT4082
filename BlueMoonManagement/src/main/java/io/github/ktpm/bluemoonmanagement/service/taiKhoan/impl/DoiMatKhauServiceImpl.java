@@ -30,7 +30,7 @@ public class DoiMatKhauServiceImpl implements DoiMatKhauService {
         }
         // Kiểm tra định dạng mật khẩu mới
         if (!PasswordUtil.isValidPasswordFormat(doiMatKhauDto.getMatKhauMoi())) {
-            return new ResponseDto(false, "Mật khẩu mới không đúng định dạng");
+            return new ResponseDto(false, "Mật khẩu mới không đúng định dạng. Mật khẩu phải có ít nhất một chữ hoa, một số và một ký tự đặc biệt.");
         }
         // So sánh mật khẩu mới và xác nhận
         if (!doiMatKhauDto.getMatKhauMoi().equals(doiMatKhauDto.getXacNhanMatKhauMoi())) {

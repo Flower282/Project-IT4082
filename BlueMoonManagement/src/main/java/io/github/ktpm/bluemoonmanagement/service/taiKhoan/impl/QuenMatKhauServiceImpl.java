@@ -55,6 +55,9 @@ public class QuenMatKhauServiceImpl implements QuenMatKhauService {
     @Override
     public ResponseDto datLaiMatKhau(DatLaiMatKhauDto dto) {
         TaiKhoan taiKhoan = taiKhoanRepository.findById(dto.getEmail()).orElse(null);
+        if(!PasswordUtil.isValidPasswordFormat(dto.getMatKhauMoi())){
+            return new ResponseDto(false, "Mật khẩu mới không đúng định dạng. Mật khẩu phải có ít nhất một chữ hoa, một số và một ký tự đặc biệt.");
+        };
         if (!dto.getMatKhauMoi().equals(dto.getXacNhanMatKhauMoi())) {
             return new ResponseDto(false, "Mật khẩu mới và xác nhận mật khẩu không khớp");
         }
