@@ -13,10 +13,14 @@ import io.github.ktpm.bluemoonmanagement.session.Session;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -35,10 +39,13 @@ public class ThemCanHoButton implements Initializable {
     private Button button_close_up;
 
     @FXML
-    private CheckBox choiceBoxTaoCuDan;
+    private Button buttonTaoChuSoHuuMoi;
 
     @FXML
     private CheckBox choiceBoxThemChuSoHuu;
+
+    @FXML
+    private CheckBox choiceBoxTaoCuDanMoi;
 
     @FXML
     private ComboBox<String> comboBoxGioiTinh;
@@ -56,10 +63,7 @@ public class ThemCanHoButton implements Initializable {
     private DatePicker datePickerNgaySinh;
 
     @FXML
-    private HBox text;
-
-    @FXML
-    private HBox text1;
+    private Label labelHuongDan;
 
     @FXML
     private Text textError;
@@ -77,6 +81,9 @@ public class ThemCanHoButton implements Initializable {
     private TextField textFieldMaDinhDanh;
 
     @FXML
+    private TextField textFieldMaDinhDanhMoi;
+
+    @FXML
     private TextField textFieldSoDienThoai;
 
     @FXML
@@ -90,6 +97,9 @@ public class ThemCanHoButton implements Initializable {
 
     @FXML
     private VBox vBoxChuSoHuu;
+
+    @FXML
+    private VBox vBoxThongTinCuDanMoi;
 
     // Service instance - sẽ được inject từ bên ngoài
     private CanHoService canHoService;
@@ -144,7 +154,7 @@ public class ThemCanHoButton implements Initializable {
         choiceBoxThemChuSoHuu.setOnAction(this::handleThemChuSoHuuChange);
         
         // Xử lý sự kiện cho checkbox tạo cư dân mới
-        choiceBoxTaoCuDan.setOnAction(this::handleTaoCuDanChange);
+        choiceBoxTaoCuDanMoi.setOnAction(this::handleTaoCuDanMoiChange);
         
         // Xử lý nút tạo căn hộ
         buttonTaoCanHo.setOnAction(this::handleTaoCanHo);
@@ -157,6 +167,10 @@ public class ThemCanHoButton implements Initializable {
         // Hiển thị/ẩn vùng nhập thông tin chủ sở hữu
         vBoxChuSoHuu.setVisible(false);
         vBoxChuSoHuu.setManaged(false);
+        
+        // Hiển thị/ẩn vùng nhập thông tin cư dân mới
+        vBoxThongTinCuDanMoi.setVisible(false);
+        vBoxThongTinCuDanMoi.setManaged(false);
     }
 
     @FXML
@@ -165,34 +179,36 @@ public class ThemCanHoButton implements Initializable {
         vBoxChuSoHuu.setVisible(isSelected);
         vBoxChuSoHuu.setManaged(isSelected);
         
+        // Nếu chọn thêm chủ sở hữu, thì bỏ chọn tạo cư dân mới
         if (isSelected) {
-            // Khi chọn thêm chủ sở hữu, tự động chọn tạo cư dân mới
-            choiceBoxTaoCuDan.setSelected(true);
-            choiceBoxTaoCuDan.setDisable(true);
-            
-            // Set focus vào field đầu tiên
+            choiceBoxTaoCuDanMoi.setSelected(false);
+            vBoxThongTinCuDanMoi.setVisible(false);
+            vBoxThongTinCuDanMoi.setManaged(false);
             textFieldMaDinhDanh.requestFocus();
         } else {
-            // Khi bỏ chọn thêm chủ sở hữu
-            choiceBoxTaoCuDan.setDisable(false);
-            clearOwnerFields();
+            textFieldMaDinhDanh.clear();
         }
         
-        // Log để debug
         System.out.println("Thêm chủ sở hữu: " + isSelected);
     }
 
     @FXML
-    private void handleTaoCuDanChange(ActionEvent event) {
-        // Nếu bỏ chọn tạo cư dân mới và đang có thêm chủ sở hữu, 
-        // thì cần bỏ chọn thêm chủ sở hữu
-        if (!choiceBoxTaoCuDan.isSelected() && choiceBoxThemChuSoHuu.isSelected()) {
+    private void handleTaoCuDanMoiChange(ActionEvent event) {
+        boolean isSelected = choiceBoxTaoCuDanMoi.isSelected();
+        vBoxThongTinCuDanMoi.setVisible(isSelected);
+        vBoxThongTinCuDanMoi.setManaged(isSelected);
+        
+        // Nếu chọn tạo cư dân mới, thì bỏ chọn thêm chủ sở hữu
+        if (isSelected) {
             choiceBoxThemChuSoHuu.setSelected(false);
-            handleThemChuSoHuuChange(null);
+            vBoxChuSoHuu.setVisible(false);
+            vBoxChuSoHuu.setManaged(false);
+            textFieldMaDinhDanhMoi.requestFocus();
+        } else {
+            clearCuDanMoiFields();
         }
         
-        // Log để debug
-        System.out.println("Tạo cư dân mới: " + choiceBoxTaoCuDan.isSelected());
+        System.out.println("Tạo cư dân mới: " + isSelected);
     }
 
     @FXML
@@ -247,6 +263,36 @@ public class ThemCanHoButton implements Initializable {
         closeWindow();
     }
 
+    @FXML
+    private void handleTaoChuSoHuuMoi(ActionEvent event) {
+        try {
+            System.out.println("Mở form thêm cư dân...");
+            
+            // Sử dụng FXMLLoader để mở form thêm cư dân
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/them_cu_dan.fxml"));
+            
+            Parent root = loader.load();
+            
+            // Tạo modal dialog
+            Stage dialogStage = new Stage();
+            dialogStage.initStyle(javafx.stage.StageStyle.DECORATED);
+            dialogStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            dialogStage.initOwner(buttonTaoChuSoHuuMoi.getScene().getWindow());
+            
+            Scene scene = new Scene(root);
+            dialogStage.setScene(scene);
+            dialogStage.setTitle("Thêm cư dân mới");
+            dialogStage.setResizable(true);
+            
+            // Hiển thị dialog
+            dialogStage.showAndWait();
+            
+        } catch (Exception e) {
+            showErrorMessage("Lỗi khi mở form thêm cư dân: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private boolean hasPermission() {
         try {
             if (Session.getCurrentUser() == null) return false;
@@ -256,7 +302,7 @@ public class ThemCanHoButton implements Initializable {
             vaiTroField.setAccessible(true);
             String vaiTro = (String) vaiTroField.get(Session.getCurrentUser());
             
-            return "Tổ phó".equals(vaiTro);
+            return "Tổ trưởng".equals(vaiTro)|| "admin".equals(vaiTro);
         } catch (Exception e) {
             System.err.println("Lỗi khi kiểm tra quyền: " + e.getMessage());
             return false;
@@ -314,18 +360,25 @@ public class ThemCanHoButton implements Initializable {
             return false;
         }
         
-        // Validate thông tin chủ sở hữu nếu được chọn
+        // Validate mã định danh chủ sở hữu nếu được chọn
         if (choiceBoxThemChuSoHuu.isSelected()) {
-            System.out.println("Validate thông tin chủ sở hữu...");
-            
             if (isBlank(textFieldMaDinhDanh.getText())) {
                 showErrorMessage("Vui lòng nhập mã định danh chủ sở hữu");
                 textFieldMaDinhDanh.requestFocus();
                 return false;
             }
+        }
+        
+        // Validate thông tin cư dân mới nếu được chọn
+        if (choiceBoxTaoCuDanMoi.isSelected()) {
+            if (isBlank(textFieldMaDinhDanhMoi.getText())) {
+                showErrorMessage("Vui lòng nhập mã định danh cho cư dân mới");
+                textFieldMaDinhDanhMoi.requestFocus();
+                return false;
+            }
             
             if (isBlank(textFieldHoVaTen.getText())) {
-                showErrorMessage("Vui lòng nhập họ và tên chủ sở hữu");
+                showErrorMessage("Vui lòng nhập họ và tên");
                 textFieldHoVaTen.requestFocus();
                 return false;
             }
@@ -370,10 +423,6 @@ public class ThemCanHoButton implements Initializable {
                 textFieldSoDienThoai.requestFocus();
                 return false;
             }
-            
-            System.out.println("Validation chủ sở hữu thành công");
-        } else {
-            System.out.println("Không có chủ sở hữu - bỏ qua validation");
         }
         
         return true;
@@ -423,18 +472,31 @@ public class ThemCanHoButton implements Initializable {
             System.err.println("Lỗi khi set field cho CanHoDto: " + e.getMessage());
         }
         
-        // Tạo ChuHoDto nếu được chọn
+        // Tạo ChuHoDto nếu có chủ hộ
         if (choiceBoxThemChuSoHuu.isSelected()) {
-            System.out.println("Tạo thông tin chủ hộ...");
-            ChuHoDto chuHoDto = createChuHoDto();
+            System.out.println("Thêm mã định danh chủ hộ có sẵn...");
+            ChuHoDto chuHoDto = createChuHoDtoFromExisting();
             
             if (chuHoDto != null) {
-                // Set chủ hộ vào căn hộ
                 try {
                     java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
                     chuHoField.setAccessible(true);
                     chuHoField.set(canHoDto, chuHoDto);
-                    System.out.println("Đã thêm chủ hộ vào căn hộ: " + getFieldValue(chuHoDto, "hoVaTen", String.class));
+                    System.out.println("Đã thêm chủ hộ có sẵn với mã: " + textFieldMaDinhDanh.getText().trim());
+                } catch (Exception e) {
+                    System.err.println("Lỗi khi set chuHo cho CanHoDto: " + e.getMessage());
+                }
+            }
+        } else if (choiceBoxTaoCuDanMoi.isSelected()) {
+            System.out.println("Tạo cư dân mới làm chủ hộ...");
+            ChuHoDto chuHoDto = createChuHoDtoFromNew();
+            
+            if (chuHoDto != null) {
+                try {
+                    java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
+                    chuHoField.setAccessible(true);
+                    chuHoField.set(canHoDto, chuHoDto);
+                    System.out.println("Đã tạo cư dân mới làm chủ hộ với mã: " + textFieldMaDinhDanhMoi.getText().trim());
                 } catch (Exception e) {
                     System.err.println("Lỗi khi set chuHo cho CanHoDto: " + e.getMessage());
                 }
@@ -447,19 +509,41 @@ public class ThemCanHoButton implements Initializable {
     }
 
     /**
-     * Tạo ChuHoDto từ thông tin nhập vào
+     * Tạo ChuHoDto từ mã định danh có sẵn - chỉ cần mã để tham chiếu đến cư dân đã có
      */
-    private ChuHoDto createChuHoDto() {
+    private ChuHoDto createChuHoDtoFromExisting() {
         try {
             ChuHoDto chuHoDto = new ChuHoDto();
             
-            // Thiết lập thông tin chủ hộ
+            // Chỉ set mã định danh - service sẽ tìm thông tin cư dân từ DB
+            java.lang.reflect.Field maDinhDanhField = ChuHoDto.class.getDeclaredField("maDinhDanh");
+            maDinhDanhField.setAccessible(true);
+            maDinhDanhField.set(chuHoDto, textFieldMaDinhDanh.getText().trim());
+            
+            System.out.println("Tạo ChuHoDto với mã định danh có sẵn: " + textFieldMaDinhDanh.getText().trim());
+            
+            return chuHoDto;
+        } catch (Exception e) {
+            System.err.println("Lỗi khi tạo ChuHoDto: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Tạo ChuHoDto từ thông tin cư dân mới
+     */
+    private ChuHoDto createChuHoDtoFromNew() {
+        try {
+            ChuHoDto chuHoDto = new ChuHoDto();
+            
+            // Thiết lập thông tin cư dân mới đầy đủ
             java.lang.reflect.Field[] fields = ChuHoDto.class.getDeclaredFields();
             for (java.lang.reflect.Field field : fields) {
                 field.setAccessible(true);
                 switch (field.getName()) {
                     case "maDinhDanh":
-                        field.set(chuHoDto, textFieldMaDinhDanh.getText().trim());
+                        field.set(chuHoDto, textFieldMaDinhDanhMoi.getText().trim());
                         break;
                     case "hoVaTen":
                         field.set(chuHoDto, textFieldHoVaTen.getText().trim());
@@ -481,8 +565,8 @@ public class ThemCanHoButton implements Initializable {
                 }
             }
             
-            System.out.println("Tạo ChuHoDto thành công:");
-            System.out.println("   - Mã định danh: " + textFieldMaDinhDanh.getText().trim());
+            System.out.println("Tạo ChuHoDto từ thông tin mới:");
+            System.out.println("   - Mã định danh: " + textFieldMaDinhDanhMoi.getText().trim());
             System.out.println("   - Họ và tên: " + textFieldHoVaTen.getText().trim());
             System.out.println("   - SĐT: " + textFieldSoDienThoai.getText().trim());
             System.out.println("   - Email: " + textFieldEmail.getText().trim());
@@ -490,7 +574,8 @@ public class ThemCanHoButton implements Initializable {
             
             return chuHoDto;
         } catch (Exception e) {
-            System.err.println("Lỗi khi tạo ChuHoDto: " + e.getMessage());
+            System.err.println("Lỗi khi tạo ChuHoDto từ thông tin mới: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }
@@ -530,19 +615,25 @@ public class ThemCanHoButton implements Initializable {
         
         // Clear owner fields
         clearOwnerFields();
+        clearCuDanMoiFields();
         
         // Reset checkboxes
         choiceBoxThemChuSoHuu.setSelected(false);
-        choiceBoxTaoCuDan.setSelected(false);
-        choiceBoxTaoCuDan.setDisable(false);
+        choiceBoxTaoCuDanMoi.setSelected(false);
         
-        // Hide owner section
+        // Hide sections
         vBoxChuSoHuu.setVisible(false);
         vBoxChuSoHuu.setManaged(false);
+        vBoxThongTinCuDanMoi.setVisible(false);
+        vBoxThongTinCuDanMoi.setManaged(false);
     }
 
     private void clearOwnerFields() {
         textFieldMaDinhDanh.clear();
+    }
+
+    private void clearCuDanMoiFields() {
+        textFieldMaDinhDanhMoi.clear();
         textFieldHoVaTen.clear();
         textFieldSoDienThoai.clear();
         textFieldEmail.clear();

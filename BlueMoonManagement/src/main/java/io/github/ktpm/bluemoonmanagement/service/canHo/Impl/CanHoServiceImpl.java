@@ -15,8 +15,10 @@ import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.entity.CanHo;
+import io.github.ktpm.bluemoonmanagement.model.entity.CuDan;
 import io.github.ktpm.bluemoonmanagement.model.mapper.CanHoMapper;
 import io.github.ktpm.bluemoonmanagement.repository.CanHoRepository;
+import io.github.ktpm.bluemoonmanagement.repository.CuDanRepository;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil;
@@ -26,10 +28,12 @@ import io.github.ktpm.bluemoonmanagement.util.XlxsFileUtil;
 public class CanHoServiceImpl implements CanHoService {
 
     private final CanHoRepository canHoRepository;
+    private final CuDanRepository cuDanRepository;
     private final CanHoMapper canHoMapper;
 
-    public CanHoServiceImpl(CanHoRepository canHoRepository, CanHoMapper canHoMapper) {
+    public CanHoServiceImpl(CanHoRepository canHoRepository, CuDanRepository cuDanRepository, CanHoMapper canHoMapper) {
         this.canHoRepository = canHoRepository;
+        this.cuDanRepository = cuDanRepository;
         this.canHoMapper = canHoMapper;
     }
 
@@ -49,21 +53,60 @@ public class CanHoServiceImpl implements CanHoService {
 
     @Override
     public ResponseDto addCanHo(CanHoDto canHoDto) {
-        // Kiểm tra quyền: chỉ 'Tổ phó' mới được thêm căn hộ
-        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
-            return new ResponseDto(false, "Bạn không có quyền thêm căn hộ. Chỉ Tổ phó mới được phép.");
+        // Kiểm tra quyền: chỉ 'Tổ trưởng' và 'admin' mới được thêm căn hộ
+        if (Session.getCurrentUser() == null || (!"Tổ trưởng".equals(Session.getCurrentUser().getVaiTro()) && !"admin".equals(Session.getCurrentUser().getVaiTro()))) {
+            return new ResponseDto(false, "Bạn không có quyền thêm căn hộ. Chỉ Tổ trưởng và Admin mới được phép.");
         }
+        
         // Check if an apartment with this code already exists
         if (canHoRepository.existsById(canHoDto.getMaCanHo())) {
             return new ResponseDto(false, "Căn hộ đã tồn tại");
         }
-        if(canHoDto.getChuHo().getTrangThaiCuTru() == "Cư trú" && canHoDto.getChuHo().getNgayChuyenDen() == null) {
-            canHoDto.getChuHo().setNgayChuyenDen(LocalDate.now());
+        
+        // Nếu có chủ hộ, xử lý theo logic phù hợp
+        if (canHoDto.getChuHo() != null) {
+            String maDinhDanh = canHoDto.getChuHo().getMaDinhDanh();
+            
+            // Kiểm tra xem cư dân có tồn tại không
+            if (!cuDanRepository.existsById(maDinhDanh)) {
+                // Nếu cư dân chưa tồn tại và có thông tin đầy đủ thì tạo mới
+                if (canHoDto.getChuHo().getHoVaTen() != null && 
+                    !canHoDto.getChuHo().getHoVaTen().trim().isEmpty()) {
+                    
+                    // Tạo cư dân mới
+                    CuDan cuDanMoi = new CuDan();
+                    cuDanMoi.setMaDinhDanh(maDinhDanh);
+                    cuDanMoi.setHoVaTen(canHoDto.getChuHo().getHoVaTen());
+                    cuDanMoi.setSoDienThoai(canHoDto.getChuHo().getSoDienThoai());
+                    cuDanMoi.setEmail(canHoDto.getChuHo().getEmail());
+                    cuDanMoi.setTrangThaiCuTru(canHoDto.getChuHo().getTrangThaiCuTru());
+                    
+                    // Set ngày chuyển đến nếu là cư trú
+                    if ("Cư trú".equals(canHoDto.getChuHo().getTrangThaiCuTru())) {
+                        cuDanMoi.setNgayChuyenDen(canHoDto.getChuHo().getNgayChuyenDen() != null ? 
+                            canHoDto.getChuHo().getNgayChuyenDen() : LocalDate.now());
+                    }
+                    
+                    // Lưu cư dân trước
+                    cuDanRepository.save(cuDanMoi);
+                    System.out.println("Đã tạo cư dân mới với mã định danh: " + maDinhDanh);
+                } else {
+                    // Chỉ có mã định danh, cư dân chưa tồn tại
+                    return new ResponseDto(false, "Cư dân với mã định danh '" + maDinhDanh + "' không tồn tại trong hệ thống. Vui lòng tạo cư dân trước hoặc kiểm tra lại mã định danh.");
+                }
+            } else {
+                System.out.println("Đã tìm thấy cư dân với mã định danh: " + maDinhDanh);
+            }
         }
+        
         // Convert DTO to entity using the mapper
         CanHo canHo = canHoMapper.fromCanHoDto(canHoDto);
+        
+        // Lưu căn hộ
         canHoRepository.save(canHo);
-        return new ResponseDto(true, "Căn hộ đã được thêm thành công");
+        
+        return new ResponseDto(true, "Căn hộ đã được thêm thành công" + 
+            (canHoDto.getChuHo() != null ? " với chủ hộ có mã: " + canHoDto.getChuHo().getMaDinhDanh() : ""));
     }
 
     @Override

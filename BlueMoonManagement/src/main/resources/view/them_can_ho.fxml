@@ -17,7 +17,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<VBox alignment="TOP_CENTER" maxHeight="700.0" maxWidth="800.0" minHeight="600.0" minWidth="700.0" prefHeight="650.0" prefWidth="750.0" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton">
+<VBox alignment="TOP_CENTER" maxHeight="700.0" maxWidth="800.0" minHeight="600.0" minWidth="700.0" prefHeight="650.0" prefWidth="750.0" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <AnchorPane prefHeight="50.0" prefWidth="750.0">
          <children>
@@ -66,7 +66,7 @@
             <HBox alignment="CENTER_LEFT" prefWidth="710.0" spacing="20.0">
                <children>
                   <CheckBox fx:id="choiceBoxThemChuSoHuu" mnemonicParsing="false" onAction="#handleThemChuSoHuuChange" text="Thêm chủ sở hữu cho căn hộ này" />
-                  <CheckBox fx:id="choiceBoxTaoCuDan" mnemonicParsing="false" onAction="#handleTaoCuDanChange" text="Tạo cư dân mới" />
+                  <CheckBox fx:id="choiceBoxTaoCuDanMoi" mnemonicParsing="false" onAction="#handleTaoCuDanMoiChange" text="Tạo cư dân mới" />
                </children>
                <padding>
                   <Insets left="20.0" right="20.0" top="8.0" />
@@ -96,7 +96,35 @@
                   <Insets left="20.0" right="20.0" top="8.0" />
                </padding>
                <children>
-                  <TextField fx:id="textFieldMaDinhDanh" prefWidth="200.0" promptText="Mã định danh" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
+                  <TextField fx:id="textFieldMaDinhDanh" prefWidth="200.0" promptText="Mã định danh chủ sở hữu" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
+                  <Label fx:id="labelHuongDan" text="(Nhập mã định danh của cư dân đã tồn tại trong hệ thống)" styleClass="text-note" HBox.hgrow="ALWAYS" />
+               </children>
+            </HBox>
+         </children>
+         <padding>
+            <Insets bottom="15.0" top="10.0" />
+         </padding>
+         <styleClass>
+            <String fx:value="white-background" />
+            <String fx:value="round-big" />
+         </styleClass>
+         <VBox.margin>
+            <Insets left="20.0" right="20.0" />
+         </VBox.margin>
+      </VBox>
+      <VBox fx:id="vBoxThongTinCuDanMoi" prefWidth="710.0" spacing="8.0">
+         <children>
+            <Label styleClass="screen-title" text="Thông tin cư dân mới">
+               <VBox.margin>
+                  <Insets left="20.0" />
+               </VBox.margin>
+            </Label>
+            <HBox alignment="CENTER_RIGHT" prefWidth="710.0" spacing="15.0">
+               <padding>
+                  <Insets left="20.0" right="20.0" top="8.0" />
+               </padding>
+               <children>
+                  <TextField fx:id="textFieldMaDinhDanhMoi" prefWidth="200.0" promptText="Mã định danh" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
                   <TextField fx:id="textFieldHoVaTen" prefWidth="250.0" promptText="Họ và tên" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
@@ -110,7 +138,7 @@
                   <ComboBox fx:id="comboBoxTrangThai" prefWidth="150.0" promptText="Trạng thái cư trú" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
-            <HBox fx:id="text" alignment="CENTER_RIGHT" prefWidth="710.0" spacing="15.0">
+            <HBox alignment="CENTER_RIGHT" prefWidth="710.0" spacing="15.0">
                <padding>
                   <Insets left="20.0" right="20.0" top="8.0" />
                </padding>

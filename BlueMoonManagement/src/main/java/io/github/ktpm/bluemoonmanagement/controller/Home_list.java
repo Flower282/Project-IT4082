@@ -16,8 +16,10 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.PieChart;
@@ -394,6 +396,7 @@ public class Home_list implements Initializable {
     @FXML
     private TextField textFieldTenKhoanThu1;
 
+    @Autowired
     private CanHoService canHoService;
 
     private List<Node> allPanes;
@@ -404,13 +407,16 @@ public class Home_list implements Initializable {
     private ObservableList<CanHoTableData> canHoList;
     private ObservableList<CanHoTableData> filteredList;
     
-    // Reference to table view for CanHo (update the existing @FXML annotation)
-    private TableView<CanHoTableData> tableViewCanHo;
+    // Reference to table view for CanHo được inject từ FXML
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         System.out.println("Home_list controller được khởi tạo");
         allPanes = List.of(gridPaneTrangChu, scrollPaneCanHo, scrollPaneCuDan, scrollPaneTaiKhoan, scrollPaneKhoanThu, scrollPaneLichSuThu);
+        
+        // Setup table căn hộ ngay từ đầu
+        setupCanHoTable();
+        
         show("TrangChu");
     }
 
@@ -435,41 +441,52 @@ public class Home_list implements Initializable {
     @FXML
     void goToCanHo(ActionEvent event) {
         show("CanHo");
-        parentController.updateScreenLabel("Danh sách căn hộ");
+        if (parentController != null) {
+            parentController.updateScreenLabel("Danh sách căn hộ");
+        }
+        
+        // Setup table và load dữ liệu
+        setupCanHoTable();
+        loadData();
     }
 
     @FXML
     void gotoCuDan(ActionEvent event) {
         show("CuDan");
-        parentController.updateScreenLabel("Danh sách cư dân");
+        if (parentController != null) {
+            parentController.updateScreenLabel("Danh sách cư dân");
+        }
     }
 
     @FXML
     void gotoKhoanThu(ActionEvent event) {
         show("KhoanThu");
-        parentController.updateScreenLabel("Danh sách khoản thu");
+        if (parentController != null) {
+            parentController.updateScreenLabel("Danh sách khoản thu");
+        }
     }
     @FXML
     private void gotothemcanho(ActionEvent event) {
         try {
             System.out.println("Mở form thêm căn hộ...");
             
-            // Load FXML cho form thêm căn hộ
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
-                getClass().getResource("/view/them_can_ho.fxml")
-            );
-            javafx.scene.Parent root = loader.load();
+            // Sử dụng FXMLLoader thông thường cho JavaFX modal
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/them_can_ho.fxml"));
             
-            // Lấy controller từ FXML loader
-            ThemCanHoButton controller = loader.getController();
+            // Tạo instance controller thủ công và set vào loader
+            ThemCanHoButton controller = new ThemCanHoButton();
+            loader.setController(controller);
             
-            // Inject service nếu có
+            // Load view
+            Parent root = loader.load();
+            
+            // Inject service sau khi load
             if (canHoService != null) {
                 controller.setCanHoService(canHoService);
             }
             
             // Tạo modal dialog
-            javafx.stage.Stage dialogStage = new javafx.stage.Stage();
+            Stage dialogStage = new Stage();
             
             // Thiết lập style để bỏ khung viền cửa sổ (undecorated)
             dialogStage.initStyle(javafx.stage.StageStyle.UNDECORATED);
@@ -479,7 +496,7 @@ public class Home_list implements Initializable {
             dialogStage.initOwner(buttonThemCanHo.getScene().getWindow());
             
             // Thiết lập scene với kích thước phù hợp
-            javafx.scene.Scene scene = new javafx.scene.Scene(root, 750, 650);
+            Scene scene = new Scene(root, 750, 650);
             dialogStage.setScene(scene);
             
             // Thiết lập kích thước cửa sổ
@@ -530,8 +547,8 @@ public class Home_list implements Initializable {
                 }
                 
                 filteredList = FXCollections.observableArrayList(canHoList);
-                if (tableViewCanHo != null) {
-                    tableViewCanHo.setItems(filteredList);
+                if (tabelViewCanHo != null) {
+                    ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
                 }
                 updateKetQuaLabel();
             } else {
@@ -552,8 +569,8 @@ public class Home_list implements Initializable {
         canHoList = FXCollections.observableArrayList();
         
         filteredList = FXCollections.observableArrayList(canHoList);
-        if (tableViewCanHo != null) {
-            tableViewCanHo.setItems(filteredList);
+        if (tabelViewCanHo != null) {
+            ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
         }
         updateKetQuaLabel();
     }
@@ -599,7 +616,10 @@ public class Home_list implements Initializable {
      * Setup table for CanHo
      */
     private void setupCanHoTable() {
-        if (tableViewCanHo != null && tableColumnMaCanHo != null) {
+        if (tabelViewCanHo != null && tableColumnMaCanHo != null) {
+            // Cast table view to correct type
+            TableView<CanHoTableData> typedTableView = (TableView<CanHoTableData>) tabelViewCanHo;
+            
             // Setup cell value factories - need to cast to proper types
             ((TableColumn<CanHoTableData, String>) tableColumnMaCanHo).setCellValueFactory(new PropertyValueFactory<>("maCanHo"));
             ((TableColumn<CanHoTableData, String>) tableColumnToaNha).setCellValueFactory(new PropertyValueFactory<>("toaNha"));
