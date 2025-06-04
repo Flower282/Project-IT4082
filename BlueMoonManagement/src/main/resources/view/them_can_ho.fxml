@@ -65,7 +65,7 @@
             </HBox>
             <HBox alignment="CENTER_LEFT" prefWidth="710.0" spacing="20.0">
                <children>
-                  <CheckBox fx:id="choiceBoxThemChuSoHuu" mnemonicParsing="false" onAction="#handleThemChuSoHuuChange" text="Thêm chủ sở hữu cho căn hộ này" />
+                  <CheckBox fx:id="choiceBoxThemChuSoHuu" mnemonicParsing="false" onAction="#handleThemChuSoHuuChange" text="Đã bán" />
                   <CheckBox fx:id="choiceBoxTaoCuDanMoi" mnemonicParsing="false" onAction="#handleTaoCuDanMoiChange" text="Tạo cư dân mới" />
                </children>
                <padding>
@@ -97,7 +97,7 @@
                </padding>
                <children>
                   <TextField fx:id="textFieldMaDinhDanh" prefWidth="200.0" promptText="Mã định danh chủ sở hữu" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
-                  <Label fx:id="labelHuongDan" text="(Nhập mã định danh của cư dân đã tồn tại trong hệ thống)" styleClass="text-note" HBox.hgrow="ALWAYS" />
+                  <Label fx:id="labelHuongDan" styleClass="text-note" text="(Nhập mã định danh của cư dân đã tồn tại trong hệ thống)" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
          </children>

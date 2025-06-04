@@ -135,10 +135,10 @@ public class ThemCanHoButton implements Initializable {
         comboBoxGioiTinh.getItems().addAll("Nam", "Nữ", "Khác");
         
         // ComboBox Tình trạng kỹ thuật
-        comboBoxTinhTrangKiThuat.getItems().addAll("Tốt", "Khá", "Trung bình", "Cần sửa chữa", "Hỏng");
+        comboBoxTinhTrangKiThuat.getItems().addAll("Bình thường", "Đang bảo trì", "Hỏng");
         
         // ComboBox Tình trạng sử dụng
-        comboBoxTinhTrangSuDung.getItems().addAll("Đang sử dụng", "Trống", "Cho thuê", "Bảo trì");
+        comboBoxTinhTrangSuDung.getItems().addAll("Đang sử dụng", "Trống");
         
         // ComboBox Trạng thái cư trú
         comboBoxTrangThai.getItems().addAll("Cư trú", "Tạm vắng", "Chuyển đi");
