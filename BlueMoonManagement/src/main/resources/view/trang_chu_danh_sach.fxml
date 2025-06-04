@@ -1,15 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import de.jensd.fx.glyphs.fontawesome.*?>
-<?import java.lang.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.chart.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon?>
+<?import java.lang.String?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Group?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<StackPane prefHeight="620.0" prefWidth="1080.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.Home_list">
+<StackPane prefHeight="620.0" prefWidth="1080.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.Home_list">
    <children>
       <GridPane fx:id="gridPaneTrangChu">
          <StackPane.margin>
@@ -236,9 +252,9 @@
                         <VBox layoutY="40.0" prefWidth="970.0" spacing="10.0" AnchorPane.topAnchor="40.0">
                            <children>
                               <TableView fx:id="tabelViewCanHo" prefWidth="970.0">
-                                <columns>
-                                  <TableColumn fx:id="tableColumnMaCanHo" prefWidth="120.00003510713577" text="Mã căn hộ" />
-                                  <TableColumn fx:id="tableColumnToaNha" prefWidth="64.0" text="Tòa nhà" />
+                                 <columns>
+                                    <TableColumn fx:id="tableColumnMaCanHo" prefWidth="120.00003510713577" text="Mã căn hộ" />
+                                    <TableColumn fx:id="tableColumnToaNha" prefWidth="64.0" text="Tòa nhà" />
                                     <TableColumn fx:id="tableColumnTang" prefWidth="55.20001220703125" text="Tầng" />
                                     <TableColumn fx:id="tableColumnSoNha" prefWidth="92.00004577636719" text="Số nhà" />
                                     <TableColumn fx:id="tableColumnDienTich" prefWidth="96.79998779296875" text="Diện tích" />
@@ -250,7 +266,7 @@
                                           <TableColumn fx:id="tableColumnSuDung" prefWidth="128.0" text="Sử dụng" />
                                        </columns>
                                     </TableColumn>
-                                </columns>
+                                 </columns>
                               </TableView>
                               <AnchorPane prefWidth="970.0">
                                  <children>
@@ -514,7 +530,7 @@
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </StackPane.margin>
       </ScrollPane>
-      <ScrollPane fx:id="scrollPaneTaiKhoan" hbarPolicy="NEVER" layoutX="30.0" layoutY="30.0" prefHeight="200.0" prefWidth="200.0" style="-fx-background: white;">
+      <ScrollPane fx:id="scrollPaneTaiKhoan" hbarPolicy="NEVER" layoutX="30.0" layoutY="30.0" prefHeight="200.0" prefWidth="200.0" style="-fx-background: white;" visible="false">
          <padding>
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </padding>
@@ -708,6 +724,68 @@
                   </HBox>
                </children>
             </AnchorPane>
+         </content>
+         <styleClass>
+            <String fx:value="white-background" />
+            <String fx:value="round-big" />
+         </styleClass>
+         <StackPane.margin>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </StackPane.margin>
+      </ScrollPane>
+      <ScrollPane fx:id="scrollPaneCanHo1" hbarPolicy="NEVER" style="-fx-background: white;">
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
+         <content>
+            <VBox alignment="TOP_CENTER" prefWidth="960.0" spacing="20.0">
+               <children>
+                  <VBox prefWidth="640.0" spacing="15.0">
+                     <children>
+                        <Label styleClass="screen-title" text="Thông tin tài khoản">
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                        </Label>
+                        <HBox alignment="CENTER_RIGHT" prefWidth="640.0" spacing="20.0">
+                           <children>
+                              <HBox alignment="CENTER_LEFT" spacing="10.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label fx:id="hoTenLabel" styleClass="text-bold" text="Họ và tên" />
+                                 </children>
+                              </HBox>
+                              <HBox alignment="CENTER_LEFT" spacing="10.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label fx:id="emailLabel" styleClass="text-bold" text="Email" />
+                                 </children>
+                              </HBox>
+                              <HBox fx:id="hBoxTrangThai" alignment="CENTER_LEFT" spacing="10.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label fx:id="vaiTroLabel" styleClass="text-bold" text="Vai trò" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets left="10.0" top="5.0" />
+                     </padding>
+                  </VBox>
+                  <Button fx:id="buttonDoiMatKhau" mnemonicParsing="false" onAction="#DoiMatKhauClicked" text="Đổi mật khẩu">
+                     <graphic>
+                        <Group>
+                           <children>
+                              <FontAwesomeIcon glyphName="EDIT" styleClass="action-button-icon" />
+                           </children>
+                        </Group>
+                     </graphic>
+                     <styleClass>
+                        <String fx:value="action-button" />
+                        <String fx:value="button-sky-blue" />
+                     </styleClass>
+                  </Button>
+               </children>
+            </VBox>
          </content>
          <styleClass>
             <String fx:value="white-background" />

@@ -8,4 +8,5 @@ import lombok.Data;
 public class DangKiDto {
     private String email;
     private String hoTen;
+    private String vaiTro;
 }
