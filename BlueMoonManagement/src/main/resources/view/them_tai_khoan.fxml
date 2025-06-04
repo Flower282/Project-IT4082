@@ -5,28 +5,25 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.Group?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<VBox alignment="TOP_CENTER" prefWidth="700.0" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<VBox alignment="TOP_CENTER" prefWidth="700.0" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.ThemTaiKhoanController">
    <children>
       <AnchorPane>
          <children>
-            <Button fx:id="button_close_up" layoutX="601.5999870300293" mnemonicParsing="false" styleClass="button-close" AnchorPane.rightAnchor="-10.0">
+            <Button fx:id="button_close_up" disable="true" layoutX="601.5999870300293" mnemonicParsing="false" styleClass="button-close" AnchorPane.rightAnchor="-10.0">
                <graphic>
                   <Group>
                      <children>
-                        <FontAwesomeIcon fx:id="buttonClose" glyphName="CLOSE" size="25px" styleClass="button-icon-close" />
+                        <FontAwesomeIcon fx:id="buttonClose" glyphName="CLOSE" size="25px" styleClass="button-icon-close" visible="false" />
                      </children>
                   </Group>
                </graphic>
@@ -43,17 +40,8 @@
                <children>
                   <HBox alignment="CENTER_LEFT" prefHeight="42.0" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Email" HBox.hgrow="ALWAYS" />
+                        <Label prefHeight="16.0" prefWidth="63.0" styleClass="text-bold" text="Email" HBox.hgrow="ALWAYS" />
                         <TextField fx:id="textFieldEmail" promptText="Nhập email" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
-                     </children>
-                     <padding>
-                        <Insets top="10.0" />
-                     </padding>
-                  </HBox>
-                  <HBox alignment="CENTER_LEFT" spacing="20.0" HBox.hgrow="ALWAYS">
-                     <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Vai trò" HBox.hgrow="ALWAYS" />
-                        <ComboBox fx:id="comboBoxVaiTro" maxWidth="1.7976931348623157E308" promptText="Vài trò" HBox.hgrow="ALWAYS" />
                      </children>
                      <padding>
                         <Insets top="10.0" />
@@ -73,27 +61,14 @@
                   <TextField fx:id="textFieldHoVaTen" promptText="Nhập họ và tên" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
-            <HBox layoutX="11.0" layoutY="155.0" spacing="20.0">
-               <children>
-                  <HBox alignment="CENTER_LEFT" prefHeight="42.0" spacing="20.0" HBox.hgrow="ALWAYS">
-                     <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Mật khẩu" HBox.hgrow="ALWAYS" />
-                        <StackPane HBox.hgrow="ALWAYS">
-                           <children>
-                              <PasswordField fx:id="passwordFieldMatKhau" promptText="Nhập mật khẩu" styleClass="text-field-normal" />
-                              <TextField fx:id="textFieldMatKhau" promptText="Nhập mật khẩu" styleClass="text-field-normal" visible="false" />
-                           </children>
-                        </StackPane>
-                        <CheckBox fx:id="checkBoxHienMatKhau" mnemonicParsing="false" text="Hiện mật khẩu" />
-                     </children>
-                     <padding>
-                        <Insets top="10.0" />
-                     </padding>
-                  </HBox>
-               </children>
+            <HBox alignment="CENTER_LEFT" layoutX="11.0" layoutY="64.0" spacing="20.0">
                <padding>
-                  <Insets left="30.0" right="30.0" />
+                  <Insets left="30.0" right="30.0" top="10.0" />
                </padding>
+               <children>
+                  <Label prefHeight="16.0" prefWidth="63.0" styleClass="text-bold" text="Vai Trò" HBox.hgrow="ALWAYS" />
+                  <ComboBox fx:id="vaiTroComboBox" prefWidth="496.0" />
+               </children>
             </HBox>
          </children>
          <padding>
@@ -119,7 +94,7 @@
             <Insets left="30.0" right="30.0" />
          </VBox.margin>
       </TextFlow>
-      <Button fx:id="buttonThemCuDan" mnemonicParsing="false" text="Thêm tài khoản">
+      <Button fx:id="buttonThemCuDan" mnemonicParsing="false" onAction="#ThemTaiKhoanClicked" text="Thêm tài khoản">
          <graphic>
             <Group>
                <children>

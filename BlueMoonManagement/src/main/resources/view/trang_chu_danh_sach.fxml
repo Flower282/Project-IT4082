@@ -70,7 +70,7 @@
                            </font>
                         </Label>
                         <FontAwesomeIcon fill="WHITE" glyphName="BUILDING" layoutX="222.0" layoutY="86.0" size="80px" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="20.0" />
-                        <Button fx:id="buttonSeeAllCanHo" layoutX="199.0" layoutY="126.0" mnemonicParsing="false" onAction="#buttonSeeAllCanHo" styleClass="button-textlike" text="Xem tất cả &gt;&gt;" textFill="WHITE" AnchorPane.bottomAnchor="25.0" AnchorPane.rightAnchor="25.0">
+                        <Button fx:id="buttonSeeAllCanHo" layoutX="199.0" layoutY="126.0" mnemonicParsing="false" onAction="#goToCanHo" styleClass="button-textlike" text="Xem tất cả &gt;&gt;" textFill="WHITE" AnchorPane.bottomAnchor="25.0" AnchorPane.rightAnchor="25.0">
                            <font>
                               <Font name="Arial Italic" size="14.0" />
                            </font>
@@ -98,7 +98,7 @@
                            </font>
                         </Label>
                         <FontAwesomeIcon fill="WHITE" glyphName="USER" layoutX="222.0" layoutY="86.0" size="80px" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="20.0" />
-                        <Button fx:id="buttonSeeAllCuDan" layoutX="199.0" layoutY="126.0" mnemonicParsing="false" styleClass="button-textlike" text="Xem tất cả &gt;&gt;" textFill="WHITE" AnchorPane.bottomAnchor="25.0" AnchorPane.rightAnchor="25.0">
+                        <Button fx:id="buttonSeeAllCuDan" layoutX="199.0" layoutY="126.0" mnemonicParsing="false" onAction="#gotoCuDan" styleClass="button-textlike" text="Xem tất cả &gt;&gt;" textFill="WHITE" AnchorPane.bottomAnchor="25.0" AnchorPane.rightAnchor="25.0">
                            <font>
                               <Font name="Arial Italic" size="14.0" />
                            </font>
@@ -129,7 +129,7 @@
                            </font>
                         </Label>
                         <FontAwesomeIcon fill="WHITE" glyphName="BOOK" layoutX="222.0" layoutY="86.0" size="80px" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="15.0" />
-                        <Button fx:id="buttonSeeAllKhoanThu" layoutX="199.0" layoutY="126.0" mnemonicParsing="false" styleClass="button-textlike" text="Xem tất cả &gt;&gt;" textFill="WHITE" AnchorPane.bottomAnchor="25.0" AnchorPane.rightAnchor="25.0">
+                        <Button fx:id="buttonSeeAllKhoanThu" layoutX="199.0" layoutY="126.0" mnemonicParsing="false" onAction="#gotoKhoanThu" styleClass="button-textlike" text="Xem tất cả &gt;&gt;" textFill="WHITE" AnchorPane.bottomAnchor="25.0" AnchorPane.rightAnchor="25.0">
                            <font>
                               <Font name="Arial Italic" size="14.0" />
                            </font>
@@ -153,7 +153,7 @@
                   <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                </rowConstraints>
                <children>
-                  <AnchorPane prefHeight="200.0" prefWidth="200.0">
+                  <AnchorPane>
                      <GridPane.margin>
                         <Insets left="15.0" right="15.0" top="15.0" />
                      </GridPane.margin>
@@ -162,7 +162,7 @@
                         <String fx:value="round-big" />
                      </styleClass>
                      <children>
-                        <BarChart fx:id="barChartDanCu" layoutX="27.0" layoutY="73.6" maxHeight="1.7976931348623157E308" prefHeight="286.0" prefWidth="500.0" style="-fx-background-color: transparent;" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="60.0">
+                        <BarChart fx:id="barChartDanCu" layoutX="27.0" layoutY="73.6" maxHeight="1.7976931348623157E308" style="-fx-background-color: transparent;" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="60.0">
                            <xAxis>
                               <CategoryAxis side="BOTTOM" />
                            </xAxis>
@@ -177,7 +177,7 @@
                         </Label>
                      </children>
                   </AnchorPane>
-                  <AnchorPane prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="1">
+                  <AnchorPane GridPane.columnIndex="1">
                      <styleClass>
                         <String fx:value="white-background" />
                         <String fx:value="round-big" />
@@ -191,7 +191,7 @@
                               <Font name="Arial Bold" size="24.0" />
                            </font>
                         </Label>
-                        <PieChart fx:id="pieChartKhoanThu" layoutX="69.0" layoutY="-33.0" prefHeight="400.0" prefWidth="270.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="60.0" />
+                        <PieChart fx:id="pieChartKhoanThu" layoutX="69.0" layoutY="-33.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="60.0" />
                      </children>
                   </AnchorPane>
                </children>
@@ -206,11 +206,11 @@
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </padding>
          <content>
-            <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="960.0">
+            <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
                <children>
                   <AnchorPane prefWidth="970.0" AnchorPane.topAnchor="40.0">
                      <children>
-                        <Button fx:id="buttonThemCanHo" layoutX="42.0" layoutY="-6.0" mnemonicParsing="false" text="Thêm căn hộ" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <Button fx:id="buttonThemCanHo" layoutX="42.0" layoutY="-6.0" mnemonicParsing="false" onAction="#gotothemcanho" text="Thêm căn hộ" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <graphic>
                               <Group>
                                  <children>
@@ -252,9 +252,9 @@
                         <VBox layoutY="40.0" prefWidth="970.0" spacing="10.0" AnchorPane.topAnchor="40.0">
                            <children>
                               <TableView fx:id="tabelViewCanHo" prefWidth="970.0">
-                                <columns>
-                                  <TableColumn fx:id="tableColumnMaCanHo" prefWidth="120.00003510713577" text="Mã căn hộ" />
-                                  <TableColumn fx:id="tableColumnToaNha" prefWidth="64.0" text="Tòa nhà" />
+                                 <columns>
+                                    <TableColumn fx:id="tableColumnMaCanHo" prefWidth="120.00003510713577" text="Mã căn hộ" />
+                                    <TableColumn fx:id="tableColumnToaNha" prefWidth="64.0" text="Tòa nhà" />
                                     <TableColumn fx:id="tableColumnTang" prefWidth="55.20001220703125" text="Tầng" />
                                     <TableColumn fx:id="tableColumnSoNha" prefWidth="92.00004577636719" text="Số nhà" />
                                     <TableColumn fx:id="tableColumnDienTich" prefWidth="96.79998779296875" text="Diện tích" />
@@ -266,7 +266,7 @@
                                           <TableColumn fx:id="tableColumnSuDung" prefWidth="128.0" text="Sử dụng" />
                                        </columns>
                                     </TableColumn>
-                                </columns>
+                                 </columns>
                               </TableView>
                               <AnchorPane prefWidth="970.0">
                                  <children>
@@ -539,7 +539,7 @@
                <children>
                   <AnchorPane prefWidth="970.0" AnchorPane.topAnchor="40.0">
                      <children>
-                        <Button fx:id="buttonThemTaiKhoan" layoutX="42.0" layoutY="-6.0" mnemonicParsing="false" text="Thêm tài khoản" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <Button fx:id="buttonThemTaiKhoan" layoutX="42.0" layoutY="-6.0" mnemonicParsing="false" onAction="#themTaiKhoanClick" text="Thêm tài khoản" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <graphic>
                               <Group>
                                  <children>
@@ -641,7 +641,7 @@
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </StackPane.margin>
       </ScrollPane>
-      <ScrollPane fx:id="scrollPaneKhoanThu1" hbarPolicy="NEVER" prefHeight="200.0" prefWidth="200.0" style="-fx-background: white;" visible="false">
+      <ScrollPane fx:id="scrollPaneLichSuThu" hbarPolicy="NEVER" prefHeight="200.0" prefWidth="200.0" style="-fx-background: white;" visible="false">
          <padding>
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </padding>
@@ -669,11 +669,11 @@
                                  <columns>
                                     <TableColumn fx:id="tableColumnMaHoaDon" prefWidth="107.19997483491898" text="Mã hóa đơn" />
                                     <TableColumn fx:id="tableColumnMaCanHoThuPhi" prefWidth="123.20001220703125" text="Mã căn hộ" />
-                                    <TableColumn fx:id="tableColumnTenKhoanThu1" prefWidth="156.800048828125" text="Tên khoản thu" />
+                                    <TableColumn fx:id="tableColumnTenKhoanThuThuPhi" prefWidth="156.800048828125" text="Tên khoản thu" />
                                     <TableColumn fx:id="tableColumnLoaiKhoanThuThuPhi" prefWidth="121.5999755859375" text="Loại khoản thu" />
                                     <TableColumn fx:id="tableColumnSoTien" prefWidth="201.5999755859375" text="Số tiền" />
                                     <TableColumn fx:id="tableColumnNgayNop" prefWidth="154.39996337890625" text="Ngày nộp" />
-                                    <TableColumn fx:id="tableColumnThaoTac1" prefWidth="105.60009765625" text="Thao tác" />
+                                    <TableColumn fx:id="tableColumnThaoTacLichSuThu" prefWidth="105.60009765625" text="Thao tác" />
                                  </columns>
                               </TableView>
                               <AnchorPane prefWidth="970.0">
@@ -729,6 +729,71 @@
             <String fx:value="white-background" />
             <String fx:value="round-big" />
          </styleClass>
+         <StackPane.margin>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </StackPane.margin>
+      </ScrollPane>
+      <ScrollPane fx:id="scrollPaneCanHo1" hbarPolicy="NEVER" style="-fx-background: white;">
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
+         <content>
+            <VBox alignment="TOP_CENTER" prefWidth="960.0" spacing="20.0">
+               <children>
+                  <VBox prefWidth="640.0" spacing="15.0">
+                     <children>
+                        <Label styleClass="screen-title" text="Thông tin tài khoản">
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                        </Label>
+                        <HBox alignment="CENTER_RIGHT" prefWidth="640.0" spacing="20.0">
+                           <children>
+                              <HBox alignment="CENTER_LEFT" spacing="10.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label fx:id="hoTenLabel" styleClass="text-bold" text="Họ và tên" />
+                                 </children>
+                              </HBox>
+                              <HBox alignment="CENTER_LEFT" spacing="10.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label fx:id="emailLabel" styleClass="text-bold" text="Email" />
+                                 </children>
+                              </HBox>
+                              <HBox fx:id="hBoxTrangThai" alignment="CENTER_LEFT" spacing="10.0" HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Label fx:id="vaiTroLabel" styleClass="text-bold" text="Vai trò" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </HBox>
+                     </children>
+                     <padding>
+                        <Insets left="10.0" top="5.0" />
+                     </padding>
+                  </VBox>
+                  <Button fx:id="buttonDoiMatKhau" mnemonicParsing="false" onAction="#DoiMatKhauClicked" text="Đổi mật khẩu">
+                     <graphic>
+                        <Group>
+                           <children>
+                              <FontAwesomeIcon glyphName="EDIT" styleClass="action-button-icon" />
+                           </children>
+                        </Group>
+                     </graphic>
+                     <styleClass>
+                        <String fx:value="action-button" />
+                        <String fx:value="button-sky-blue" />
+                     </styleClass>
+                  </Button>
+               </children>
+            </VBox>
+         </content>
+         <styleClass>
+            <String fx:value="white-background" />
+            <String fx:value="round-big" />
+         </styleClass>
+         <StackPane.margin>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </StackPane.margin>
       </ScrollPane>
    </children>
 </StackPane>

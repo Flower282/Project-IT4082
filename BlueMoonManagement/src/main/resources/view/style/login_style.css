@@ -41,14 +41,16 @@
     -fx-background-color: white;
 }
 
-.button-textlike { /* Nút thao tác, có gạch chân, chưa đổi màu */
+.button-textlike {
+    /* Nút thao tác, có gạch chân, chưa đổi màu */
     -fx-background-color: transparent;
     -fx-underline: true;
     -fx-background-radius: 15;
     -fx-text-fill: #333333;
 }
 
-.button-textlike: hover { /* Nền trắng nhạt */
+.button-textlike: hover {
+    /* Nền trắng nhạt */
     -fx-background-color: rgba(0, 0, 0, 0.1);
 }
 
@@ -80,5 +82,5 @@
 }
 
 .background {
-    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, #4472C4, #4BACC6);
+    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, #ffffff, #ffffff);
 }

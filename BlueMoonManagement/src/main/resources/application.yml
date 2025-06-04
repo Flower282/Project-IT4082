@@ -20,8 +20,8 @@ spring:
   mail:
     host: smtp.gmail.com           # Thay bằng host của dịch vụ email
     port: 587
-    username: your_email@gmail.com # Thay bằng email gửi
-    password: your_app_password    # Thay bằng mật khẩu ứng dụng
+    username: bluemoonnoreply@gmail.com # Thay bằng email gửi
+    password: ahylnpruyfjuddjh                        #bluemoon20242
     properties:
       mail:
         smtp:
