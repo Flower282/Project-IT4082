@@ -302,7 +302,7 @@ public class ThemCanHoButton implements Initializable {
             vaiTroField.setAccessible(true);
             String vaiTro = (String) vaiTroField.get(Session.getCurrentUser());
             
-            return "Tổ trưởng".equals(vaiTro)|| "admin".equals(vaiTro);
+            return "Tổ phó".equals(vaiTro);
         } catch (Exception e) {
             System.err.println("Lỗi khi kiểm tra quyền: " + e.getMessage());
             return false;

@@ -64,6 +64,9 @@ public class KhungController implements Initializable{
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        
+        buttonTaiKhoan.setDisable(true);
+        
         System.out.println("KhungController được khởi tạo");
         String name = Session.getCurrentUser().getHoTen();
         setAccountName(name);
@@ -74,6 +77,10 @@ public class KhungController implements Initializable{
             updateScreenLabel("Trang chủ");
         } catch (IOException e) {
             System.err.println("Không thể load trang chủ: " + e.getMessage());
+        }
+
+        if (Session.getCurrentUser().getVaiTro().equals("Tổ trưởng")) {
+            buttonTaiKhoan.setDisable(false);
         }
 
     }

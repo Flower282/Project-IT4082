@@ -53,8 +53,8 @@ public class CanHoServiceImpl implements CanHoService {
 
     @Override
     public ResponseDto addCanHo(CanHoDto canHoDto) {
-        // Kiểm tra quyền: chỉ 'Tổ trưởng' và 'admin' mới được thêm căn hộ
-        if (Session.getCurrentUser() == null || (!"Tổ trưởng".equals(Session.getCurrentUser().getVaiTro()) && !"admin".equals(Session.getCurrentUser().getVaiTro()))) {
+        // Kiểm tra quyền: chỉ 'Tổ phó' mới được thêm căn hộ
+        if (Session.getCurrentUser() == null || (!"Tổ phó".equals(Session.getCurrentUser().getVaiTro()))) {
             return new ResponseDto(false, "Bạn không có quyền thêm căn hộ. Chỉ Tổ trưởng và Admin mới được phép.");
         }
         
