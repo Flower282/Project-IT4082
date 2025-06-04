@@ -90,6 +90,11 @@
                               <Font name="Arial Bold" size="20.0" />
                            </font>
                         </Button>
+                        <Button fx:id="buttonXacNhan" disable="true" layoutX="10.0" layoutY="44.0" mnemonicParsing="false" onAction="#XacNhanClicked" prefHeight="55.0" prefWidth="600.0" styleClass="action-button" text="Xác nhận">
+                           <font>
+                              <Font name="Arial Bold" size="20.0" />
+                           </font>
+                        </Button>
                         <Button fx:id="buttonQuayLaiDangNhap" layoutX="10.0" layoutY="44.0" mnemonicParsing="false" onAction="#QuayLaiDangNhapClicked" prefHeight="55.0" prefWidth="600.0" styleClass="wait-button" text="Quay lại đăng nhập bằng email">
                            <font>
                               <Font name="Arial Bold" size="20.0" />
@@ -97,11 +102,6 @@
                            <VBox.margin>
                               <Insets top="10.0" />
                            </VBox.margin>
-                        </Button>
-                        <Button fx:id="buttonXacNhan" disable="true" layoutX="10.0" layoutY="44.0" mnemonicParsing="false" onAction="#XacNhanClicked" prefHeight="55.0" prefWidth="600.0" styleClass="action-button" text="Xác nhận">
-                           <font>
-                              <Font name="Arial Bold" size="20.0" />
-                           </font>
                         </Button>
                      </children>
                   </VBox>
