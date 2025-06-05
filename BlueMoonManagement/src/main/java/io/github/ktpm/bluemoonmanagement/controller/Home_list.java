@@ -5,15 +5,15 @@ import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
-import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
+import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.FxView;
 import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
@@ -1253,77 +1253,21 @@ public class Home_list implements Initializable {
             ((TableColumn<CuDanTableData, String>) tableColumnHoVaTen).setCellValueFactory(new PropertyValueFactory<>("hoVaTen"));
             ((TableColumn<CuDanTableData, String>) tableColumnGioiTinh).setCellValueFactory(new PropertyValueFactory<>("gioiTinh"));
             ((TableColumn<CuDanTableData, String>) tableColumnNgaySinh).setCellValueFactory(new PropertyValueFactory<>("ngaySinh"));
-            ((TableColumn<CuDanTableData, String>) tableColumnSoDienThoai).setCellValueFactory(new PropertyValueFactory<>("soDienThoai"));
-            ((TableColumn<CuDanTableData, String>) tableColumnEmail).setCellValueFactory(new PropertyValueFactory<>("email"));
             ((TableColumn<CuDanTableData, String>) tableColumnMaCanHoCuDan).setCellValueFactory(new PropertyValueFactory<>("maCanHo"));
-            ((TableColumn<CuDanTableData, String>) tableColumnTrangThaiCuDan).setCellValueFactory(new PropertyValueFactory<>("trangThaiCuTru"));
+            ((TableColumn<CuDanTableData, String>) tableColumnSoDienThoai).setCellValueFactory(new PropertyValueFactory<>("soDienThoai"));
             ((TableColumn<CuDanTableData, String>) tableColumnNgayChuyenDen).setCellValueFactory(new PropertyValueFactory<>("ngayChuyenDen"));
+            ((TableColumn<CuDanTableData, String>) tableColumnTrangThaiCuDan).setCellValueFactory(new PropertyValueFactory<>("trangThaiCuTru"));
             
-            // Setup action column with delete button
-            ((TableColumn<CuDanTableData, String>) tableColumnThaoTacCuDan).setCellFactory(col -> {
-                return new javafx.scene.control.TableCell<CuDanTableData, String>() {
-                    private final javafx.scene.control.Button deleteButton = new javafx.scene.control.Button("Xóa");
-                    
-                    {
-                        deleteButton.getStyleClass().addAll("action-button", "button-red");
-                        
-                        // Kiểm tra quyền của người dùng và disable nút nếu không phải "Tổ phó"
-                        boolean isToPhO = false;
-                        try {
-                            if (Session.getCurrentUser() != null) {
-                                String vaiTro = Session.getCurrentUser().getVaiTro();
-                                isToPhO = "Tổ phó".equals(vaiTro);
-                            }
-                        } catch (Exception e) {
-                            System.err.println("Lỗi khi kiểm tra vai trò cho nút xóa: " + e.getMessage());
-                            isToPhO = false;
-                        }
-                        
-                        deleteButton.setDisable(!isToPhO);
-                        
-                        if (!isToPhO) {
-                            // Thêm tooltip giải thích tại sao nút bị disable
-                            javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
-                                "Chỉ người dùng có vai trò 'Tổ phó' mới có thể xóa cư dân");
-                            javafx.scene.control.Tooltip.install(deleteButton, tooltip);
-                        }
-                        
-                        deleteButton.setOnAction(event -> {
-                            try {
-                                // Double check quyền trước khi thực hiện xóa
-                                if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
-                                    showError("Lỗi quyền", "Bạn không có quyền xóa cư dân.\nChỉ người dùng có vai trò 'Tổ phó' mới được phép thực hiện thao tác này.");
-                                    return;
-                                }
-                                
-                                int index = getIndex();
-                                if (index >= 0 && index < getTableView().getItems().size()) {
-                                    CuDanTableData cuDan = getTableView().getItems().get(index);
-                                    if (cuDan != null) {
-                                        handleDeleteCuDan(cuDan);
-                                    }
-                                }
-                            } catch (Exception e) {
-                                System.err.println("Lỗi khi xóa cư dân: " + e.getMessage());
-                                e.printStackTrace();
-                                showError("Lỗi", "Có lỗi xảy ra khi xóa cư dân: " + e.getMessage());
-                            }
-                        });
+            // Setup row click event để mở popup chỉnh sửa cư dân
+            typedTableView.setRowFactory(tv -> {
+                javafx.scene.control.TableRow<CuDanTableData> row = new javafx.scene.control.TableRow<>();
+                row.setOnMouseClicked(event -> {
+                    if (event.getClickCount() == 2 && !row.isEmpty()) {
+                        CuDanTableData rowData = row.getItem();
+                        handleEditCuDan(rowData);
                     }
-                    
-                    @Override
-                    protected void updateItem(String item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (empty || getIndex() < 0) {
-                            setGraphic(null);
-                        } else {
-                            javafx.scene.layout.HBox hbox = new javafx.scene.layout.HBox();
-                            hbox.setAlignment(javafx.geometry.Pos.CENTER);
-                            hbox.getChildren().add(deleteButton);
-                            setGraphic(hbox);
-                        }
-                    }
-                };
+                });
+                return row;
             });
             
             // Setup scroll bars - enable vertical scrolling, disable horizontal scrolling
@@ -1344,17 +1288,9 @@ public class Home_list implements Initializable {
                 }
             });
             
-            // Thiết lập chiều cao và chiều rộng giống với trang căn hộ
-            typedTableView.setPrefHeight(400); // Giống với trang căn hộ
-            typedTableView.setMaxHeight(400);
-            typedTableView.setPrefWidth(970); // Giống với trang căn hộ
+            // Thiết lập chiều rộng (không cố định chiều cao để cho phép dynamic sizing)
+            typedTableView.setPrefWidth(970);
             typedTableView.setMaxWidth(970);
-            
-            // Cải thiện hiệu suất cuộn
-            typedTableView.setRowFactory(tv -> {
-                javafx.scene.control.TableRow<CuDanTableData> row = new javafx.scene.control.TableRow<>();
-                return row;
-            });
             
             // Cho phép cuộn bằng phím mũi tên và chuột
             typedTableView.setOnKeyPressed(event -> {
@@ -1368,7 +1304,7 @@ public class Home_list implements Initializable {
             
             // Thêm tooltip hướng dẫn
             javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
-                "Bảng hiển thị tối đa 15 dòng. Sử dụng chuột hoặc phím mũi tên để cuộn xem thêm dữ liệu");
+                "Double-click vào dòng cư dân để chỉnh sửa thông tin");
             javafx.scene.control.Tooltip.install(typedTableView, tooltip);
             
             // Đảm bảo TableView có thể focus để nhận sự kiện phím

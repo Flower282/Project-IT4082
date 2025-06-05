@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.Optional;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.springframework.stereotype.Service;
@@ -28,7 +27,6 @@ import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil;
 import io.github.ktpm.bluemoonmanagement.util.XlxsFileUtil;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -170,15 +168,43 @@ public class CanHoServiceImpl implements CanHoService {
     }
 
     @Override
+    @Transactional
     public ResponseDto updateCanHo(CanHoDto canHoDto) {
         if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
             return new ResponseDto(false, "Bạn không có quyền cập nhật căn hộ. Chỉ Tổ phó mới được phép.");
         }
-        if (canHoRepository.existsById(canHoDto.getMaCanHo())) {
-            return new ResponseDto(false, "Căn hộ đã tồn tại");
+        
+        // Tìm căn hộ hiện có trong database
+        CanHo existingCanHo = canHoRepository.findById(canHoDto.getMaCanHo()).orElse(null);
+        if (existingCanHo == null) {
+            return new ResponseDto(false, "Không tìm thấy căn hộ để cập nhật");
         }
-        CanHo canHo = canHoMapper.fromCanHoDto(canHoDto);
-        canHoRepository.save(canHo);
+        
+        // Cập nhật thông tin căn hộ hiện có (không tạo entity mới)
+        existingCanHo.setToaNha(canHoDto.getToaNha());
+        existingCanHo.setTang(canHoDto.getTang());
+        existingCanHo.setSoNha(canHoDto.getSoNha());
+        existingCanHo.setDienTich(canHoDto.getDienTich());
+        existingCanHo.setDaBanChua(canHoDto.isDaBanChua());
+        existingCanHo.setTrangThaiKiThuat(canHoDto.getTrangThaiKiThuat());
+        existingCanHo.setTrangThaiSuDung(canHoDto.getTrangThaiSuDung());
+        
+        // Xử lý cập nhật chủ hộ nếu có thay đổi
+        if (canHoDto.getChuHo() != null && canHoDto.getChuHo().getMaDinhDanh() != null) {
+            CuDan chuHo = cuDanRepository.findById(canHoDto.getChuHo().getMaDinhDanh()).orElse(null);
+            if (chuHo != null) {
+                existingCanHo.setChuHo(chuHo);
+            }
+        } else {
+            existingCanHo.setChuHo(null);
+        }
+        
+        // Lưu changes
+        canHoRepository.save(existingCanHo);
+        entityManager.flush(); // Đảm bảo changes được commit ngay
+        
+        System.out.println("DEBUG: Updated apartment " + canHoDto.getMaCanHo() + " successfully");
+        
         return new ResponseDto(true, "Căn hộ đã được cập nhật thành công");
     }
 

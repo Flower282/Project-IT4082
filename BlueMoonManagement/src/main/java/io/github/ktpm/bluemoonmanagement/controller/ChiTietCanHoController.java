@@ -17,6 +17,7 @@ import io.github.ktpm.bluemoonmanagement.model.dto.phuongTien.PhuongTienDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -120,6 +121,9 @@ public class ChiTietCanHoController implements Initializable {
     @FXML private Button buttonThuToanBo;
     @FXML private Button buttonXemLichSu;
     @FXML private CheckBox checkBoxKhongTinhBatBuoc;
+    
+    // Edit button in thông tin tab 
+    @FXML private Button buttonChinhSua;
 
     // Data
     private CanHoChiTietDto currentCanHo;
@@ -158,6 +162,9 @@ public class ChiTietCanHoController implements Initializable {
         setupTabNavigation();
         setupTables();
         setupComboBoxes();
+        
+        // Setup permissions for buttons
+        setupButtonPermissions();
         
         // Default to first tab
         showThongTinTab();
@@ -256,6 +263,17 @@ public class ChiTietCanHoController implements Initializable {
                     PhuongTienDto phuongTien = getTableView().getItems().get(getIndex());
                     handleDeletePhuongTien(phuongTien);
                 });
+                
+                // Disable nút xóa cho Tổ trưởng
+                try {
+                    String userRole = getCurrentUserRole();
+                    if ("Tổ trưởng".equals(userRole)) {
+                        deleteButton.setDisable(true);
+                        deleteButton.setOpacity(0.5);
+                    }
+                } catch (Exception e) {
+                    System.err.println("ERROR: Cannot setup delete button permission: " + e.getMessage());
+                }
             }
 
             @Override
@@ -331,6 +349,107 @@ public class ChiTietCanHoController implements Initializable {
             comboBoxLoaiKhoanThu.setItems(FXCollections.observableArrayList("Tất cả"));
             comboBoxLoaiKhoanThu.setValue("Tất cả");
         }
+    }
+
+    /**
+     * Thiết lập quyền cho các nút dựa trên vai trò người dùng
+     */
+    private void setupButtonPermissions() {
+        try {
+            System.out.println("=== DEBUG: setupButtonPermissions() called ===");
+            
+            // Debug current user
+            if (Session.getCurrentUser() == null) {
+                System.out.println("DEBUG: getCurrentUser() returns NULL!");
+            } else {
+                System.out.println("DEBUG: getCurrentUser() = " + Session.getCurrentUser());
+                System.out.println("DEBUG: Email: " + Session.getCurrentUser().getEmail());
+                System.out.println("DEBUG: HoTen: " + Session.getCurrentUser().getHoTen());
+                System.out.println("DEBUG: VaiTro: '" + Session.getCurrentUser().getVaiTro() + "'");
+            }
+            
+            String userRole = getCurrentUserRole();
+            System.out.println("DEBUG: getCurrentUserRole() returns: '" + userRole + "'");
+            
+            boolean isToTruong = "Tổ trưởng".equals(userRole);
+            System.out.println("DEBUG: isToTruong = " + isToTruong);
+            
+            if (isToTruong) {
+                // Disable/làm mờ các nút cho Tổ trưởng (trừ nút tìm kiếm)
+                disableButtonsForToTruong();
+                System.out.println("DEBUG: ✅ DISABLED buttons for Tổ trưởng");
+            } else {
+                System.out.println("DEBUG: ❌ NOT disabling buttons - User role: '" + userRole + "' - buttons enabled");
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot setup button permissions: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Lấy vai trò người dùng hiện tại
+     */
+    private String getCurrentUserRole() {
+        try {
+            if (Session.getCurrentUser() == null) {
+                return null;
+            }
+            return Session.getCurrentUser().getVaiTro();
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot get current user role: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Disable các nút cho Tổ trưởng (trừ nút tìm kiếm)
+     */
+    private void disableButtonsForToTruong() {
+        System.out.println("=== DEBUG: disableButtonsForToTruong() called ===");
+        
+        // Phần thông tin căn hộ - disable nút chỉnh sửa
+        if (buttonChinhSua != null) {
+            buttonChinhSua.setDisable(true);
+            buttonChinhSua.setOpacity(0.5);
+            System.out.println("DEBUG: ✅ Disabled buttonChinhSua");
+        } else {
+            System.out.println("DEBUG: ❌ buttonChinhSua is NULL!");
+        }
+        
+        // Phần cư dân - disable tất cả nút thao tác, giữ nút tìm kiếm
+        // (Nút xóa cư dân trong table sẽ được disable trong setupTables)
+        
+        // Phần phương tiện - disable nút thêm
+        if (buttonThemPhuongTien != null) {
+            buttonThemPhuongTien.setDisable(true);
+            buttonThemPhuongTien.setOpacity(0.5);
+            System.out.println("DEBUG: ✅ Disabled buttonThemPhuongTien");
+        } else {
+            System.out.println("DEBUG: ❌ buttonThemPhuongTien is NULL!");
+        }
+        
+        // Phần khoản thu - disable nút thu toàn bộ và xem lịch sử
+        if (buttonThuToanBo != null) {
+            buttonThuToanBo.setDisable(true);
+            buttonThuToanBo.setOpacity(0.5);
+            System.out.println("DEBUG: ✅ Disabled buttonThuToanBo");
+        } else {
+            System.out.println("DEBUG: ❌ buttonThuToanBo is NULL!");
+        }
+        
+        if (buttonXemLichSu != null) {
+            buttonXemLichSu.setDisable(true);
+            buttonXemLichSu.setOpacity(0.5);
+            System.out.println("DEBUG: ✅ Disabled buttonXemLichSu");
+        } else {
+            System.out.println("DEBUG: ❌ buttonXemLichSu is NULL!");
+        }
+        
+        // Note: Nút tìm kiếm (buttonTimKiemCuDan, buttonTimKiemPhuongTien, buttonTimKiemThuPhi) 
+        // sẽ KHÔNG bị disable theo yêu cầu
+        
+        System.out.println("DEBUG: ✅ COMPLETED disabling action buttons for Tổ trưởng");
     }
 
     /**
@@ -684,6 +803,13 @@ public class ChiTietCanHoController implements Initializable {
     @FXML
     private void handleThemPhuongTien() {
         try {
+            // Kiểm tra quyền
+            String userRole = getCurrentUserRole();
+            if ("Tổ trưởng".equals(userRole)) {
+                showError("Không có quyền", "Bạn không có quyền thêm phương tiện. Chỉ có Tổ phó mới có thể thêm.");
+                return;
+            }
+            
             if (currentCanHo == null || currentCanHo.getMaCanHo() == null) {
                 showError("Lỗi", "Không có thông tin căn hộ để thêm phương tiện");
                 return;
@@ -889,6 +1015,17 @@ public class ChiTietCanHoController implements Initializable {
     // Thu phí actions
     @FXML
     private void handleThuToanBo() {
+        // Kiểm tra quyền
+        try {
+            String userRole = getCurrentUserRole();
+            if ("Tổ trưởng".equals(userRole)) {
+                showError("Không có quyền", "Bạn không có quyền thực hiện thu toàn bộ. Chỉ có Tổ phó mới có thể thực hiện.");
+                return;
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot check user permission: " + e.getMessage());
+        }
+        
         boolean baoGomBatBuoc = checkBoxKhongTinhBatBuoc != null ? !checkBoxKhongTinhBatBuoc.isSelected() : true;
         
         if (hoaDonList == null || hoaDonList.isEmpty()) {
@@ -928,6 +1065,17 @@ public class ChiTietCanHoController implements Initializable {
 
     @FXML
     private void handleXemLichSu() {
+        // Kiểm tra quyền
+        try {
+            String userRole = getCurrentUserRole();
+            if ("Tổ trưởng".equals(userRole)) {
+                showError("Không có quyền", "Bạn không có quyền xem lịch sử thu phí. Chỉ có Tổ phó mới có thể xem.");
+                return;
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot check user permission: " + e.getMessage());
+        }
+        
         if (currentCanHo == null) {
             showError("Lỗi", "Không có thông tin căn hộ");
             return;
@@ -952,6 +1100,13 @@ public class ChiTietCanHoController implements Initializable {
     @FXML
     private void handleChinhSuaCanHo() {
         try {
+            // Kiểm tra quyền
+            String userRole = getCurrentUserRole();
+            if ("Tổ trưởng".equals(userRole)) {
+                showError("Không có quyền", "Bạn không có quyền chỉnh sửa căn hộ. Chỉ có Tổ phó mới có thể chỉnh sửa.");
+                return;
+            }
+            
             if (currentCanHo == null) {
                 showError("Lỗi", "Không có thông tin căn hộ để chỉnh sửa");
                 return;
@@ -959,35 +1114,8 @@ public class ChiTietCanHoController implements Initializable {
             
             System.out.println("DEBUG: Opening edit apartment form for: " + currentCanHo.getMaCanHo());
             
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
-                getClass().getResource("/view/them_can_ho.fxml")
-            );
-            javafx.scene.Parent root = loader.load();
-            
-            // Get controller and setup for edit mode
-            io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller = loader.getController();
-            if (controller != null) {
-                // Setup edit mode - hide unnecessary sections and change title
-                setupEditMode(controller);
-                
-                // Populate apartment data
-                populateApartmentData(controller);
-                
-                // Inject service if available
-                if (canHoService != null) {
-                    controller.setCanHoService(canHoService);
-                    System.out.println("DEBUG: Injected CanHoService to edit form controller");
-                }
-            }
-            
-            javafx.stage.Stage stage = new javafx.stage.Stage();
-            stage.setTitle("Chỉnh sửa căn hộ - " + currentCanHo.getMaCanHo());
-            stage.setScene(new javafx.scene.Scene(root, 750, 400)); // Smaller height since we hide sections
-            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
-            stage.initOwner(button_close_up.getScene().getWindow());
-            stage.show();
-            
-            System.out.println("DEBUG: Edit apartment window opened successfully");
+            // Sử dụng form thêm căn hộ cho chỉnh sửa
+            openEditFormUsingAddForm();
             
         } catch (Exception e) {
             System.err.println("ERROR: Exception in handleChinhSuaCanHo: " + e.getMessage());
@@ -995,139 +1123,184 @@ public class ChiTietCanHoController implements Initializable {
             showError("Lỗi mở chỉnh sửa", "Không thể mở form chỉnh sửa căn hộ: " + e.getMessage());
         }
     }
-
+    
     /**
-     * Setup edit mode - hide unnecessary sections and change text
+     * Mở form chỉnh sửa bằng cách sử dụng form thêm căn hộ
      */
-    private void setupEditMode(io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller) {
+    private void openEditFormUsingAddForm() {
         try {
-            // Use reflection to access private fields
-            java.lang.reflect.Field vBoxChuSoHuuField = controller.getClass().getDeclaredField("vBoxChuSoHuu");
-            vBoxChuSoHuuField.setAccessible(true);
-            javafx.scene.layout.VBox vBoxChuSoHuu = (javafx.scene.layout.VBox) vBoxChuSoHuuField.get(controller);
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/view/them_can_ho.fxml")
+            );
+            javafx.scene.Parent root = loader.load();
             
-            java.lang.reflect.Field vBoxThongTinCuDanMoiField = controller.getClass().getDeclaredField("vBoxThongTinCuDanMoi");
-            vBoxThongTinCuDanMoiField.setAccessible(true);
-            javafx.scene.layout.VBox vBoxThongTinCuDanMoi = (javafx.scene.layout.VBox) vBoxThongTinCuDanMoiField.get(controller);
-            
-            java.lang.reflect.Field choiceBoxThemChuSoHuuField = controller.getClass().getDeclaredField("choiceBoxThemChuSoHuu");
-            choiceBoxThemChuSoHuuField.setAccessible(true);
-            javafx.scene.control.CheckBox choiceBoxThemChuSoHuu = (javafx.scene.control.CheckBox) choiceBoxThemChuSoHuuField.get(controller);
-            
-            java.lang.reflect.Field choiceBoxTaoCuDanMoiField = controller.getClass().getDeclaredField("choiceBoxTaoCuDanMoi");
-            choiceBoxTaoCuDanMoiField.setAccessible(true);
-            javafx.scene.control.CheckBox choiceBoxTaoCuDanMoi = (javafx.scene.control.CheckBox) choiceBoxTaoCuDanMoiField.get(controller);
-            
-            java.lang.reflect.Field buttonTaoCanHoField = controller.getClass().getDeclaredField("buttonTaoCanHo");
-            buttonTaoCanHoField.setAccessible(true);
-            javafx.scene.control.Button buttonTaoCanHo = (javafx.scene.control.Button) buttonTaoCanHoField.get(controller);
-            
-            java.lang.reflect.Field labelTitleField = controller.getClass().getDeclaredField("labelTitle");
-            labelTitleField.setAccessible(true);
-            javafx.scene.control.Label labelTitle = (javafx.scene.control.Label) labelTitleField.get(controller);
-            
-            // Hide unnecessary sections
-            if (vBoxChuSoHuu != null) {
-                vBoxChuSoHuu.setVisible(false);
-                vBoxChuSoHuu.setManaged(false);
+            // Get controller
+            io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller = loader.getController();
+            if (controller != null) {
+                // Inject services
+                if (canHoService != null) {
+                    controller.setCanHoService(canHoService);
+                    System.out.println("DEBUG: Injected CanHoService to edit form controller");
+                }
+                
+                // Convert current data to CanHoDto for edit mode
+                CanHoDto canHoDto = convertToCanHoDto();
+                
+                // Setup edit mode
+                controller.setupEditMode(canHoDto);
+                
+                // Setup form untuk chỉnh sửa
+                setupEditForm(controller);
             }
             
-            if (vBoxThongTinCuDanMoi != null) {
-                vBoxThongTinCuDanMoi.setVisible(false);
-                vBoxThongTinCuDanMoi.setManaged(false);
-            }
+            // Create and show stage
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("Chỉnh sửa căn hộ - " + currentCanHo.getMaCanHo());
+            stage.setScene(new javafx.scene.Scene(root, 900, 650));
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            stage.initOwner(button_close_up.getScene().getWindow());
+            stage.show();
             
-            // Hide checkboxes
-            if (choiceBoxThemChuSoHuu != null) {
-                choiceBoxThemChuSoHuu.setVisible(false);
-                choiceBoxThemChuSoHuu.setManaged(false);
-            }
-            
-            if (choiceBoxTaoCuDanMoi != null) {
-                choiceBoxTaoCuDanMoi.setVisible(false);
-                choiceBoxTaoCuDanMoi.setManaged(false);
-            }
-            
-            // Change button text and title
-            if (buttonTaoCanHo != null) {
-                buttonTaoCanHo.setText("Cập nhật căn hộ");
-            }
-            
-            if (labelTitle != null) {
-                labelTitle.setText("Chỉnh sửa căn hộ");
-            }
-            
-            System.out.println("DEBUG: Edit mode setup completed - unnecessary sections hidden");
+            System.out.println("DEBUG: Edit apartment window opened successfully");
             
         } catch (Exception e) {
-            System.err.println("ERROR: Cannot setup edit mode: " + e.getMessage());
+            System.err.println("ERROR: Cannot open edit form: " + e.getMessage());
+            e.printStackTrace();
+            showError("Lỗi", "Không thể mở form chỉnh sửa: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Convert CanHoChiTietDto to CanHoDto
+     */
+    private CanHoDto convertToCanHoDto() {
+        CanHoDto dto = new CanHoDto();
+        dto.setMaCanHo(currentCanHo.getMaCanHo());
+        dto.setToaNha(currentCanHo.getToaNha());
+        dto.setTang(currentCanHo.getTang());
+        dto.setSoNha(currentCanHo.getSoNha());
+        dto.setDienTich(currentCanHo.getDienTich());
+        dto.setDaBanChua(currentCanHo.isDaBanChua());
+        dto.setTrangThaiKiThuat(currentCanHo.getTrangThaiKiThuat());
+        dto.setTrangThaiSuDung(currentCanHo.getTrangThaiSuDung());
+        dto.setChuHo(currentCanHo.getChuHo());
+        return dto;
+    }
+    
+    /**
+     * Setup form để phù hợp với chỉnh sửa
+     */
+    private void setupEditForm(io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller) {
+        try {
+            // Access và disable các field không được chỉnh sửa bằng reflection
+            disableReadOnlyFields(controller);
+            
+            // Thay đổi title và button text
+            updateFormLabels(controller);
+            
+            System.out.println("DEBUG: Edit form setup completed");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot setup edit form: " + e.getMessage());
             e.printStackTrace();
         }
     }
-
+    
     /**
-     * Populate apartment data into form fields
+     * Disable các field không được chỉnh sửa
      */
-    private void populateApartmentData(io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller) {
+    private void disableReadOnlyFields(io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller) {
         try {
-            if (currentCanHo == null) return;
+            // Disable tòa nhà
+            setFieldDisabled(controller, "textFieldToa", true);
             
-            // Use reflection to access private fields and set values
-            java.lang.reflect.Field textFieldToaField = controller.getClass().getDeclaredField("textFieldToa");
-            textFieldToaField.setAccessible(true);
-            javafx.scene.control.TextField textFieldToa = (javafx.scene.control.TextField) textFieldToaField.get(controller);
+            // Disable tầng  
+            setFieldDisabled(controller, "textFieldTang", true);
             
-            java.lang.reflect.Field textFieldTangField = controller.getClass().getDeclaredField("textFieldTang");
-            textFieldTangField.setAccessible(true);
-            javafx.scene.control.TextField textFieldTang = (javafx.scene.control.TextField) textFieldTangField.get(controller);
+            // Disable số nhà
+            setFieldDisabled(controller, "textFieldSoNha", true);
             
-            java.lang.reflect.Field textFieldSoNhaField = controller.getClass().getDeclaredField("textFieldSoNha");
-            textFieldSoNhaField.setAccessible(true);
-            javafx.scene.control.TextField textFieldSoNha = (javafx.scene.control.TextField) textFieldSoNhaField.get(controller);
-            
-            java.lang.reflect.Field textFieldDienTichField = controller.getClass().getDeclaredField("textFieldDienTich");
-            textFieldDienTichField.setAccessible(true);
-            javafx.scene.control.TextField textFieldDienTich = (javafx.scene.control.TextField) textFieldDienTichField.get(controller);
-            
-            java.lang.reflect.Field comboBoxTinhTrangKiThuatField = controller.getClass().getDeclaredField("comboBoxTinhTrangKiThuat");
-            comboBoxTinhTrangKiThuatField.setAccessible(true);
-            javafx.scene.control.ComboBox<String> comboBoxTinhTrangKiThuat = (javafx.scene.control.ComboBox<String>) comboBoxTinhTrangKiThuatField.get(controller);
-            
-            java.lang.reflect.Field comboBoxTinhTrangSuDungField = controller.getClass().getDeclaredField("comboBoxTinhTrangSuDung");
-            comboBoxTinhTrangSuDungField.setAccessible(true);
-            javafx.scene.control.ComboBox<String> comboBoxTinhTrangSuDung = (javafx.scene.control.ComboBox<String>) comboBoxTinhTrangSuDungField.get(controller);
-            
-            // Set values
-            if (textFieldToa != null && currentCanHo.getToaNha() != null) {
-                textFieldToa.setText(currentCanHo.getToaNha());
-            }
-            
-            if (textFieldTang != null && currentCanHo.getTang() != null) {
-                textFieldTang.setText(currentCanHo.getTang());
-            }
-            
-            if (textFieldSoNha != null && currentCanHo.getSoNha() != null) {
-                textFieldSoNha.setText(currentCanHo.getSoNha());
-            }
-            
-            if (textFieldDienTich != null && currentCanHo.getDienTich() != 0.0) {
-                textFieldDienTich.setText(String.valueOf(currentCanHo.getDienTich()));
-            }
-            
-            if (comboBoxTinhTrangKiThuat != null && currentCanHo.getTrangThaiKiThuat() != null) {
-                comboBoxTinhTrangKiThuat.setValue(currentCanHo.getTrangThaiKiThuat());
-            }
-            
-            if (comboBoxTinhTrangSuDung != null && currentCanHo.getTrangThaiSuDung() != null) {
-                comboBoxTinhTrangSuDung.setValue(currentCanHo.getTrangThaiSuDung());
-                comboBoxTinhTrangSuDung.setDisable(false); // Enable it for editing
-            }
-            
-            System.out.println("DEBUG: Apartment data populated successfully");
+            System.out.println("DEBUG: Read-only fields disabled");
             
         } catch (Exception e) {
-            System.err.println("ERROR: Cannot populate apartment data: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("ERROR: Cannot disable read-only fields: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Set field disabled bằng reflection
+     */
+    private void setFieldDisabled(io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller, 
+                                  String fieldName, boolean disabled) {
+        try {
+            java.lang.reflect.Field field = controller.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            Object fieldObject = field.get(controller);
+            
+            if (fieldObject instanceof javafx.scene.control.TextField) {
+                ((javafx.scene.control.TextField) fieldObject).setDisable(disabled);
+            } else if (fieldObject instanceof javafx.scene.control.ComboBox) {
+                ((javafx.scene.control.ComboBox<?>) fieldObject).setDisable(disabled);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("WARNING: Cannot disable field " + fieldName + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Update form labels cho chỉnh sửa
+     */
+    private void updateFormLabels(io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller) {
+        try {
+            // Change title
+            setLabelText(controller, "labelTitle", "Chỉnh sửa căn hộ");
+            
+            // Change button text
+            setButtonText(controller, "buttonTaoCanHo", "Cập nhật căn hộ");
+            
+            System.out.println("DEBUG: Form labels updated for edit mode");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot update form labels: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Set label text bằng reflection
+     */
+    private void setLabelText(io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller, 
+                              String fieldName, String text) {
+        try {
+            java.lang.reflect.Field field = controller.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            Object fieldObject = field.get(controller);
+            
+            if (fieldObject instanceof javafx.scene.control.Label) {
+                ((javafx.scene.control.Label) fieldObject).setText(text);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("WARNING: Cannot set label text for " + fieldName + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Set button text bằng reflection
+     */
+    private void setButtonText(io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller, 
+                               String fieldName, String text) {
+        try {
+            java.lang.reflect.Field field = controller.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            Object fieldObject = field.get(controller);
+            
+            if (fieldObject instanceof javafx.scene.control.Button) {
+                ((javafx.scene.control.Button) fieldObject).setText(text);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("WARNING: Cannot set button text for " + fieldName + ": " + e.getMessage());
         }
     }
 

@@ -16,6 +16,7 @@ import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.ChuHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.phuongTien.PhuongTienDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService;
 import io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService;
@@ -325,7 +326,11 @@ public class ChinhSuaCanHoController implements Initializable {
         if (buttonLuu != null) {
             buttonLuu.setOnAction(e -> handleLuuThongTin());
         }
+        
+
     }
+    
+
 
     /**
      * Xử lý khi thay đổi checkbox "Chủ sở hữu mới"
@@ -468,41 +473,137 @@ public class ChinhSuaCanHoController implements Initializable {
     @FXML
     private void handleLuuThongTin() {
         try {
+            System.out.println("DEBUG: Starting save apartment information process");
+            
             // Validate input
             if (!validateInput()) {
+                System.out.println("DEBUG: Input validation failed");
                 return;
             }
             
-            // TODO: Build DTO and call service to save
-            showSuccess("Thành công", "Đã lưu thông tin căn hộ thành công");
+            // Check permission
+            if (Session.getCurrentUser() == null) {
+                System.out.println("DEBUG: No current user in session");
+                showError("Lỗi quyền", "Vui lòng đăng nhập để thực hiện thao tác này.");
+                return;
+            }
             
-            // Close window
-            Stage stage = (Stage) buttonLuu.getScene().getWindow();
-            stage.close();
+            String userRole = Session.getCurrentUser().getVaiTro();
+            System.out.println("DEBUG: Current user role: " + userRole);
+            
+            if (!"Tổ phó".equals(userRole)) {
+                System.out.println("DEBUG: User does not have permission to edit apartment");
+                showError("Lỗi quyền", "Bạn không có quyền chỉnh sửa căn hộ. Chỉ Tổ phó mới được phép.");
+                return;
+            }
+            
+            // Build DTO from form data
+            CanHoDto canHoDto = buildCanHoDto();
+            System.out.println("DEBUG: Built CanHoDto for apartment: " + canHoDto.getMaCanHo());
+            
+            // Check if service is available
+            if (canHoService == null) {
+                System.err.println("ERROR: CanHoService is null");
+                showError("Lỗi", "Service chưa sẵn sàng. Vui lòng thử lại.");
+                return;
+            }
+            
+            // Call service to update
+            System.out.println("DEBUG: Calling updateCanHo service");
+            ResponseDto response = canHoService.updateCanHo(canHoDto);
+            
+            if (response != null) {
+                if (response.isSuccess()) {
+                    System.out.println("DEBUG: Update successful: " + response.getMessage());
+                    showSuccess("Thành công", response.getMessage());
+                    
+                    // Refresh apartment detail windows if they are open
+                    ChiTietCanHoController.refreshAllWindowsForApartment(canHoDto.getMaCanHo());
+                    
+                    // Close window
+                    Stage stage = (Stage) buttonLuu.getScene().getWindow();
+                    stage.close();
+                } else {
+                    System.out.println("DEBUG: Update failed: " + response.getMessage());
+                    showError("Lỗi", response.getMessage());
+                }
+            } else {
+                System.err.println("ERROR: Service returned null response");
+                showError("Lỗi", "Không nhận được phản hồi từ hệ thống");
+            }
             
         } catch (Exception e) {
+            System.err.println("ERROR: Exception in handleLuuThongTin: " + e.getMessage());
+            e.printStackTrace();
             showError("Lỗi", "Không thể lưu thông tin: " + e.getMessage());
         }
     }
+    
+    /**
+     * Build CanHoDto from form data
+     */
+    private CanHoDto buildCanHoDto() {
+        CanHoDto dto = new CanHoDto();
+        
+        // Giữ nguyên mã căn hộ và thông tin không thay đổi
+        dto.setMaCanHo(currentCanHo.getMaCanHo());
+        dto.setToaNha(currentCanHo.getToaNha());
+        dto.setTang(currentCanHo.getTang());
+        dto.setSoNha(currentCanHo.getSoNha());
+        
+        // Chỉ cập nhật các field được phép chỉnh sửa
+        dto.setDienTich(Double.parseDouble(textFieldDienTich.getText().trim()));
+        
+        // Parse trạng thái
+        String trangThai = comboBoxTrangThai.getValue();
+        dto.setDaBanChua("Đã bán".equals(trangThai));
+        dto.setTrangThaiKiThuat(comboBoxTinhTrangKiThuat.getValue());
+        
+        // Determine trangThaiSuDung based on whether apartment has active residents
+        boolean hasActiveResidents = cuDanList.stream()
+            .anyMatch(cuDan -> "Cư trú".equals(cuDan.getTrangThaiCuTru()));
+        dto.setTrangThaiSuDung(hasActiveResidents ? "Đang ở" : "Trống");
+        
+        // Xử lý thông tin chủ sở hữu
+        dto.setChuHo(buildChuHoDto());
+        
+        System.out.println("DEBUG: Built CanHoDto - only editable fields updated");
+        return dto;
+    }
+    
+    /**
+     * Build ChuHoDto from owner form data
+     */
+    private ChuHoDto buildChuHoDto() {
+        // Nếu không có thông tin chủ sở hữu trong form thì trả về null
+        if (isBlank(textFieldMaDinhDanh.getText()) || isBlank(textFieldHoVaTen.getText())) {
+            return null;
+        }
+        
+        ChuHoDto chuHoDto = new ChuHoDto();
+        chuHoDto.setMaDinhDanh(textFieldMaDinhDanh.getText().trim());
+        chuHoDto.setHoVaTen(textFieldHoVaTen.getText().trim());
+        chuHoDto.setSoDienThoai(textFieldSoDienThoai.getText().trim());
+        chuHoDto.setEmail(textFieldEmail.getText().trim());
+        
+        System.out.println("DEBUG: Built ChuHoDto for owner: " + chuHoDto.getHoVaTen());
+        return chuHoDto;
+    }
+    
+    /**
+     * Check if string is blank or null
+     */
+    private boolean isBlank(String str) {
+        return str == null || str.trim().isEmpty();
+    }
+    
+
 
     /**
      * Validate input data
      */
     private boolean validateInput() {
-        if (textFieldToa.getText().trim().isEmpty()) {
-            showError("Lỗi", "Vui lòng nhập tòa nhà");
-            return false;
-        }
-        
-        if (textFieldTang.getText().trim().isEmpty()) {
-            showError("Lỗi", "Vui lòng nhập tầng");
-            return false;
-        }
-        
-        if (textFieldSoNha.getText().trim().isEmpty()) {
-            showError("Lỗi", "Vui lòng nhập số nhà");
-            return false;
-        }
+        // Chỉ validate các field được phép chỉnh sửa
         
         if (textFieldDienTich.getText().trim().isEmpty()) {
             showError("Lỗi", "Vui lòng nhập diện tích");
@@ -510,9 +611,13 @@ public class ChinhSuaCanHoController implements Initializable {
         }
         
         try {
-            Double.parseDouble(textFieldDienTich.getText().trim());
+            double dienTich = Double.parseDouble(textFieldDienTich.getText().trim());
+            if (dienTich <= 0) {
+                showError("Lỗi", "Diện tích phải lớn hơn 0");
+                return false;
+            }
         } catch (NumberFormatException e) {
-            showError("Lỗi", "Diện tích phải là số");
+            showError("Lỗi", "Diện tích phải là số hợp lệ");
             return false;
         }
         
@@ -521,8 +626,72 @@ public class ChinhSuaCanHoController implements Initializable {
             return false;
         }
         
+        if (comboBoxTinhTrangKiThuat.getValue() == null) {
+            showError("Lỗi", "Vui lòng chọn tình trạng kỹ thuật");
+            return false;
+        }
+        
+        // Validate thông tin chủ sở hữu nếu có nhập
+        if (!validateOwnerInfo()) {
+            return false;
+        }
+        
         return true;
     }
+    
+    /**
+     * Validate owner information
+     */
+    private boolean validateOwnerInfo() {
+        String maDinhDanh = textFieldMaDinhDanh.getText().trim();
+        String hoVaTen = textFieldHoVaTen.getText().trim();
+        String soDienThoai = textFieldSoDienThoai.getText().trim();
+        String email = textFieldEmail.getText().trim();
+        
+        // Nếu có một trong các field chủ sở hữu được nhập thì phải nhập đầy đủ
+        boolean hasAnyOwnerInfo = !isBlank(maDinhDanh) || !isBlank(hoVaTen) || 
+                                 !isBlank(soDienThoai) || !isBlank(email);
+        
+        if (hasAnyOwnerInfo) {
+            if (isBlank(maDinhDanh)) {
+                showError("Lỗi", "Vui lòng nhập mã định danh chủ sở hữu");
+                return false;
+            }
+            
+            if (isBlank(hoVaTen)) {
+                showError("Lỗi", "Vui lòng nhập họ và tên chủ sở hữu");
+                return false;
+            }
+            
+            if (!isBlank(soDienThoai) && !isValidPhoneNumber(soDienThoai)) {
+                showError("Lỗi", "Số điện thoại không hợp lệ (10-11 chữ số)");
+                return false;
+            }
+            
+            if (!isBlank(email) && !isValidEmail(email)) {
+                showError("Lỗi", "Email không hợp lệ");
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Validate email format
+     */
+    private boolean isValidEmail(String email) {
+        return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    }
+    
+    /**
+     * Validate phone number format
+     */
+    private boolean isValidPhoneNumber(String phoneNumber) {
+        return phoneNumber.matches("^[0-9]{10,11}$");
+    }
+    
+
 
     /**
      * Set data cho form
@@ -549,12 +718,22 @@ public class ChinhSuaCanHoController implements Initializable {
      * Load thông tin căn hộ
      */
     private void loadCanHoInfo(CanHoChiTietDto canHoData) {
+        // Load data nhưng disable các field không được chỉnh sửa
         textFieldToa.setText(canHoData.getToaNha());
+        textFieldToa.setDisable(true); // Không cho chỉnh sửa tòa nhà
+        
         textFieldTang.setText(canHoData.getTang());
+        textFieldTang.setDisable(true); // Không cho chỉnh sửa tầng
+        
         textFieldSoNha.setText(canHoData.getSoNha());
+        textFieldSoNha.setDisable(true); // Không cho chỉnh sửa số phòng
+        
+        // Chỉ cho phép chỉnh sửa diện tích và trạng thái
         textFieldDienTich.setText(String.valueOf(canHoData.getDienTich()));
         comboBoxTrangThai.setValue(canHoData.isDaBanChua() ? "Đã bán" : "Chưa bán");
         comboBoxTinhTrangKiThuat.setValue(canHoData.getTrangThaiKiThuat());
+        
+        System.out.println("DEBUG: Apartment info loaded - only area and status can be edited");
     }
 
     /**
@@ -572,7 +751,27 @@ public class ChinhSuaCanHoController implements Initializable {
             
             // Lưu mã định danh ban đầu
             originalOwnerMaDinhDanh = chuHo.getMaDinhDanh();
+            
+            System.out.println("DEBUG: Loaded existing owner info: " + chuHo.getHoVaTen());
+        } else {
+            // Nếu chưa có chủ sở hữu, để trống form để có thể tạo mới
+            textFieldMaDinhDanh.clear();
+            textFieldHoVaTen.clear();
+            datePickerNgaySinh.setValue(null);
+            comboBoxGioiTinh.setValue(null);
+            textFieldSoDienThoai.clear();
+            textFieldEmail.clear();
+            
+            originalOwnerMaDinhDanh = null;
+            
+            System.out.println("DEBUG: No existing owner - form ready for new owner creation");
         }
+        
+        // Enable all owner fields for editing/creating
+        textFieldMaDinhDanh.setDisable(false);
+        textFieldHoVaTen.setDisable(false);
+        textFieldSoDienThoai.setDisable(false);
+        textFieldEmail.setDisable(false);
     }
 
     /**
@@ -643,5 +842,79 @@ public class ChinhSuaCanHoController implements Initializable {
 
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+    }
+    
+    /**
+     * Static method để mở form chỉnh sửa căn hộ từ controller khác
+     */
+    public static void openEditForm(CanHoChiTietDto canHoData, CanHoService canHoService, 
+                                   CuDanService cuDanService, PhuongTienService phuongTienService,
+                                   ApplicationContext applicationContext, javafx.stage.Window parent) {
+        try {
+            System.out.println("DEBUG: Opening edit apartment form for: " + canHoData.getMaCanHo());
+            
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                ChinhSuaCanHoController.class.getResource("/view/chinh_sua_can_ho.fxml")
+            );
+            javafx.scene.Parent root = loader.load();
+            
+            // Get controller và inject dependencies
+            ChinhSuaCanHoController controller = loader.getController();
+            if (controller != null) {
+                controller.setCanHoService(canHoService);
+                controller.setCuDanService(cuDanService);
+                controller.setPhuongTienService(phuongTienService);
+                controller.setApplicationContext(applicationContext);
+                
+                // Load data
+                controller.setCanHoData(canHoData);
+            }
+            
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("Chỉnh sửa căn hộ - " + canHoData.getMaCanHo());
+            stage.setScene(new javafx.scene.Scene(root, 1000, 700));
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            if (parent != null) {
+                stage.initOwner(parent);
+            }
+            stage.show();
+            
+            System.out.println("DEBUG: Edit apartment window opened successfully");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot open edit apartment form: " + e.getMessage());
+            e.printStackTrace();
+            
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+            alert.setTitle("Lỗi");
+            alert.setHeaderText("Không thể mở form chỉnh sửa");
+            alert.setContentText("Chi tiết: " + e.getMessage());
+            alert.showAndWait();
+        }
+    }
+    
+    /**
+     * Refresh data từ database - gọi khi cần reload sau khi thay đổi
+     */
+    public void refreshData() {
+        if (currentCanHo != null && canHoService != null) {
+            try {
+                System.out.println("DEBUG: Refreshing apartment data for: " + currentCanHo.getMaCanHo());
+                
+                CanHoDto canHoDto = new CanHoDto();
+                canHoDto.setMaCanHo(currentCanHo.getMaCanHo());
+                
+                CanHoChiTietDto refreshedData = canHoService.getCanHoChiTiet(canHoDto);
+                if (refreshedData != null) {
+                    setCanHoData(refreshedData);
+                    System.out.println("DEBUG: Data refreshed successfully");
+                } else {
+                    showError("Lỗi", "Không thể tải lại dữ liệu căn hộ");
+                }
+            } catch (Exception e) {
+                System.err.println("ERROR: Cannot refresh data: " + e.getMessage());
+                showError("Lỗi", "Không thể tải lại dữ liệu: " + e.getMessage());
+            }
+        }
     }
 }
