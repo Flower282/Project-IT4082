@@ -89,7 +89,9 @@ public class LoginController implements Initializable {
         // Lấy tài khoản và mật khẩu từ các TextField
         String email = textFieldEmail.getText().trim();
         String password = passwordFieldMatKhau.getText().trim();
-
+        if(password.isEmpty()){
+            password = textFieldMatKhau.getText().trim();
+        }
         if(email.isEmpty()) {
             textError.setText("Vui lòng nhập đầy đủ thông tin đăng nhập.");
             textError.setVisible(true);

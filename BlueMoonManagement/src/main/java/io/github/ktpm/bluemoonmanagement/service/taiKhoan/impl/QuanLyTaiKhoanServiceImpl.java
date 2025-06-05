@@ -7,10 +7,12 @@ import io.github.ktpm.bluemoonmanagement.model.entity.TaiKhoan;
 import io.github.ktpm.bluemoonmanagement.repository.TaiKhoanRepository;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.session.Session;
+import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
+@Service
 public class QuanLyTaiKhoanServiceImpl implements QuanLyTaiKhoanService {
     private final TaiKhoanRepository taiKhoanRepository;
     private final TaiKhoanMapper taiKhoanMapper;

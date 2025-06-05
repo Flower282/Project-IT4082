@@ -711,4 +711,8 @@ public class ThemCanHoButton implements Initializable {
             return "Lỗi không xác định";
         }
     }
+    @FXML
+    void daBanClicked(ActionEvent event) {
+
+    }
 }
