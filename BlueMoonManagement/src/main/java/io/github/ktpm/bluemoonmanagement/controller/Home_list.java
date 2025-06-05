@@ -5,6 +5,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
+import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -441,18 +443,32 @@ public class Home_list implements Initializable {
 
     @Autowired
     private ApplicationContext applicationContext;
-    
+
+    @Autowired
+    private QuanLyTaiKhoanService taiKhoanService;
+
     @Autowired
     private io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService cuDanService;
 
     private List<Node> allPanes;
     private KhungController parentController;
-    
+
     private ObservableList<CanHoTableData> canHoList;
     private ObservableList<CanHoTableData> filteredList;
     
     private ObservableList<CuDanTableData> cuDanList;
     private ObservableList<CuDanTableData> filteredCuDanList;
+
+    private ObservableList<TaiKhoanTableData> taiKhoanList;
+    private ObservableList<TaiKhoanTableData> filteredTaiKhoanList;
+
+    // Pagination variables
+    private int currentPageCuDan = 1;
+    private int itemsPerPageCuDan = 10;
+    private int totalPagesCuDan = 1;
+    private List<CuDanTableData> allCuDanData;
+
+    // Reference to table view for CanHo được inject từ FXML
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -471,11 +487,11 @@ public class Home_list implements Initializable {
         // Setup tables
         setupCanHoTable();
         setupCuDanTable();
-        
+        setupTaiKhoanTable();
         // Load data
         loadData();
         loadCuDanData();
-        
+        loadTaiKhoanData();
         // Show default tab
         show("TrangChu");
         
@@ -485,9 +501,6 @@ public class Home_list implements Initializable {
             emailLabel.setText("Email: " + Session.getCurrentUser().getEmail());
             vaiTroLabel.setText("Vai trò: " + Session.getCurrentUser().getVaiTro());
         }
-        
-        // Setup button permissions based on user role
-        setupButtonPermissions();
         
         System.out.println("Home_list đã được khởi tạo");
     }
@@ -1002,6 +1015,138 @@ public class Home_list implements Initializable {
         public void setTrangThaiCuTru(String trangThaiCuTru) { this.trangThaiCuTru = trangThaiCuTru; }
         public void setNgayChuyenDen(String ngayChuyenDen) { this.ngayChuyenDen = ngayChuyenDen; }
     }
+    public class TaiKhoanTableData {
+        private String email;
+        private String hoVaTen;
+        private String vaiTro;
+        private String ngayTao;
+        private String ngayCapNhat;
+
+        public TaiKhoanTableData(String email, String hoVaTen, String vaiTro,String ngayTao ,String ngayCapNhat) {
+            this.email = email;
+            this.hoVaTen = hoVaTen;
+            this.vaiTro = vaiTro;
+            this.ngayTao = ngayTao;
+            this.ngayCapNhat = ngayCapNhat;
+
+        }
+        // Getters
+        public String getEmail() { return email; }
+        public String getHoVaTen() { return hoVaTen; }
+        public String getVaiTro() { return vaiTro; }
+        public String getNgayCapNhat() { return ngayCapNhat; }
+        public String getNgayTao(){ return ngayTao; }
+        // Setters
+        public void setEmail(String email) { this.email = email; }
+        public void setHoVaTen(String hoVaTen) { this.hoVaTen = hoVaTen; }
+        public void setVaiTro(String vaiTro) { this.vaiTro = vaiTro; }
+        public void setNgayTao(String ngayTao){this.ngayTao = ngayTao; }
+        public void setNgayCapNhat(String ngayCapNhat) { this.ngayCapNhat = ngayCapNhat; }
+
+    }
+
+    public void setupTaiKhoanTable() {
+        if( tabelViewTaiKhoan != null && tableColumnEmail != null) {
+            // Cast table view to correct type
+            TableView<TaiKhoanTableData> typedTableView = (TableView<TaiKhoanTableData>) tabelViewTaiKhoan;
+
+            // Setup cell value factories - need to cast to proper types
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnEmail).setCellValueFactory(new PropertyValueFactory<>("email"));
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnHoVaTenTaiKhoan).setCellValueFactory(new PropertyValueFactory<>("hoVaTen"));
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnVaiTro).setCellValueFactory(new PropertyValueFactory<>("vaiTro"));
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayTao).setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayCapNhat).setCellValueFactory(new PropertyValueFactory<>("ngayCapNhat"));
+
+            // Thêm sự kiện single-click để xem chi tiết tài khoản
+            typedTableView.setRowFactory(tv -> {
+                javafx.scene.control.TableRow<TaiKhoanTableData> row = new javafx.scene.control.TableRow<>();
+                row.setOnMouseClicked(event -> {
+                    // Single-click vào bất kỳ chỗ nào của dòng sẽ mở chi tiết
+                    if (!row.isEmpty() && event.getClickCount() == 1) {
+                        TaiKhoanTableData rowData = row.getItem();
+                        handleXemChiTietTaiKhoan(rowData);
+                    }
+                });
+                return row;
+            });
+        }
+    }
+
+    private void handleXemChiTietTaiKhoan(TaiKhoanTableData rowData) {
+//        try {
+//            if (taiKhoanService != null) {
+//
+//                String email = rowData.getEmail();
+//                String hoVaTen = rowData.getHoVaTen();
+//                String vaiTro = rowData.getVaiTro();
+//                String ngayTao = rowData.getNgayTao();
+//                String ngayCapNhat = rowData.getNgayCapNhat();
+//
+//
+//                ThongTinTaiKhoanDto thongTinTaiKhoanDto = new ThongTinTaiKhoanDto(email, hoVaTen, vaiTro);
+//                if (thongTinTaiKhoanDto != null) {
+//                    openChiTietTaiKhoan(thongTinTaiKhoanDto);
+//                } else {
+//                    showError("Lỗi", "Không tìm thấy thông tin chi tiết tài khoản");
+//                }
+//            } else {
+//                showError("Lỗi", "Dịch vụ tài khoản không khả dụng");
+//            }
+//        } catch (Exception e) {
+//            showError("Lỗi khi xem chi tiết", "Chi tiết: " + e.getMessage());
+//        }
+    }
+
+//    private void openChiTietTaiKhoan(ThongTinTaiKhoanDto thongTinTaiKhoanDto) {
+//        try {
+//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/tai_khoan.fxml"));
+//            Parent root = loader.load();
+//
+//            ChiTietTaiKhoanController controller = loader.getController();
+//            controller.setTaiKhoanService(taiKhoanService);
+//            controller.setThongTinTaiKhoan(thongTinTaiKhoanDto);
+//
+//            Stage stage = new Stage();
+//            stage.setTitle("Chi tiết tài khoản - " + thongTinTaiKhoanDto.getEmail());
+//            stage.setScene(new Scene(root, 600, 400));
+//            stage.initModality(Modality.WINDOW_MODAL);
+//            stage.initOwner(tabelViewTaiKhoan.getScene().getWindow());
+//            stage.show();
+//        } catch (IOException e) {
+//            showError("Lỗi mở chi tiết", "Không thể mở trang chi tiết tài khoản: " + e.getMessage());
+//        }
+//    }
+
+    private void loadTaiKhoanData() {
+        try {
+            if (taiKhoanService != null) {
+                List<ThongTinTaiKhoanDto> taiKhoanDtoList = taiKhoanService.layDanhSachTaiKhoan();
+                taiKhoanList = FXCollections.observableArrayList();
+
+                if (taiKhoanDtoList != null) {
+                    for (ThongTinTaiKhoanDto dto : taiKhoanDtoList) {
+                        TaiKhoanTableData tableData = new TaiKhoanTableData(
+                            dto.getEmail(),
+                            dto.getHoTen(),
+                            dto.getVaiTro(),
+                            dto.getNgayTao() != null ? dto.getNgayTao().toString() : "",
+                            dto.getNgayCapNhat() != null ? dto.getNgayCapNhat().toString() : ""
+
+                        );
+
+                        taiKhoanList.add(tableData);
+                    }
+                }
+
+                filteredTaiKhoanList = FXCollections.observableArrayList(taiKhoanList);
+                ((TableView<TaiKhoanTableData>) tabelViewTaiKhoan).setItems(filteredTaiKhoanList);
+            } else {
+                System.err.println("TaiKhoanService is not available, cannot load data.");
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading TaiKhoan data: " + e.getMessage());
+        }
+    }
 
     @Autowired
     private FxViewLoader fxViewLoader;
@@ -1114,19 +1259,71 @@ public class Home_list implements Initializable {
             ((TableColumn<CuDanTableData, String>) tableColumnTrangThaiCuDan).setCellValueFactory(new PropertyValueFactory<>("trangThaiCuTru"));
             ((TableColumn<CuDanTableData, String>) tableColumnNgayChuyenDen).setCellValueFactory(new PropertyValueFactory<>("ngayChuyenDen"));
             
-            // Thêm sự kiện single-click để chỉnh sửa cư dân (giống như table căn hộ)
-            typedTableView.setRowFactory(tv -> {
-                javafx.scene.control.TableRow<CuDanTableData> row = new javafx.scene.control.TableRow<>();
-                row.setOnMouseClicked(event -> {
-                    System.out.println("DEBUG: Mouse clicked on row");
-                    // Single-click vào bất kỳ chỗ nào của dòng sẽ mở form chỉnh sửa
-                    if (!row.isEmpty() && event.getClickCount() == 1) {
-                        CuDanTableData rowData = row.getItem();
-                        System.out.println("DEBUG: Opening edit form for: " + (rowData != null ? rowData.getHoVaTen() : "null"));
-                        handleEditCuDan(rowData);
+            // Setup action column with delete button
+            ((TableColumn<CuDanTableData, String>) tableColumnThaoTacCuDan).setCellFactory(col -> {
+                return new javafx.scene.control.TableCell<CuDanTableData, String>() {
+                    private final javafx.scene.control.Button deleteButton = new javafx.scene.control.Button("Xóa");
+                    
+                    {
+                        deleteButton.getStyleClass().addAll("action-button", "button-red");
+                        
+                        // Kiểm tra quyền của người dùng và disable nút nếu không phải "Tổ phó"
+                        boolean isToPhO = false;
+                        try {
+                            if (Session.getCurrentUser() != null) {
+                                String vaiTro = Session.getCurrentUser().getVaiTro();
+                                isToPhO = "Tổ phó".equals(vaiTro);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Lỗi khi kiểm tra vai trò cho nút xóa: " + e.getMessage());
+                            isToPhO = false;
+                        }
+                        
+                        deleteButton.setDisable(!isToPhO);
+                        
+                        if (!isToPhO) {
+                            // Thêm tooltip giải thích tại sao nút bị disable
+                            javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
+                                "Chỉ người dùng có vai trò 'Tổ phó' mới có thể xóa cư dân");
+                            javafx.scene.control.Tooltip.install(deleteButton, tooltip);
+                        }
+                        
+                        deleteButton.setOnAction(event -> {
+                            try {
+                                // Double check quyền trước khi thực hiện xóa
+                                if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+                                    showError("Lỗi quyền", "Bạn không có quyền xóa cư dân.\nChỉ người dùng có vai trò 'Tổ phó' mới được phép thực hiện thao tác này.");
+                                    return;
+                                }
+                                
+                                int index = getIndex();
+                                if (index >= 0 && index < getTableView().getItems().size()) {
+                                    CuDanTableData cuDan = getTableView().getItems().get(index);
+                                    if (cuDan != null) {
+                                        handleDeleteCuDan(cuDan);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                System.err.println("Lỗi khi xóa cư dân: " + e.getMessage());
+                                e.printStackTrace();
+                                showError("Lỗi", "Có lỗi xảy ra khi xóa cư dân: " + e.getMessage());
+                            }
+                        });
                     }
-                });
-                return row;
+                    
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || getIndex() < 0) {
+                            setGraphic(null);
+                        } else {
+                            javafx.scene.layout.HBox hbox = new javafx.scene.layout.HBox();
+                            hbox.setAlignment(javafx.geometry.Pos.CENTER);
+                            hbox.getChildren().add(deleteButton);
+                            setGraphic(hbox);
+                        }
+                    }
+                };
             });
             
             // Setup scroll bars - enable vertical scrolling, disable horizontal scrolling
@@ -1153,7 +1350,11 @@ public class Home_list implements Initializable {
             typedTableView.setPrefWidth(970); // Giống với trang căn hộ
             typedTableView.setMaxWidth(970);
             
-            // Note: RowFactory đã được setup ở trên với click event, không cần thiết lập lại
+            // Cải thiện hiệu suất cuộn
+            typedTableView.setRowFactory(tv -> {
+                javafx.scene.control.TableRow<CuDanTableData> row = new javafx.scene.control.TableRow<>();
+                return row;
+            });
             
             // Cho phép cuộn bằng phím mũi tên và chuột
             typedTableView.setOnKeyPressed(event -> {
@@ -1255,23 +1456,24 @@ public class Home_list implements Initializable {
                         showError("Lỗi quyền", "Bạn chưa đăng nhập. Vui lòng đăng nhập lại!");
                         return;
                     }
-                    
+
                     if (!"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
                         showError("Lỗi quyền", "Bạn không có quyền xóa cư dân.\nChỉ người dùng có vai trò 'Tổ phó' mới được phép thực hiện thao tác này.");
                         return;
                     }
-                    
+
                     // Gọi service để xóa mềm cư dân
                     System.out.println("DEBUG Controller: Gọi service xóa mềm với mã: " + cuDan.getMaDinhDanh());
                     boolean deleted = cuDanService.xoaMem(cuDan.getMaDinhDanh());
                     System.out.println("DEBUG Controller: Kết quả xóa: " + deleted);
-                    
+
                     if (deleted) {
+                        showSuccess("Thành công", "Đã xóa cư dân thành công!");
                         // Reload dữ liệu để cập nhật danh sách
                         loadCuDanData();
                     } else {
                         System.err.println("DEBUG Controller: Xóa thất bại - hiển thị thông báo lỗi");
-                        showError("Lỗi xóa cư dân", 
+                        showError("Lỗi xóa cư dân",
                             "Không thể xóa cư dân: " + cuDan.getHoVaTen() + "\n\n" +
                             "Có thể do:\n" +
                             "• Cư dân không tồn tại trong hệ thống\n" +
@@ -1352,7 +1554,7 @@ public class Home_list implements Initializable {
      */
     private void setupButtonPermissions() {
         boolean isToPhO = false;
-        
+
         try {
             if (Session.getCurrentUser() != null) {
                 String vaiTro = Session.getCurrentUser().getVaiTro();
@@ -1365,7 +1567,7 @@ public class Home_list implements Initializable {
             System.err.println("Lỗi khi kiểm tra vai trò người dùng: " + e.getMessage());
             isToPhO = false; // Mặc định không có quyền
         }
-        
+
         // Disable/enable các nút thêm dựa trên quyền
         if (buttonThemCuDan != null) {
             buttonThemCuDan.setDisable(!isToPhO);
@@ -1377,7 +1579,7 @@ public class Home_list implements Initializable {
                 System.out.println("DEBUG: Đã disable nút thêm cư dân");
             }
         }
-        
+
         if (buttonThemCanHo != null) {
             buttonThemCanHo.setDisable(!isToPhO);
             if (!isToPhO) {
@@ -1400,28 +1602,28 @@ public class Home_list implements Initializable {
             // Load FXML file
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/xac_nhan.fxml"));
             javafx.scene.Parent root = loader.load();
-            
+
             // Lấy controller
             XacNhanController controller = loader.getController();
-            
+
             // Thiết lập nội dung
             controller.setTitle("Xác nhận xóa cư dân");
             controller.setContent("Bạn có chắc chắn muốn xóa cư dân " + hoVaTen + " (Mã: " + maDinhDanh + ") không?");
-            
+
             // Tạo stage
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.initStyle(javafx.stage.StageStyle.UNDECORATED);
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(tabelViewCuDan.getScene().getWindow());
-            
+
             // Thiết lập scene
             javafx.scene.Scene scene = new javafx.scene.Scene(root);
             stage.setScene(scene);
             stage.centerOnScreen();
-            
+
             // Hiển thị và chờ
             stage.showAndWait();
-            
+
             return controller.isConfirmed();
         } catch (Exception e) {
             System.err.println("Lỗi khi hiển thị dialog xác nhận: " + e.getMessage());
