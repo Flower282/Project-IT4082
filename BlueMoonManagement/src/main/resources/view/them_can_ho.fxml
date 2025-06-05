@@ -17,7 +17,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<VBox alignment="TOP_CENTER" maxHeight="700.0" maxWidth="800.0" minHeight="600.0" minWidth="700.0" prefHeight="650.0" prefWidth="750.0" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<VBox alignment="TOP_CENTER" maxHeight="700.0" maxWidth="800.0" minHeight="600.0" minWidth="700.0" prefHeight="650.0" prefWidth="750.0" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton">
    <children>
       <AnchorPane prefHeight="50.0" prefWidth="750.0">
          <children>
@@ -30,7 +30,7 @@
                   </Group>
                </graphic>
             </Button>
-            <Label layoutY="9.59999942779541" styleClass="popup-title" text="Thêm căn hộ" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="10.0" />
+            <Label fx:id="labelTitle" layoutY="9.59999942779541" styleClass="popup-title" text="Thêm căn hộ" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="10.0" />
          </children>
          <VBox.margin>
             <Insets left="20.0" right="20.0" top="5.0" />

@@ -369,15 +369,14 @@
                            <children>
                               <TableView fx:id="tabelViewCuDan" prefHeight="400.0" prefWidth="970.0">
                                  <columns>
-                                    <TableColumn fx:id="tableColumnMaDinhDanh" prefWidth="89.59999924898148" resizable="false" text="Mã định danh" />
-                                    <TableColumn fx:id="tableColumnHoVaTen" prefWidth="129.59999084472656" resizable="false" text="Họ và tên" />
-                                    <TableColumn fx:id="tableColumnGioiTinh" prefWidth="65.60002136230469" resizable="false" text="Giới tính" />
-                                    <TableColumn fx:id="tableColumnNgaySinh" prefWidth="136.80007934570312" resizable="false" text="Ngày sinh" />
-                                    <TableColumn fx:id="tableColumnMaCanHoCuDan" prefWidth="117.5999755859375" resizable="false" text="Mã căn hộ" />
-                                    <TableColumn fx:id="tableColumnSoDienThoai" prefWidth="118.4000244140625" resizable="false" text="Số điện thoại" />
-                                    <TableColumn fx:id="tableColumnNgayChuyenDen" prefWidth="109.60003662109375" resizable="false" text="Ngày chuyển đến" />
-                                    <TableColumn fx:id="tableColumnTrangThaiCuDan" prefWidth="101.60003662109375" resizable="false" text="Trạng thái" />
-                                    <TableColumn fx:id="tableColumnThaoTacCuDan" prefWidth="96.80002441406248" resizable="false" text="Thao tác" />
+                                    <TableColumn fx:id="tableColumnMaDinhDanh" prefWidth="127.99999314546585" resizable="false" text="Mã định danh" />
+                                    <TableColumn fx:id="tableColumnHoVaTen" prefWidth="154.4000244140625" resizable="false" text="Họ và tên" />
+                                    <TableColumn fx:id="tableColumnGioiTinh" prefWidth="73.60003662109375" resizable="false" text="Giới tính" />
+                                    <TableColumn fx:id="tableColumnNgaySinh" prefWidth="120.0" resizable="false" text="Ngày sinh" />
+                                    <TableColumn fx:id="tableColumnMaCanHoCuDan" prefWidth="105.0" resizable="false" text="Mã căn hộ" />
+                                    <TableColumn fx:id="tableColumnSoDienThoai" prefWidth="120.0" resizable="false" text="Số điện thoại" />
+                                    <TableColumn fx:id="tableColumnNgayChuyenDen" prefWidth="139.2000732421875" resizable="false" text="Ngày chuyển đến" />
+                                                                         <TableColumn fx:id="tableColumnTrangThaiCuDan" prefWidth="140.0" resizable="false" text="Trạng thái"  />
                                  </columns>
                               </TableView>
                               <AnchorPane prefWidth="970.0">

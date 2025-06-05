@@ -35,6 +35,9 @@ public class ThemCanHoButton implements Initializable {
     private Button buttonTaoCanHo;
 
     @FXML
+    private Label labelTitle;
+
+    @FXML
     private Button button_close_up;
 
     @FXML

@@ -949,16 +949,209 @@ public class ChiTietCanHoController implements Initializable {
         }
     }
 
+    @FXML
+    private void handleChinhSuaCanHo() {
+        try {
+            if (currentCanHo == null) {
+                showError("Lỗi", "Không có thông tin căn hộ để chỉnh sửa");
+                return;
+            }
+            
+            System.out.println("DEBUG: Opening edit apartment form for: " + currentCanHo.getMaCanHo());
+            
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/view/them_can_ho.fxml")
+            );
+            javafx.scene.Parent root = loader.load();
+            
+            // Get controller and setup for edit mode
+            io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller = loader.getController();
+            if (controller != null) {
+                // Setup edit mode - hide unnecessary sections and change title
+                setupEditMode(controller);
+                
+                // Populate apartment data
+                populateApartmentData(controller);
+                
+                // Inject service if available
+                if (canHoService != null) {
+                    controller.setCanHoService(canHoService);
+                    System.out.println("DEBUG: Injected CanHoService to edit form controller");
+                }
+            }
+            
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("Chỉnh sửa căn hộ - " + currentCanHo.getMaCanHo());
+            stage.setScene(new javafx.scene.Scene(root, 750, 400)); // Smaller height since we hide sections
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            stage.initOwner(button_close_up.getScene().getWindow());
+            stage.show();
+            
+            System.out.println("DEBUG: Edit apartment window opened successfully");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception in handleChinhSuaCanHo: " + e.getMessage());
+            e.printStackTrace();
+            showError("Lỗi mở chỉnh sửa", "Không thể mở form chỉnh sửa căn hộ: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Setup edit mode - hide unnecessary sections and change text
+     */
+    private void setupEditMode(io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller) {
+        try {
+            // Use reflection to access private fields
+            java.lang.reflect.Field vBoxChuSoHuuField = controller.getClass().getDeclaredField("vBoxChuSoHuu");
+            vBoxChuSoHuuField.setAccessible(true);
+            javafx.scene.layout.VBox vBoxChuSoHuu = (javafx.scene.layout.VBox) vBoxChuSoHuuField.get(controller);
+            
+            java.lang.reflect.Field vBoxThongTinCuDanMoiField = controller.getClass().getDeclaredField("vBoxThongTinCuDanMoi");
+            vBoxThongTinCuDanMoiField.setAccessible(true);
+            javafx.scene.layout.VBox vBoxThongTinCuDanMoi = (javafx.scene.layout.VBox) vBoxThongTinCuDanMoiField.get(controller);
+            
+            java.lang.reflect.Field choiceBoxThemChuSoHuuField = controller.getClass().getDeclaredField("choiceBoxThemChuSoHuu");
+            choiceBoxThemChuSoHuuField.setAccessible(true);
+            javafx.scene.control.CheckBox choiceBoxThemChuSoHuu = (javafx.scene.control.CheckBox) choiceBoxThemChuSoHuuField.get(controller);
+            
+            java.lang.reflect.Field choiceBoxTaoCuDanMoiField = controller.getClass().getDeclaredField("choiceBoxTaoCuDanMoi");
+            choiceBoxTaoCuDanMoiField.setAccessible(true);
+            javafx.scene.control.CheckBox choiceBoxTaoCuDanMoi = (javafx.scene.control.CheckBox) choiceBoxTaoCuDanMoiField.get(controller);
+            
+            java.lang.reflect.Field buttonTaoCanHoField = controller.getClass().getDeclaredField("buttonTaoCanHo");
+            buttonTaoCanHoField.setAccessible(true);
+            javafx.scene.control.Button buttonTaoCanHo = (javafx.scene.control.Button) buttonTaoCanHoField.get(controller);
+            
+            java.lang.reflect.Field labelTitleField = controller.getClass().getDeclaredField("labelTitle");
+            labelTitleField.setAccessible(true);
+            javafx.scene.control.Label labelTitle = (javafx.scene.control.Label) labelTitleField.get(controller);
+            
+            // Hide unnecessary sections
+            if (vBoxChuSoHuu != null) {
+                vBoxChuSoHuu.setVisible(false);
+                vBoxChuSoHuu.setManaged(false);
+            }
+            
+            if (vBoxThongTinCuDanMoi != null) {
+                vBoxThongTinCuDanMoi.setVisible(false);
+                vBoxThongTinCuDanMoi.setManaged(false);
+            }
+            
+            // Hide checkboxes
+            if (choiceBoxThemChuSoHuu != null) {
+                choiceBoxThemChuSoHuu.setVisible(false);
+                choiceBoxThemChuSoHuu.setManaged(false);
+            }
+            
+            if (choiceBoxTaoCuDanMoi != null) {
+                choiceBoxTaoCuDanMoi.setVisible(false);
+                choiceBoxTaoCuDanMoi.setManaged(false);
+            }
+            
+            // Change button text and title
+            if (buttonTaoCanHo != null) {
+                buttonTaoCanHo.setText("Cập nhật căn hộ");
+            }
+            
+            if (labelTitle != null) {
+                labelTitle.setText("Chỉnh sửa căn hộ");
+            }
+            
+            System.out.println("DEBUG: Edit mode setup completed - unnecessary sections hidden");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot setup edit mode: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Populate apartment data into form fields
+     */
+    private void populateApartmentData(io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller) {
+        try {
+            if (currentCanHo == null) return;
+            
+            // Use reflection to access private fields and set values
+            java.lang.reflect.Field textFieldToaField = controller.getClass().getDeclaredField("textFieldToa");
+            textFieldToaField.setAccessible(true);
+            javafx.scene.control.TextField textFieldToa = (javafx.scene.control.TextField) textFieldToaField.get(controller);
+            
+            java.lang.reflect.Field textFieldTangField = controller.getClass().getDeclaredField("textFieldTang");
+            textFieldTangField.setAccessible(true);
+            javafx.scene.control.TextField textFieldTang = (javafx.scene.control.TextField) textFieldTangField.get(controller);
+            
+            java.lang.reflect.Field textFieldSoNhaField = controller.getClass().getDeclaredField("textFieldSoNha");
+            textFieldSoNhaField.setAccessible(true);
+            javafx.scene.control.TextField textFieldSoNha = (javafx.scene.control.TextField) textFieldSoNhaField.get(controller);
+            
+            java.lang.reflect.Field textFieldDienTichField = controller.getClass().getDeclaredField("textFieldDienTich");
+            textFieldDienTichField.setAccessible(true);
+            javafx.scene.control.TextField textFieldDienTich = (javafx.scene.control.TextField) textFieldDienTichField.get(controller);
+            
+            java.lang.reflect.Field comboBoxTinhTrangKiThuatField = controller.getClass().getDeclaredField("comboBoxTinhTrangKiThuat");
+            comboBoxTinhTrangKiThuatField.setAccessible(true);
+            javafx.scene.control.ComboBox<String> comboBoxTinhTrangKiThuat = (javafx.scene.control.ComboBox<String>) comboBoxTinhTrangKiThuatField.get(controller);
+            
+            java.lang.reflect.Field comboBoxTinhTrangSuDungField = controller.getClass().getDeclaredField("comboBoxTinhTrangSuDung");
+            comboBoxTinhTrangSuDungField.setAccessible(true);
+            javafx.scene.control.ComboBox<String> comboBoxTinhTrangSuDung = (javafx.scene.control.ComboBox<String>) comboBoxTinhTrangSuDungField.get(controller);
+            
+            // Set values
+            if (textFieldToa != null && currentCanHo.getToaNha() != null) {
+                textFieldToa.setText(currentCanHo.getToaNha());
+            }
+            
+            if (textFieldTang != null && currentCanHo.getTang() != null) {
+                textFieldTang.setText(currentCanHo.getTang());
+            }
+            
+            if (textFieldSoNha != null && currentCanHo.getSoNha() != null) {
+                textFieldSoNha.setText(currentCanHo.getSoNha());
+            }
+            
+            if (textFieldDienTich != null && currentCanHo.getDienTich() != 0.0) {
+                textFieldDienTich.setText(String.valueOf(currentCanHo.getDienTich()));
+            }
+            
+            if (comboBoxTinhTrangKiThuat != null && currentCanHo.getTrangThaiKiThuat() != null) {
+                comboBoxTinhTrangKiThuat.setValue(currentCanHo.getTrangThaiKiThuat());
+            }
+            
+            if (comboBoxTinhTrangSuDung != null && currentCanHo.getTrangThaiSuDung() != null) {
+                comboBoxTinhTrangSuDung.setValue(currentCanHo.getTrangThaiSuDung());
+                comboBoxTinhTrangSuDung.setDisable(false); // Enable it for editing
+            }
+            
+            System.out.println("DEBUG: Apartment data populated successfully");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot populate apartment data: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Thiết lập dữ liệu căn hộ từ bên ngoài
      */
     public void setCanHoData(CanHoChiTietDto canHoData) {
-        if (canHoData != null) {
-            // Luôn luôn load dữ liệu đầy đủ từ service/database
-            loadDataFromService(canHoData.getMaCanHo());
-        } else {
-            showError("Lỗi dữ liệu", "Không có thông tin căn hộ để hiển thị");
-            clearAllData();
+        try {
+            System.out.println("DEBUG: setCanHoData called with: " + (canHoData != null ? canHoData.getMaCanHo() : "NULL"));
+            
+            if (canHoData != null) {
+                System.out.println("DEBUG: About to call loadDataFromService for: " + canHoData.getMaCanHo());
+                // Luôn luôn load dữ liệu đầy đủ từ service/database
+                loadDataFromService(canHoData.getMaCanHo());
+                System.out.println("DEBUG: loadDataFromService completed successfully");
+            } else {
+                System.err.println("ERROR: CanHoData is null");
+                showError("Lỗi dữ liệu", "Không có thông tin căn hộ để hiển thị");
+                clearAllData();
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception in setCanHoData: " + e.getMessage());
+            e.printStackTrace();
+            showError("Lỗi thiết lập dữ liệu", "Không thể thiết lập dữ liệu căn hộ: " + e.getMessage());
         }
     }
 

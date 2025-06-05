@@ -552,15 +552,14 @@ public class Home_list implements Initializable {
             // Sử dụng FXMLLoader thông thường cho JavaFX modal
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/them_can_ho.fxml"));
             
-            // Tạo instance controller thủ công và set vào loader
-            ThemCanHoButton controller = new ThemCanHoButton();
-            loader.setController(controller);
-            
             // Load view
             Parent root = loader.load();
             
+            // Get controller từ FXML
+            ThemCanHoButton controller = loader.getController();
+            
             // Inject service sau khi load
-            if (canHoService != null) {
+            if (canHoService != null && controller != null) {
                 controller.setCanHoService(canHoService);
             }
             
@@ -612,18 +611,21 @@ public class Home_list implements Initializable {
                 
                 if (canHoDtoList != null) {
                     for (CanHoDto dto : canHoDtoList) {
-                        String chuHoName = dto.getChuHo() != null ? dto.getChuHo().getHoVaTen() : "";
-                        CanHoTableData tableData = new CanHoTableData(
-                            dto.getMaCanHo(),
-                            dto.getToaNha(),
-                            dto.getTang(),
-                            dto.getSoNha(),
-                            dto.getDienTich() + " m²",
-                            chuHoName,
-                            dto.getTrangThaiSuDung(),
-                            dto.getTrangThaiKiThuat()
-                        );
-                        canHoList.add(tableData);
+                        // Kiểm tra xem căn hộ có cư dân còn đang ở không
+                        if (shouldShowApartment(dto)) {
+                            String chuHoName = dto.getChuHo() != null ? dto.getChuHo().getHoVaTen() : "";
+                            CanHoTableData tableData = new CanHoTableData(
+                                dto.getMaCanHo(),
+                                dto.getToaNha(),
+                                dto.getTang(),
+                                dto.getSoNha(),
+                                dto.getDienTich() + " m²",
+                                chuHoName,
+                                dto.getTrangThaiSuDung(),
+                                dto.getTrangThaiKiThuat()
+                            );
+                            canHoList.add(tableData);
+                        }
                     }
                 }
                 
@@ -643,6 +645,40 @@ public class Home_list implements Initializable {
         }
     }
     
+    /**
+     * Kiểm tra xem căn hộ có nên hiển thị trong danh sách hay không
+     * Ẩn những căn hộ có tất cả cư dân đã chuyển đi
+     */
+    private boolean shouldShowApartment(io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto dto) {
+        try {
+            // Lấy thông tin chi tiết căn hộ để kiểm tra cư dân
+            io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto chiTiet = canHoService.getCanHoChiTiet(dto);
+            
+            if (chiTiet == null || chiTiet.getCuDanList() == null || chiTiet.getCuDanList().isEmpty()) {
+                // Nếu không có cư dân thì vẫn hiển thị (căn hộ trống)
+                return true;
+            }
+            
+            // Kiểm tra xem có cư dân nào còn đang ở không
+            for (io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto cuDan : chiTiet.getCuDanList()) {
+                String trangThai = cuDan.getTrangThaiCuTru();
+                // Nếu có ít nhất 1 cư dân chưa chuyển đi thì hiển thị căn hộ
+                if (trangThai != null && !trangThai.equals("Đã chuyển đi")) {
+                    return true;
+                }
+            }
+            
+            // Tất cả cư dân đều đã chuyển đi thì ẩn căn hộ
+            System.out.println("DEBUG: Hiding apartment " + dto.getMaCanHo() + " - all residents moved out");
+            return false;
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot check apartment residents for " + dto.getMaCanHo() + ": " + e.getMessage());
+            // Nếu có lỗi thì vẫn hiển thị để tránh mất dữ liệu
+            return true;
+        }
+    }
+
     /**
      * Load dữ liệu mẫu khi service chưa sẵn sàng
      */
@@ -758,12 +794,18 @@ public class Home_list implements Initializable {
      */
     private void openChiTietCanHo(CanHoChiTietDto chiTiet) {
         try {
+            System.out.println("DEBUG: Starting to open chi tiet can ho for: " + chiTiet.getMaCanHo());
+            
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
                 getClass().getResource("/view/chi_tiet_can_ho.fxml")
             );
+            System.out.println("DEBUG: FXML Loader created successfully");
+            
             javafx.scene.Parent root = loader.load();
+            System.out.println("DEBUG: FXML loaded successfully");
             
             ChiTietCanHoController controller = loader.getController();
+            System.out.println("DEBUG: Controller obtained: " + (controller != null ? "SUCCESS" : "NULL"));
             
             // Inject ApplicationContext trước tiên
             if (applicationContext != null) {
@@ -791,15 +833,21 @@ public class Home_list implements Initializable {
             }
             
             // Set data sau khi đã inject services
+            System.out.println("DEBUG: Setting CanHo data to controller");
             controller.setCanHoData(chiTiet);
+            System.out.println("DEBUG: CanHo data set successfully");
             
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.setTitle("Chi tiết căn hộ - " + chiTiet.getMaCanHo());
             stage.setScene(new javafx.scene.Scene(root, 1000, 700));
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(tabelViewCanHo.getScene().getWindow());
+            System.out.println("DEBUG: About to show stage");
             stage.show();
+            System.out.println("DEBUG: Stage shown successfully");
         } catch (Exception e) {
+            System.err.println("ERROR: Exception in openChiTietCanHo: " + e.getMessage());
+            e.printStackTrace();
             showError("Lỗi mở chi tiết", "Không thể mở trang chi tiết căn hộ: " + e.getMessage());
         }
     }
@@ -808,15 +856,39 @@ public class Home_list implements Initializable {
      * Tạo dữ liệu mẫu cho chi tiết căn hộ
      */
     private CanHoChiTietDto createSampleChiTiet(CanHoTableData canHo) {
-        CanHoChiTietDto chiTiet = new CanHoChiTietDto();
-        chiTiet.setMaCanHo(canHo.getMaCanHo());
-        chiTiet.setToaNha(canHo.getToaNha());
-        chiTiet.setTang(canHo.getTang());
-        chiTiet.setSoNha(canHo.getSoNha());
-        chiTiet.setDienTich(Double.parseDouble(canHo.getDienTich().replace(" m²", "")));
-        chiTiet.setTrangThaiKiThuat(canHo.getTrangThaiKiThuat());
-        chiTiet.setTrangThaiSuDung(canHo.getTrangThaiSuDung());
-        return chiTiet;
+        try {
+            CanHoChiTietDto chiTiet = new CanHoChiTietDto();
+            chiTiet.setMaCanHo(canHo.getMaCanHo());
+            chiTiet.setToaNha(canHo.getToaNha());
+            chiTiet.setTang(canHo.getTang());
+            chiTiet.setSoNha(canHo.getSoNha());
+            
+            // Safe parsing of area
+            try {
+                String dienTichStr = canHo.getDienTich();
+                if (dienTichStr != null) {
+                    dienTichStr = dienTichStr.replace(" m²", "").replace("m²", "").trim();
+                    chiTiet.setDienTich(Double.parseDouble(dienTichStr));
+                } else {
+                    chiTiet.setDienTich(0.0);
+                }
+            } catch (NumberFormatException e) {
+                System.err.println("Cannot parse area: " + canHo.getDienTich() + ", using default 0.0");
+                chiTiet.setDienTich(0.0);
+            }
+            
+            chiTiet.setTrangThaiKiThuat(canHo.getTrangThaiKiThuat());
+            chiTiet.setTrangThaiSuDung(canHo.getTrangThaiSuDung());
+            
+            // Set default status
+            chiTiet.setDaBanChua(false); // Default to not sold
+            
+            return chiTiet;
+        } catch (Exception e) {
+            System.err.println("Error creating sample CanHoChiTietDto: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     // Setter for dependency injection
@@ -1042,71 +1114,19 @@ public class Home_list implements Initializable {
             ((TableColumn<CuDanTableData, String>) tableColumnTrangThaiCuDan).setCellValueFactory(new PropertyValueFactory<>("trangThaiCuTru"));
             ((TableColumn<CuDanTableData, String>) tableColumnNgayChuyenDen).setCellValueFactory(new PropertyValueFactory<>("ngayChuyenDen"));
             
-            // Setup action column with delete button
-            ((TableColumn<CuDanTableData, String>) tableColumnThaoTacCuDan).setCellFactory(col -> {
-                return new javafx.scene.control.TableCell<CuDanTableData, String>() {
-                    private final javafx.scene.control.Button deleteButton = new javafx.scene.control.Button("Xóa");
-                    
-                    {
-                        deleteButton.getStyleClass().addAll("action-button", "button-red");
-                        
-                        // Kiểm tra quyền của người dùng và disable nút nếu không phải "Tổ phó"
-                        boolean isToPhO = false;
-                        try {
-                            if (Session.getCurrentUser() != null) {
-                                String vaiTro = Session.getCurrentUser().getVaiTro();
-                                isToPhO = "Tổ phó".equals(vaiTro);
-                            }
-                        } catch (Exception e) {
-                            System.err.println("Lỗi khi kiểm tra vai trò cho nút xóa: " + e.getMessage());
-                            isToPhO = false;
-                        }
-                        
-                        deleteButton.setDisable(!isToPhO);
-                        
-                        if (!isToPhO) {
-                            // Thêm tooltip giải thích tại sao nút bị disable
-                            javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
-                                "Chỉ người dùng có vai trò 'Tổ phó' mới có thể xóa cư dân");
-                            javafx.scene.control.Tooltip.install(deleteButton, tooltip);
-                        }
-                        
-                        deleteButton.setOnAction(event -> {
-                            try {
-                                // Double check quyền trước khi thực hiện xóa
-                                if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
-                                    showError("Lỗi quyền", "Bạn không có quyền xóa cư dân.\nChỉ người dùng có vai trò 'Tổ phó' mới được phép thực hiện thao tác này.");
-                                    return;
-                                }
-                                
-                                int index = getIndex();
-                                if (index >= 0 && index < getTableView().getItems().size()) {
-                                    CuDanTableData cuDan = getTableView().getItems().get(index);
-                                    if (cuDan != null) {
-                                        handleDeleteCuDan(cuDan);
-                                    }
-                                }
-                            } catch (Exception e) {
-                                System.err.println("Lỗi khi xóa cư dân: " + e.getMessage());
-                                e.printStackTrace();
-                                showError("Lỗi", "Có lỗi xảy ra khi xóa cư dân: " + e.getMessage());
-                            }
-                        });
+            // Thêm sự kiện single-click để chỉnh sửa cư dân (giống như table căn hộ)
+            typedTableView.setRowFactory(tv -> {
+                javafx.scene.control.TableRow<CuDanTableData> row = new javafx.scene.control.TableRow<>();
+                row.setOnMouseClicked(event -> {
+                    System.out.println("DEBUG: Mouse clicked on row");
+                    // Single-click vào bất kỳ chỗ nào của dòng sẽ mở form chỉnh sửa
+                    if (!row.isEmpty() && event.getClickCount() == 1) {
+                        CuDanTableData rowData = row.getItem();
+                        System.out.println("DEBUG: Opening edit form for: " + (rowData != null ? rowData.getHoVaTen() : "null"));
+                        handleEditCuDan(rowData);
                     }
-                    
-                    @Override
-                    protected void updateItem(String item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (empty || getIndex() < 0) {
-                            setGraphic(null);
-                        } else {
-                            javafx.scene.layout.HBox hbox = new javafx.scene.layout.HBox();
-                            hbox.setAlignment(javafx.geometry.Pos.CENTER);
-                            hbox.getChildren().add(deleteButton);
-                            setGraphic(hbox);
-                        }
-                    }
-                };
+                });
+                return row;
             });
             
             // Setup scroll bars - enable vertical scrolling, disable horizontal scrolling
@@ -1133,11 +1153,7 @@ public class Home_list implements Initializable {
             typedTableView.setPrefWidth(970); // Giống với trang căn hộ
             typedTableView.setMaxWidth(970);
             
-            // Cải thiện hiệu suất cuộn
-            typedTableView.setRowFactory(tv -> {
-                javafx.scene.control.TableRow<CuDanTableData> row = new javafx.scene.control.TableRow<>();
-                return row;
-            });
+            // Note: RowFactory đã được setup ở trên với click event, không cần thiết lập lại
             
             // Cho phép cuộn bằng phím mũi tên và chuột
             typedTableView.setOnKeyPressed(event -> {
@@ -1163,6 +1179,67 @@ public class Home_list implements Initializable {
         }
     }
     
+    /**
+     * Xử lý chỉnh sửa cư dân
+     */
+    private void handleEditCuDan(CuDanTableData cuDan) {
+        try {
+            // Kiểm tra quyền
+            if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+                showError("Lỗi quyền", "Bạn không có quyền chỉnh sửa cư dân.\nChỉ người dùng có vai trò 'Tổ phó' mới được phép thực hiện thao tác này.");
+                return;
+            }
+            
+            System.out.println("Mở form chỉnh sửa cư dân: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
+            
+            // Load view + controller using FxViewLoader
+            FxView<?> fxView = fxViewLoader.loadFxView("/view/cu_dan.fxml");
+            
+            // Get controller and setup edit mode
+            Object controller = fxView.getController();
+            if (controller instanceof io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController) {
+                io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController cuDanController = 
+                    (io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController) controller;
+                
+                // Setup edit mode với dữ liệu cư dân hiện tại
+                cuDanController.setupEditMode(cuDan);
+            }
+
+            // Tạo cửa sổ mới
+            Stage newStage = new Stage();
+            newStage.setScene(new Scene(fxView.getView()));
+            newStage.setTitle("Chỉnh sửa cư dân - " + cuDan.getHoVaTen());
+
+            // Thiết lập modal
+            newStage.initModality(Modality.APPLICATION_MODAL);
+
+            // Gán owner là cửa sổ hiện tại
+            Stage currentStage = (Stage) scrollPaneCuDan.getScene().getWindow();
+            newStage.initOwner(currentStage);
+
+            // Thiết lập kích thước cửa sổ
+            newStage.setMinWidth(700);
+            newStage.setMinHeight(600);
+            newStage.setResizable(true);
+
+            // Hiển thị cửa sổ mới và chờ đóng
+            newStage.showAndWait();
+            
+            // Reload dữ liệu sau khi đóng form chỉnh sửa
+            System.out.println("Form chỉnh sửa cư dân đã đóng, reload dữ liệu...");
+            loadCuDanData();
+
+        } catch (IOException e) {
+            System.err.println("Không thể mở cửa sổ chỉnh sửa cư dân:");
+            e.printStackTrace();
+            showError("Lỗi", "Không thể mở form chỉnh sửa cư dân: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Lỗi khi xử lý chỉnh sửa cư dân: " + e.getMessage());
+            e.printStackTrace();
+            showError("Lỗi", "Có lỗi xảy ra khi chỉnh sửa cư dân: " + e.getMessage());
+        }
+    }
+
     /**
      * Xử lý xóa mềm cư dân
      */

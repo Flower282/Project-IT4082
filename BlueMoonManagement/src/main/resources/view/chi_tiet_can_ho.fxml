@@ -17,7 +17,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox fx:controller="io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController" alignment="TOP_CENTER" spacing="10.0" stylesheets="@/view/style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<VBox fx:controller="io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController" alignment="TOP_CENTER" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <AnchorPane>
          <children>
@@ -221,7 +221,7 @@
                         </VBox>
                      </children>
                   </VBox>
-                  <Button fx:id="buttonChinhSua" layoutX="297.0" layoutY="325.0" mnemonicParsing="false" text="Chỉnh sửa" AnchorPane.bottomAnchor="15.0">
+                  <Button fx:id="buttonChinhSua" layoutX="297.0" layoutY="325.0" mnemonicParsing="false" onAction="#handleChinhSuaCanHo" text="Chỉnh sửa" AnchorPane.bottomAnchor="15.0">
                      <graphic>
                         <Group>
                            <children>

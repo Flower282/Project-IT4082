@@ -195,7 +195,7 @@
             <Insets left="30.0" right="30.0" />
          </VBox.margin>
       </TextFlow>
-      <StackPane>
+      <VBox alignment="CENTER" spacing="10.0">
          <VBox.margin>
             <Insets bottom="20.0" />
          </VBox.margin>
@@ -213,7 +213,7 @@
                   <String fx:value="button-green" />
                </styleClass>
             </Button>
-            <Button fx:id="buttonLuu" layoutX="296.0" layoutY="10.0" mnemonicParsing="false" text="Lưu" visible="false">
+            <Button fx:id="buttonLuu" mnemonicParsing="false" text="Lưu" visible="false">
                <graphic>
                   <Group>
                      <children>
@@ -223,10 +223,23 @@
                </graphic>
                <styleClass>
                   <String fx:value="action-button" />
-                  <String fx:value="button-orange" />
+                  <String fx:value="button-green" />
                </styleClass>
             </Button>
-            <Button fx:id="buttonChinhSua" layoutX="328.0" layoutY="10.0" mnemonicParsing="false" text="Chỉnh sửa" visible="false">
+            <Button fx:id="buttonXoa" mnemonicParsing="false" text="Xóa" visible="false">
+               <graphic>
+                  <Group>
+                     <children>
+                        <FontAwesomeIcon glyphName="TRASH" styleClass="action-button-icon" />
+                     </children>
+                  </Group>
+               </graphic>
+               <styleClass>
+                  <String fx:value="action-button" />
+                  <String fx:value="button-red" />
+               </styleClass>
+            </Button>
+            <Button fx:id="buttonChinhSua" mnemonicParsing="false" text="Chỉnh sửa" visible="false">
                <graphic>
                   <Group>
                      <children>
@@ -240,7 +253,7 @@
                </styleClass>
             </Button>
          </children>
-      </StackPane>
+      </VBox>
    </children>
    <styleClass>
       <String fx:value="round-big" />
