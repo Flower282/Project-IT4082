@@ -5,6 +5,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
+import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -485,11 +487,11 @@ public class Home_list implements Initializable {
         // Setup tables
         setupCanHoTable();
         setupCuDanTable();
-        
+        setupTaiKhoanTable();
         // Load data
         loadData();
         loadCuDanData();
-        
+        loadTaiKhoanData();
         // Show default tab
         show("TrangChu");
         
