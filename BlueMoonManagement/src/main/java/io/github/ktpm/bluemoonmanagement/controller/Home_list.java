@@ -1191,9 +1191,49 @@ public class Home_list implements Initializable {
                     private final javafx.scene.control.Button deleteButton = new javafx.scene.control.Button("Xóa");
                     
                     {
+                        deleteButton.getStyleClass().addAll("action-button", "button-red");
+
+                        // Kiểm tra quyền của người dùng và disable nút nếu không phải "Tổ phó"
+                        boolean isToPhO = false;
+                        try {
+                            if (Session.getCurrentUser() != null) {
+                                String vaiTro = Session.getCurrentUser().getVaiTro();
+                                isToPhO = "Tổ phó".equals(vaiTro);
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Lỗi khi kiểm tra vai trò cho nút xóa: " + e.getMessage());
+                            isToPhO = false;
+                        }
+
+                        deleteButton.setDisable(!isToPhO);
+
+                        if (!isToPhO) {
+                            // Thêm tooltip giải thích tại sao nút bị disable
+                            javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
+                                "Chỉ người dùng có vai trò 'Tổ phó' mới có thể xóa cư dân");
+                            javafx.scene.control.Tooltip.install(deleteButton, tooltip);
+                        }
+
                         deleteButton.setOnAction(event -> {
-                            CuDanTableData cuDan = getTableView().getItems().get(getIndex());
-                            handleDeleteCuDan(cuDan);
+                            try {
+                                // Double check quyền trước khi thực hiện xóa
+                                if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+                                    showError("Lỗi quyền", "Bạn không có quyền xóa cư dân.\nChỉ người dùng có vai trò 'Tổ phó' mới được phép thực hiện thao tác này.");
+                                    return;
+                                }
+
+                                int index = getIndex();
+                                if (index >= 0 && index < getTableView().getItems().size()) {
+                                    CuDanTableData cuDan = getTableView().getItems().get(index);
+                                    if (cuDan != null) {
+                                        handleDeleteCuDan(cuDan);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                System.err.println("Lỗi khi xóa cư dân: " + e.getMessage());
+                                e.printStackTrace();
+                                showError("Lỗi", "Có lỗi xảy ra khi xóa cư dân: " + e.getMessage());
+                            }
                         });
                     }
                     
@@ -1212,16 +1252,24 @@ public class Home_list implements Initializable {
                 };
             });
             
-            // Fix scroll bar issue - hide scroll bars to prevent mouse scroll problems
+            // Setup scroll bars - enable vertical scrolling, disable horizontal scrolling
             javafx.application.Platform.runLater(() -> {
                 for (javafx.scene.Node node : typedTableView.lookupAll(".scroll-bar")) {
                     if (node instanceof javafx.scene.control.ScrollBar) {
-                        node.setVisible(false);
-                        ((javafx.scene.control.ScrollBar) node).setDisable(true);
+                        javafx.scene.control.ScrollBar scrollBar = (javafx.scene.control.ScrollBar) node;
+                        if (scrollBar.getOrientation() == javafx.geometry.Orientation.HORIZONTAL) {
+                            // Ẩn scroll bar ngang
+                            scrollBar.setVisible(false);
+                            scrollBar.setDisable(true);
+                        } else {
+                            // Giữ scroll bar dọc và cho phép cuộn
+                            scrollBar.setVisible(true);
+                            scrollBar.setDisable(false);
+                        }
                     }
                 }
             });
-
+            
             System.out.println("CuDan table setup completed");
         } else {
             System.out.println("WARNING: tabelViewCuDan is null");
@@ -1233,28 +1281,43 @@ public class Home_list implements Initializable {
      */
     private void handleDeleteCuDan(CuDanTableData cuDan) {
         try {
-            // Hiển thị dialog xác nhận
-            javafx.scene.control.Alert confirmDialog = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
-            confirmDialog.setTitle("Xác nhận xóa");
-            confirmDialog.setHeaderText("Xóa cư dân");
-            confirmDialog.setContentText("Bạn có chắc chắn muốn xóa cư dân " + cuDan.getHoVaTen() + " không?\nThao tác này sẽ cập nhật ngày chuyển đi cho cư dân.");
+            // Hiển thị dialog xác nhận tùy chỉnh
+            boolean confirmed = showCustomConfirmDialog(cuDan.getHoVaTen(), cuDan.getMaDinhDanh());
             
-            java.util.Optional<javafx.scene.control.ButtonType> result = confirmDialog.showAndWait();
-            
-            if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+            if (confirmed) {
                 if (cuDanService != null) {
+                    // Kiểm tra quyền trước khi xóa
+                    if (Session.getCurrentUser() == null) {
+                        showError("Lỗi quyền", "Bạn chưa đăng nhập. Vui lòng đăng nhập lại!");
+                        return;
+                    }
+
+                    if (!"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+                        showError("Lỗi quyền", "Bạn không có quyền xóa cư dân.\nChỉ người dùng có vai trò 'Tổ phó' mới được phép thực hiện thao tác này.");
+                        return;
+                    }
+
                     // Gọi service để xóa mềm cư dân
+                    System.out.println("DEBUG Controller: Gọi service xóa mềm với mã: " + cuDan.getMaDinhDanh());
                     boolean deleted = cuDanService.xoaMem(cuDan.getMaDinhDanh());
-                    
+                    System.out.println("DEBUG Controller: Kết quả xóa: " + deleted);
+
                     if (deleted) {
                         showSuccess("Thành công", "Đã xóa cư dân thành công!");
                         // Reload dữ liệu để cập nhật danh sách
                         loadCuDanData();
                     } else {
-                        showError("Lỗi", "Không thể xóa cư dân. Vui lòng thử lại!");
+                        System.err.println("DEBUG Controller: Xóa thất bại - hiển thị thông báo lỗi");
+                        showError("Lỗi xóa cư dân",
+                            "Không thể xóa cư dân: " + cuDan.getHoVaTen() + "\n\n" +
+                            "Có thể do:\n" +
+                            "• Cư dân không tồn tại trong hệ thống\n" +
+                            "• Lỗi kết nối cơ sở dữ liệu\n" +
+                            "• Quyền truy cập không đủ\n\n" +
+                            "Vui lòng kiểm tra console để xem chi tiết lỗi.");
                     }
                 } else {
-                    showError("Lỗi", "Service không khả dụng!");
+                    showError("Lỗi hệ thống", "Service không khả dụng. Vui lòng liên hệ quản trị viên!");
                 }
             }
         } catch (Exception e) {
@@ -1270,11 +1333,6 @@ public class Home_list implements Initializable {
         try {
             if (cuDanService != null) {
                 List<io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto> cuDanDtoList = cuDanService.getAllCuDan();
-                
-                // Clear existing data
-                if (cuDanList == null) {
-                    cuDanList = FXCollections.observableArrayList();
-                }
                 cuDanList.clear();
                 
                 if (cuDanDtoList != null) {
@@ -1302,18 +1360,10 @@ public class Home_list implements Initializable {
                 System.out.println("Loaded " + cuDanList.size() + " residents from service");
             } else {
                 System.err.println("CuDanService is null");
-                // Initialize empty data
-                allCuDanData = new java.util.ArrayList<>();
-                currentPageCuDan = 1;
-                updateCurrentPageDisplay();
             }
         } catch (Exception e) {
             System.err.println("Lỗi khi tải dữ liệu cư dân từ service: " + e.getMessage());
             e.printStackTrace();
-            // Initialize empty data on error
-            allCuDanData = new java.util.ArrayList<>();
-            currentPageCuDan = 1;
-            updateCurrentPageDisplay();
         }
     }
 
@@ -1323,7 +1373,97 @@ public class Home_list implements Initializable {
     private void updateCuDanKetQuaLabel() {
         int total = filteredCuDanList != null ? filteredCuDanList.size() : 0;
         if (labelKetQuaHienThiCuDan != null) {
-            labelKetQuaHienThiCuDan.setText(String.format("Hiển thị 1 - %d trên tổng số %d cư dân", total, total));
+            // Với chiều cao 400px, có thể hiển thị khoảng 15-16 dòng
+            int visibleRows = Math.min(total, 15);
+            if (total <= 15) {
+                labelKetQuaHienThiCuDan.setText(String.format("Hiển thị %d/%d cư dân", total, total));
+            } else {
+                labelKetQuaHienThiCuDan.setText(String.format("Hiển thị %d đầu tiên / %d cư dân (cuộn để xem thêm)", visibleRows, total));
+            }
+        }
+    }
+
+    /**
+     * Thiết lập quyền cho các nút dựa trên vai trò người dùng
+     * Chỉ "Tổ phó" mới có thể thêm cư dân và căn hộ
+     */
+    private void setupButtonPermissions() {
+        boolean isToPhO = false;
+
+        try {
+            if (Session.getCurrentUser() != null) {
+                String vaiTro = Session.getCurrentUser().getVaiTro();
+                isToPhO = "Tổ phó".equals(vaiTro);
+                System.out.println("DEBUG: User role = " + vaiTro + ", isToPhO = " + isToPhO);
+            } else {
+                System.out.println("DEBUG: Không có user hiện tại");
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi kiểm tra vai trò người dùng: " + e.getMessage());
+            isToPhO = false; // Mặc định không có quyền
+        }
+
+        // Disable/enable các nút thêm dựa trên quyền
+        if (buttonThemCuDan != null) {
+            buttonThemCuDan.setDisable(!isToPhO);
+            if (!isToPhO) {
+                // Thêm tooltip giải thích tại sao nút bị disable
+                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
+                    "Chỉ người dùng có vai trò 'Tổ phó' mới có thể thêm cư dân");
+                javafx.scene.control.Tooltip.install(buttonThemCuDan, tooltip);
+                System.out.println("DEBUG: Đã disable nút thêm cư dân");
+            }
+        }
+
+        if (buttonThemCanHo != null) {
+            buttonThemCanHo.setDisable(!isToPhO);
+            if (!isToPhO) {
+                // Thêm tooltip giải thích tại sao nút bị disable
+                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
+                    "Chỉ người dùng có vai trò 'Tổ phó' mới có thể thêm căn hộ");
+                javafx.scene.control.Tooltip.install(buttonThemCanHo, tooltip);
+                System.out.println("DEBUG: Đã disable nút thêm căn hộ");
+            }
+        }
+
+        System.out.println("DEBUG: Hoàn thành thiết lập quyền nút");
+    }
+
+    /**
+     * Hiển thị dialog xác nhận tùy chỉnh
+     */
+    private boolean showCustomConfirmDialog(String hoVaTen, String maDinhDanh) {
+        try {
+            // Load FXML file
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/xac_nhan.fxml"));
+            javafx.scene.Parent root = loader.load();
+
+            // Lấy controller
+            XacNhanController controller = loader.getController();
+
+            // Thiết lập nội dung
+            controller.setTitle("Xác nhận xóa cư dân");
+            controller.setContent("Bạn có chắc chắn muốn xóa cư dân " + hoVaTen + " (Mã: " + maDinhDanh + ") không?");
+
+            // Tạo stage
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.initStyle(javafx.stage.StageStyle.UNDECORATED);
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            stage.initOwner(tabelViewCuDan.getScene().getWindow());
+
+            // Thiết lập scene
+            javafx.scene.Scene scene = new javafx.scene.Scene(root);
+            stage.setScene(scene);
+            stage.centerOnScreen();
+
+            // Hiển thị và chờ
+            stage.showAndWait();
+
+            return controller.isConfirmed();
+        } catch (Exception e) {
+            System.err.println("Lỗi khi hiển thị dialog xác nhận: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
     }
 

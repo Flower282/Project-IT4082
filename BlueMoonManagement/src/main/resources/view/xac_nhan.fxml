@@ -13,9 +13,9 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<AnchorPane prefHeight="220.0" prefWidth="450.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane prefHeight="220.0" prefWidth="450.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.XacNhanController">
    <children>
-      <Button fx:id="button_close_up" layoutX="376.0" layoutY="8.0" mnemonicParsing="false" styleClass="button-close" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="5.0">
+      <Button fx:id="button_close_up" layoutX="376.0" layoutY="8.0" mnemonicParsing="false" onAction="#handleCloseUp" styleClass="button-close" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="5.0">
          <graphic>
             <Group>
                <children>
@@ -26,7 +26,7 @@
       </Button>
       <HBox alignment="CENTER" layoutX="191.0" layoutY="168.8000030517578" prefWidth="450.0" spacing="20.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="0.0">
          <children>
-            <Button fx:id="button_close_option" mnemonicParsing="false" text="Hủy">
+            <Button fx:id="buttonCancel" mnemonicParsing="false" onAction="#handleCancel" text="Hủy">
                <styleClass>
                   <String fx:value="action-button" />
                   <String fx:value="button-red" />
@@ -39,7 +39,7 @@
                   </Group>
                </graphic>
             </Button>
-            <Button fx:id="button_close_option1" layoutX="204.0" layoutY="10.0" mnemonicParsing="false" text="Xác nhận">
+            <Button fx:id="buttonConfirm" layoutX="204.0" layoutY="10.0" mnemonicParsing="false" onAction="#handleConfirm" text="Xác nhận">
                <styleClass>
                   <String fx:value="action-button" />
                   <String fx:value="button-green" />
