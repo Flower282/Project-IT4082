@@ -5,6 +5,8 @@ import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
+import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -441,6 +443,9 @@ public class Home_list implements Initializable {
 
     @Autowired
     private ApplicationContext applicationContext;
+
+    @Autowired
+    private QuanLyTaiKhoanService taiKhoanService;
     
     @Autowired
     private io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService cuDanService;
@@ -453,6 +458,9 @@ public class Home_list implements Initializable {
     
     private ObservableList<CuDanTableData> cuDanList;
     private ObservableList<CuDanTableData> filteredCuDanList;
+
+    private ObservableList<TaiKhoanTableData> taiKhoanList;
+    private ObservableList<TaiKhoanTableData> filteredTaiKhoanList;
     
     // Pagination variables
     private int currentPageCuDan = 1;
@@ -479,10 +487,11 @@ public class Home_list implements Initializable {
         // Setup tables
         setupCanHoTable();
         setupCuDanTable();
-        
+        setupTaiKhoanTable();
         // Load data
         loadData();
         loadCuDanData();
+        loadTaiKhoanData();
         
         // Show default tab
         show("TrangChu");
@@ -934,6 +943,138 @@ public class Home_list implements Initializable {
         public void setMaCanHo(String maCanHo) { this.maCanHo = maCanHo; }
         public void setTrangThaiCuTru(String trangThaiCuTru) { this.trangThaiCuTru = trangThaiCuTru; }
         public void setNgayChuyenDen(String ngayChuyenDen) { this.ngayChuyenDen = ngayChuyenDen; }
+    }
+    public class TaiKhoanTableData {
+        private String email;
+        private String hoVaTen;
+        private String vaiTro;
+        private String ngayTao;
+        private String ngayCapNhat;
+
+        public TaiKhoanTableData(String email, String hoVaTen, String vaiTro,String ngayTao ,String ngayCapNhat) {
+            this.email = email;
+            this.hoVaTen = hoVaTen;
+            this.vaiTro = vaiTro;
+            this.ngayTao = ngayTao;
+            this.ngayCapNhat = ngayCapNhat;
+
+        }
+        // Getters
+        public String getEmail() { return email; }
+        public String getHoVaTen() { return hoVaTen; }
+        public String getVaiTro() { return vaiTro; }
+        public String getNgayCapNhat() { return ngayCapNhat; }
+        public String getNgayTao(){ return ngayTao; }
+        // Setters
+        public void setEmail(String email) { this.email = email; }
+        public void setHoVaTen(String hoVaTen) { this.hoVaTen = hoVaTen; }
+        public void setVaiTro(String vaiTro) { this.vaiTro = vaiTro; }
+        public void setNgayTao(String ngayTao){this.ngayTao = ngayTao; }
+        public void setNgayCapNhat(String ngayCapNhat) { this.ngayCapNhat = ngayCapNhat; }
+
+    }
+
+    public void setupTaiKhoanTable() {
+        if( tabelViewTaiKhoan != null && tableColumnEmail != null) {
+            // Cast table view to correct type
+            TableView<TaiKhoanTableData> typedTableView = (TableView<TaiKhoanTableData>) tabelViewTaiKhoan;
+
+            // Setup cell value factories - need to cast to proper types
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnEmail).setCellValueFactory(new PropertyValueFactory<>("email"));
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnHoVaTenTaiKhoan).setCellValueFactory(new PropertyValueFactory<>("hoVaTen"));
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnVaiTro).setCellValueFactory(new PropertyValueFactory<>("vaiTro"));
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayTao).setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayCapNhat).setCellValueFactory(new PropertyValueFactory<>("ngayCapNhat"));
+
+            // Thêm sự kiện single-click để xem chi tiết tài khoản
+            typedTableView.setRowFactory(tv -> {
+                javafx.scene.control.TableRow<TaiKhoanTableData> row = new javafx.scene.control.TableRow<>();
+                row.setOnMouseClicked(event -> {
+                    // Single-click vào bất kỳ chỗ nào của dòng sẽ mở chi tiết
+                    if (!row.isEmpty() && event.getClickCount() == 1) {
+                        TaiKhoanTableData rowData = row.getItem();
+                        handleXemChiTietTaiKhoan(rowData);
+                    }
+                });
+                return row;
+            });
+        }
+    }
+
+    private void handleXemChiTietTaiKhoan(TaiKhoanTableData rowData) {
+//        try {
+//            if (taiKhoanService != null) {
+//
+//                String email = rowData.getEmail();
+//                String hoVaTen = rowData.getHoVaTen();
+//                String vaiTro = rowData.getVaiTro();
+//                String ngayTao = rowData.getNgayTao();
+//                String ngayCapNhat = rowData.getNgayCapNhat();
+//
+//
+//                ThongTinTaiKhoanDto thongTinTaiKhoanDto = new ThongTinTaiKhoanDto(email, hoVaTen, vaiTro);
+//                if (thongTinTaiKhoanDto != null) {
+//                    openChiTietTaiKhoan(thongTinTaiKhoanDto);
+//                } else {
+//                    showError("Lỗi", "Không tìm thấy thông tin chi tiết tài khoản");
+//                }
+//            } else {
+//                showError("Lỗi", "Dịch vụ tài khoản không khả dụng");
+//            }
+//        } catch (Exception e) {
+//            showError("Lỗi khi xem chi tiết", "Chi tiết: " + e.getMessage());
+//        }
+    }
+
+//    private void openChiTietTaiKhoan(ThongTinTaiKhoanDto thongTinTaiKhoanDto) {
+//        try {
+//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/tai_khoan.fxml"));
+//            Parent root = loader.load();
+//
+//            ChiTietTaiKhoanController controller = loader.getController();
+//            controller.setTaiKhoanService(taiKhoanService);
+//            controller.setThongTinTaiKhoan(thongTinTaiKhoanDto);
+//
+//            Stage stage = new Stage();
+//            stage.setTitle("Chi tiết tài khoản - " + thongTinTaiKhoanDto.getEmail());
+//            stage.setScene(new Scene(root, 600, 400));
+//            stage.initModality(Modality.WINDOW_MODAL);
+//            stage.initOwner(tabelViewTaiKhoan.getScene().getWindow());
+//            stage.show();
+//        } catch (IOException e) {
+//            showError("Lỗi mở chi tiết", "Không thể mở trang chi tiết tài khoản: " + e.getMessage());
+//        }
+//    }
+
+    private void loadTaiKhoanData() {
+        try {
+            if (taiKhoanService != null) {
+                List<ThongTinTaiKhoanDto> taiKhoanDtoList = taiKhoanService.layDanhSachTaiKhoan();
+                taiKhoanList = FXCollections.observableArrayList();
+
+                if (taiKhoanDtoList != null) {
+                    for (ThongTinTaiKhoanDto dto : taiKhoanDtoList) {
+                        TaiKhoanTableData tableData = new TaiKhoanTableData(
+                            dto.getEmail(),
+                            dto.getHoTen(),
+                            dto.getVaiTro(),
+                            dto.getNgayTao() != null ? dto.getNgayTao().toString() : "",
+                            dto.getNgayCapNhat() != null ? dto.getNgayCapNhat().toString() : ""
+
+                        );
+
+                        taiKhoanList.add(tableData);
+                    }
+                }
+
+                filteredTaiKhoanList = FXCollections.observableArrayList(taiKhoanList);
+                ((TableView<TaiKhoanTableData>) tabelViewTaiKhoan).setItems(filteredTaiKhoanList);
+            } else {
+                System.err.println("TaiKhoanService is not available, cannot load data.");
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading TaiKhoan data: " + e.getMessage());
+        }
     }
 
     @Autowired
