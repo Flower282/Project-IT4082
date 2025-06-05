@@ -22,7 +22,6 @@ import io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil;
 import io.github.ktpm.bluemoonmanagement.util.XlxsFileUtil;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -223,14 +222,32 @@ public class CuDanServiceImpl implements CuDanService {
     @Transactional
     public boolean xoaMem(String maDinhDanh) {
         try {
-            if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            System.out.println("=== DEBUG: Xử lý xóa mềm cư dân ===");
+            System.out.println("Mã định danh: " + maDinhDanh);
+            
+            // Kiểm tra user hiện tại
+            if (Session.getCurrentUser() == null) {
+                System.err.println("DEBUG: Người dùng chưa đăng nhập");
                 return false;
             }
             
-            CuDan cuDan = cuDanRepository.findById(maDinhDanh).orElse(null);
-            if (cuDan == null) {
+            System.out.println("DEBUG: Người dùng hiện tại: " + Session.getCurrentUser().getHoTen() + " (" + Session.getCurrentUser().getEmail() + ")");
+            System.out.println("DEBUG: Vai trò: " + Session.getCurrentUser().getVaiTro());
+            
+            if (!"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+                System.err.println("DEBUG: Không có quyền xóa - cần vai trò 'Tổ phó'");
                 return false;
             }
+            
+            // Kiểm tra cư dân tồn tại
+            CuDan cuDan = cuDanRepository.findById(maDinhDanh).orElse(null);
+            if (cuDan == null) {
+                System.err.println("DEBUG: Không tìm thấy cư dân với mã: " + maDinhDanh);
+                return false;
+            }
+            
+            System.out.println("DEBUG: Tìm thấy cư dân: " + cuDan.getHoVaTen());
+            System.out.println("DEBUG: Trạng thái hiện tại: " + cuDan.getTrangThaiCuTru());
             
             // Soft delete: set ngayChuyenDi và cập nhật trạng thái
             cuDan.setNgayChuyenDi(LocalDate.now());
@@ -238,9 +255,11 @@ public class CuDanServiceImpl implements CuDanService {
             cuDanRepository.save(cuDan);
             entityManager.flush();
             
+            System.out.println("DEBUG: Xóa mềm thành công!");
             return true;
         } catch (Exception e) {
             System.err.println("Lỗi khi xóa mềm cư dân: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }

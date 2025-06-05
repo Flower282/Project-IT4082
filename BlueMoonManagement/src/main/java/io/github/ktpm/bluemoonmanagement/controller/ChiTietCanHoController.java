@@ -389,13 +389,18 @@ public class ChiTietCanHoController implements Initializable {
             if (chiTiet != null) {
                 currentCanHo = chiTiet;
                 
-                // Load danh sách từ service data
+                // Load danh sách từ service data và lọc chỉ hiển thị cư dân chưa bị xóa (chưa có ngày chuyển đi)
                 cuDanList.clear();
                 if (chiTiet.getCuDanList() != null) {
-                    cuDanList.addAll(chiTiet.getCuDanList());
-                    System.out.println("=== DEBUG: UI loaded " + chiTiet.getCuDanList().size() + " residents ===");
-                    for (CuDanTrongCanHoDto cuDan : chiTiet.getCuDanList()) {
-                        System.out.println("- UI Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
+                    // Lọc chỉ hiển thị cư dân chưa có ngày chuyển đi
+                    chiTiet.getCuDanList().stream()
+                        .filter(cuDan -> cuDan.getNgayChuyenDi() == null)
+                        .forEach(cuDanList::add);
+                    
+                    System.out.println("=== DEBUG: UI loaded " + chiTiet.getCuDanList().size() + " total residents, " 
+                                     + cuDanList.size() + " active residents ===");
+                    for (CuDanTrongCanHoDto cuDan : cuDanList) {
+                        System.out.println("- UI Active Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
                     }
                 } else {
                     System.out.println("=== DEBUG: No residents in DTO ===");
