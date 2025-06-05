@@ -1,18 +1,38 @@
 package io.github.ktpm.bluemoonmanagement.service.taiKhoan.impl;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
+import io.github.ktpm.bluemoonmanagement.model.mapper.TaiKhoanMapper;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import io.github.ktpm.bluemoonmanagement.model.entity.TaiKhoan;
 import io.github.ktpm.bluemoonmanagement.repository.TaiKhoanRepository;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class QuanLyTaiKhoanServiceImpl implements QuanLyTaiKhoanService {
     private final TaiKhoanRepository taiKhoanRepository;
+    private final TaiKhoanMapper taiKhoanMapper;
 
-    public QuanLyTaiKhoanServiceImpl(TaiKhoanRepository taiKhoanRepository) {
+    public QuanLyTaiKhoanServiceImpl(TaiKhoanRepository taiKhoanRepository, TaiKhoanMapper taiKhoanMapper) {
         this.taiKhoanRepository = taiKhoanRepository;
+        this.taiKhoanMapper = taiKhoanMapper;
+    }
+
+    @Override
+    public List<ThongTinTaiKhoanDto> layDanhSachTaiKhoan() {
+        List<ThongTinTaiKhoanDto> danhSachTaiKhoan = taiKhoanRepository.findAll()
+                .stream()
+                .map(taiKhoanMapper::toThongTinTaiKhoanDto)
+                .collect(Collectors.toList());
+        for(ThongTinTaiKhoanDto taiKhoandto : danhSachTaiKhoan) {
+            if(taiKhoandto.getEmail().equals("admin")){
+                danhSachTaiKhoan.remove(taiKhoandto);
+                break;
+            }
+        }
+        return danhSachTaiKhoan;
     }
 
     @Override
