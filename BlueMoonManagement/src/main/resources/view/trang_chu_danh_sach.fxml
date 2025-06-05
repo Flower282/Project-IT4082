@@ -251,7 +251,7 @@
                         </Button>
                         <VBox layoutY="40.0" prefWidth="970.0" spacing="10.0" AnchorPane.topAnchor="40.0">
                            <children>
-                              <TableView fx:id="tabelViewCanHo" prefHeight="400.0" prefWidth="970.0">
+                              <TableView fx:id="tabelViewCanHo" prefWidth="970.0" prefHeight="400.0">
                                  <columns>
                                     <TableColumn fx:id="tableColumnMaCanHo" prefWidth="120.00003510713577" text="Mã căn hộ" />
                                     <TableColumn fx:id="tableColumnToaNha" prefWidth="64.0" text="Tòa nhà" />
@@ -291,9 +291,9 @@
                      <children>
                         <TextField fx:id="textFieldMaCanHo" prefWidth="215.0" promptText="Nhập mã căn hộ" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldChuSoHuu" prefWidth="240.0" promptText="Nhập chủ sở hữu" styleClass="text-field-normal" />
-                        <ComboBox fx:id="comboBoxToa" editable="true" prefWidth="90.0" promptText="Tòa" style="-fx-background-color: transaprent;" />
-                        <ComboBox fx:id="comboBoxTang" editable="true" layoutX="722.0" layoutY="10.0" prefWidth="84.0" promptText="Tầng" style="-fx-background-color: transaprent;" />
-                        <ComboBox fx:id="comboBoxTrangThai" layoutX="722.0" layoutY="10.0" prefWidth="136.0" promptText="Trạng thái" style="-fx-background-color: transaprent;" />
+                        <ComboBox fx:id="comboBoxToa" editable="true" prefWidth="90.0" promptText="Tòa" style="-fx-background-color: transparent;" />
+                        <ComboBox fx:id="comboBoxTang" editable="true" layoutX="722.0" layoutY="10.0" prefWidth="84.0" promptText="Tầng" style="-fx-background-color: transparent;" />
+                        <ComboBox fx:id="comboBoxTrangThai" layoutX="722.0" layoutY="10.0" prefWidth="136.0" promptText="Trạng thái" style="-fx-background-color: transparent;" />
                         <Button fx:id="buttonTimKiemCanHo" mnemonicParsing="false" text="Tìm kiếm">
                            <styleClass>
                               <String fx:value="action-button" />
@@ -317,7 +317,7 @@
             <String fx:value="round-big" />
          </styleClass>
       </ScrollPane>
-      <ScrollPane fx:id="scrollPaneCuDan" fitToWidth="true" hbarPolicy="AS_NEEDED" layoutX="30.0" layoutY="30.0" prefHeight="200.0" prefWidth="200.0" style="-fx-background: white;" vbarPolicy="AS_NEEDED" visible="false">
+      <ScrollPane fx:id="scrollPaneCuDan" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" fitToWidth="true" layoutX="30.0" layoutY="30.0" prefHeight="200.0" prefWidth="200.0" style="-fx-background: white;" visible="false">
          <padding>
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </padding>
@@ -393,13 +393,6 @@
                                           <Font name="Arial" size="14.0" />
                                        </font>
                                     </Label>
-                                    <HBox alignment="CENTER" layoutX="300.0" layoutY="0.0" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="300.0" AnchorPane.rightAnchor="300.0" AnchorPane.topAnchor="0.0">
-                                       <children>
-                                          <Button fx:id="buttonPreviousPageCuDan" mnemonicParsing="false" onAction="#previousPageCuDan" text="&lt; Trước" />
-                                          <Label fx:id="labelCurrentPageCuDan" text="Trang 1 / 1" />
-                                          <Button fx:id="buttonNextPageCuDan" mnemonicParsing="false" onAction="#nextPageCuDan" text="Sau &gt;" />
-                                       </children>
-                                    </HBox>
                                  </children>
                               </AnchorPane>
                            </children>
@@ -411,7 +404,7 @@
                         <TextField fx:id="textFieldHoVaTen" prefWidth="310.0" promptText="Nhập họ và tên" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldMaDinhDanh" prefWidth="242.0" promptText="Nhập mã định danh" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldMaCanHoCuDan" layoutX="240.0" layoutY="10.0" prefWidth="206.0" promptText="Nhập mã căn hộ" styleClass="text-field-normal" />
-                        <ComboBox fx:id="comboBoxTrangThaiCuDan" layoutX="722.0" layoutY="10.0" prefWidth="187.0" promptText="Trạng thái" style="-fx-background-color: transaprent;" />
+                        <ComboBox fx:id="comboBoxTrangThaiCuDan" layoutX="722.0" layoutY="10.0" prefWidth="187.0" promptText="Trạng thái" style="-fx-background-color: transparent;" />
                         <Button fx:id="buttonTimKiemCuDan" mnemonicParsing="false" prefWidth="146.0" text="Tìm kiếm">
                            <styleClass>
                               <String fx:value="action-button" />
@@ -510,8 +503,8 @@
                         <TextField fx:id="textFieldMaKhoanThu" prefWidth="195.0" promptText="Nhập mã khoản thu" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldTenKhoanThu" prefWidth="210.0" promptText="Nhập tên khoản thu" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldBoPhanQuanLy" layoutX="421.0" layoutY="10.0" prefWidth="206.0" promptText="Nhập bộ phận quản lý" styleClass="text-field-normal" />
-                        <ComboBox fx:id="comboBoxLoaiKhoanThu" prefWidth="187.0" promptText="Bắt buộc" style="-fx-background-color: transaprent;" />
-                        <ComboBox fx:id="comboBoxTrangThaiHoaDon" layoutX="722.0" layoutY="10.0" prefWidth="187.0" promptText="Trạng thái" style="-fx-background-color: transaprent;" />
+                        <ComboBox fx:id="comboBoxLoaiKhoanThu" prefWidth="187.0" promptText="Bắt buộc" style="-fx-background-color: transparent;" />
+                        <ComboBox fx:id="comboBoxTrangThaiHoaDon" layoutX="722.0" layoutY="10.0" prefWidth="187.0" promptText="Trạng thái" style="-fx-background-color: transparent;" />
                         <Button fx:id="buttonTimKiemKhoanThu" mnemonicParsing="false" prefWidth="150.0" text="Tìm kiếm">
                            <styleClass>
                               <String fx:value="action-button" />
@@ -538,7 +531,7 @@
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </StackPane.margin>
       </ScrollPane>
-      <ScrollPane fx:id="scrollPaneTaiKhoan" hbarPolicy="NEVER" layoutX="30.0" layoutY="30.0" prefHeight="200.0" prefWidth="200.0" style="-fx-background: white;">
+      <ScrollPane fx:id="scrollPaneTaiKhoan" hbarPolicy="NEVER" layoutX="30.0" layoutY="30.0" prefHeight="200.0" prefWidth="200.0" style="-fx-background: white;" visible="false">
          <padding>
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </padding>
@@ -590,11 +583,12 @@
                            <children>
                               <TableView fx:id="tabelViewTaiKhoan" prefWidth="970.0">
                                  <columns>
-                                    <TableColumn fx:id="tableColumnEmail" prefWidth="230.3999908566475" text="Email" />
-                                    <TableColumn fx:id="tableColumnHoVaTenTaiKhoan" prefWidth="215.19996643066406" text="Họ và tên" />
-                                    <TableColumn fx:id="tableColumnVaiTro" prefWidth="101.60003662109375" text="Vai trò" />
-                                    <TableColumn fx:id="tableColumnNgayTaoTaiKhoan" prefWidth="208.79998779296875" text="Ngày tạo" />
-                                    <TableColumn fx:id="tableColumnNgayCapNhat" prefWidth="216.79998779296875" text="Ngày cập nhật" />
+                                    <TableColumn fx:id="tableColumnEmail" prefWidth="268.0000541806221" text="Email" />
+                                    <TableColumn fx:id="tableColumnHoVaTenTaiKhoan" prefWidth="185.5999755859375" text="Họ và tên" />
+                                    <TableColumn fx:id="tableColumnVaiTro" prefWidth="119.20001220703125" text="Vai trò" />
+                                    <TableColumn fx:id="tableColumnNgayCapNhat" prefWidth="161.60003662109375" text="Ngày cập nhật" />
+                                    <TableColumn fx:id="tableColumnTrangThaiTaiKhoan" prefWidth="135.199951171875" text="Trạng thái" />
+                                    <TableColumn fx:id="tableColumnThaoTacTaiKhoan" prefWidth="95.9998779296875" text="Thao tác" />
                                  </columns>
                               </TableView>
                               <AnchorPane prefWidth="970.0">
@@ -620,8 +614,8 @@
                      <children>
                         <TextField fx:id="textFieldEmail" prefWidth="277.0" promptText="Nhập email" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldHoVaTenTaiKhoan" prefWidth="252.0" promptText="Nhập họ và tên" styleClass="text-field-normal" />
-                        <ComboBox fx:id="comboBoxVaiTro" layoutX="623.0" layoutY="10.0" prefWidth="128.0" promptText="Vai trò" style="-fx-background-color: transaprent;" />
-                        <ComboBox fx:id="comboBoxTrangThaiTaiKhoan" layoutX="722.0" layoutY="10.0" prefWidth="132.0" promptText="Trạng thái" style="-fx-background-color: transaprent;" />
+                        <ComboBox fx:id="comboBoxVaiTro" layoutX="623.0" layoutY="10.0" prefWidth="128.0" promptText="Vai trò" style="-fx-background-color: transparent;" />
+                        <ComboBox fx:id="comboBoxTrangThaiTaiKhoan" layoutX="722.0" layoutY="10.0" prefWidth="132.0" promptText="Trạng thái" style="-fx-background-color: transparent;" />
                         <Button fx:id="buttonTimKiemCuDan11" mnemonicParsing="false" prefWidth="104.0" text="Tìm kiếm">
                            <styleClass>
                               <String fx:value="action-button" />
@@ -712,7 +706,7 @@
                      <children>
                         <TextField fx:id="textFieldMaHoaDon" prefWidth="195.0" promptText="Nhập mã hóa đơn" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldTenKhoanThu1" prefWidth="210.0" promptText="Nhập tên khoản thu" styleClass="text-field-normal" />
-                        <ComboBox fx:id="comboBoxLoaiKhoanThu1" layoutX="722.0" layoutY="10.0" prefWidth="187.0" promptText="Bắt buộc" style="-fx-background-color: transaprent;" />
+                        <ComboBox fx:id="comboBoxLoaiKhoanThu1" layoutX="722.0" layoutY="10.0" prefWidth="187.0" promptText="Bắt buộc" style="-fx-background-color: transparent;" />
                         <DatePicker fx:id="datePickerNgayNop" promptText="Nhập ngày nộp" />
                         <Button fx:id="buttonTimKiemThuPhi" mnemonicParsing="false" prefWidth="150.0" text="Tìm kiếm">
                            <styleClass>
@@ -740,7 +734,7 @@
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </StackPane.margin>
       </ScrollPane>
-      <ScrollPane fx:id="scrollPaneCanHo1" hbarPolicy="NEVER" style="-fx-background: white;" visible="false">
+      <ScrollPane fx:id="scrollPaneCanHo1" hbarPolicy="NEVER" style="-fx-background: white;">
          <padding>
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </padding>

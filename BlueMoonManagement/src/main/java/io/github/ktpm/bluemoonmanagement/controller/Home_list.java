@@ -5,8 +5,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
-import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -446,7 +444,7 @@ public class Home_list implements Initializable {
 
     @Autowired
     private QuanLyTaiKhoanService taiKhoanService;
-    
+
     @Autowired
     private io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService cuDanService;
 
@@ -461,7 +459,7 @@ public class Home_list implements Initializable {
 
     private ObservableList<TaiKhoanTableData> taiKhoanList;
     private ObservableList<TaiKhoanTableData> filteredTaiKhoanList;
-    
+
     // Pagination variables
     private int currentPageCuDan = 1;
     private int itemsPerPageCuDan = 10;
@@ -487,11 +485,10 @@ public class Home_list implements Initializable {
         // Setup tables
         setupCanHoTable();
         setupCuDanTable();
-        setupTaiKhoanTable();
+        
         // Load data
         loadData();
         loadCuDanData();
-        loadTaiKhoanData();
         
         // Show default tab
         show("TrangChu");
@@ -1215,6 +1212,16 @@ public class Home_list implements Initializable {
                 };
             });
             
+            // Fix scroll bar issue - hide scroll bars to prevent mouse scroll problems
+            javafx.application.Platform.runLater(() -> {
+                for (javafx.scene.Node node : typedTableView.lookupAll(".scroll-bar")) {
+                    if (node instanceof javafx.scene.control.ScrollBar) {
+                        node.setVisible(false);
+                        ((javafx.scene.control.ScrollBar) node).setDisable(true);
+                    }
+                }
+            });
+
             System.out.println("CuDan table setup completed");
         } else {
             System.out.println("WARNING: tabelViewCuDan is null");
@@ -1287,14 +1294,12 @@ public class Home_list implements Initializable {
                     }
                 }
                 
-                // Store all data for pagination
-                allCuDanData = new java.util.ArrayList<>(cuDanList);
-                
-                // Reset to first page and update display
-                currentPageCuDan = 1;
-                updateCurrentPageDisplay();
-                
-                System.out.println("Loaded " + allCuDanData.size() + " residents from service");
+                filteredCuDanList = FXCollections.observableArrayList(cuDanList);
+                if (tabelViewCuDan != null) {
+                    ((TableView<CuDanTableData>) tabelViewCuDan).setItems(filteredCuDanList);
+                }
+                updateCuDanKetQuaLabel();
+                System.out.println("Loaded " + cuDanList.size() + " residents from service");
             } else {
                 System.err.println("CuDanService is null");
                 // Initialize empty data
@@ -1316,74 +1321,9 @@ public class Home_list implements Initializable {
      * Cập nhật label kết quả cho cư dân
      */
     private void updateCuDanKetQuaLabel() {
-        int total = allCuDanData != null ? allCuDanData.size() : 0;
-        int startItem = total > 0 ? (currentPageCuDan - 1) * itemsPerPageCuDan + 1 : 0;
-        int endItem = Math.min(currentPageCuDan * itemsPerPageCuDan, total);
-        
+        int total = filteredCuDanList != null ? filteredCuDanList.size() : 0;
         if (labelKetQuaHienThiCuDan != null) {
-            labelKetQuaHienThiCuDan.setText(String.format("Hiển thị %d - %d trên tổng số %d cư dân", startItem, endItem, total));
-        }
-        
-        if (labelCurrentPageCuDan != null) {
-            labelCurrentPageCuDan.setText(String.format("Trang %d / %d", currentPageCuDan, totalPagesCuDan));
-        }
-        
-        // Update button states
-        if (buttonPreviousPageCuDan != null) {
-            buttonPreviousPageCuDan.setDisable(currentPageCuDan <= 1);
-        }
-        if (buttonNextPageCuDan != null) {
-            buttonNextPageCuDan.setDisable(currentPageCuDan >= totalPagesCuDan);
-        }
-    }
-    
-    /**
-     * Cập nhật hiển thị trang hiện tại
-     */
-    private void updateCurrentPageDisplay() {
-        if (allCuDanData == null || allCuDanData.isEmpty()) {
-            filteredCuDanList = FXCollections.observableArrayList();
-            totalPagesCuDan = 1;
-            currentPageCuDan = 1;
-        } else {
-            totalPagesCuDan = (int) Math.ceil((double) allCuDanData.size() / itemsPerPageCuDan);
-            if (currentPageCuDan > totalPagesCuDan) {
-                currentPageCuDan = totalPagesCuDan;
-            }
-            
-            int startIndex = (currentPageCuDan - 1) * itemsPerPageCuDan;
-            int endIndex = Math.min(startIndex + itemsPerPageCuDan, allCuDanData.size());
-            
-            List<CuDanTableData> currentPageData = allCuDanData.subList(startIndex, endIndex);
-            filteredCuDanList = FXCollections.observableArrayList(currentPageData);
-        }
-        
-        if (tabelViewCuDan != null) {
-            ((TableView<CuDanTableData>) tabelViewCuDan).setItems(filteredCuDanList);
-        }
-        
-        updateCuDanKetQuaLabel();
-    }
-    
-    /**
-     * Chuyển đến trang trước
-     */
-    @FXML
-    private void previousPageCuDan() {
-        if (currentPageCuDan > 1) {
-            currentPageCuDan--;
-            updateCurrentPageDisplay();
-        }
-    }
-    
-    /**
-     * Chuyển đến trang sau
-     */
-    @FXML
-    private void nextPageCuDan() {
-        if (currentPageCuDan < totalPagesCuDan) {
-            currentPageCuDan++;
-            updateCurrentPageDisplay();
+            labelKetQuaHienThiCuDan.setText(String.format("Hiển thị 1 - %d trên tổng số %d cư dân", total, total));
         }
     }
 
