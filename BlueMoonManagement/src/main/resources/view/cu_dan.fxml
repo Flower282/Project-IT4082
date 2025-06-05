@@ -17,7 +17,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<VBox alignment="TOP_CENTER" prefWidth="700.0" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<VBox alignment="TOP_CENTER" prefWidth="700.0" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController">
    <children>
       <AnchorPane>
          <children>
@@ -45,8 +45,8 @@
                <children>
                   <HBox alignment="CENTER_LEFT" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Họ và tên" />
-                        <TextField fx:id="textFieldHoVaTen" promptText="Nhập họ và tên" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
+                        <Label prefHeight="16.0" prefWidth="100.0" styleClass="text-bold" text="Họ và tên" />
+                        <TextField fx:id="textFieldHoVaTen" prefWidth="474.0" promptText="Nhập họ và tên" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
                      </children>
                      <padding>
                         <Insets top="10.0" />
@@ -79,8 +79,8 @@
                <children>
                   <HBox alignment="CENTER_LEFT" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Giới tính" HBox.hgrow="ALWAYS" />
-                        <ComboBox fx:id="comboBoxGioiTinh" maxWidth="1.7976931348623157E308" promptText="Giới tính" HBox.hgrow="ALWAYS" />
+                        <Label prefHeight="16.0" prefWidth="92.0" styleClass="text-bold" text="Giới tính" HBox.hgrow="ALWAYS" />
+                        <ComboBox fx:id="comboBoxGioiTinh" maxWidth="1.7976931348623157E308" prefWidth="115.0" promptText="Giới tính" HBox.hgrow="ALWAYS" />
                      </children>
                      <padding>
                         <Insets top="10.0" />
@@ -88,7 +88,7 @@
                   </HBox>
                   <HBox alignment="CENTER_LEFT" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Ngày sinh" HBox.hgrow="ALWAYS" />
+                        <Label prefHeight="16.0" prefWidth="73.0" styleClass="text-bold" text="Ngày sinh" HBox.hgrow="ALWAYS" />
                         <DatePicker fx:id="datePickerNgaySinh" maxWidth="1.7976931348623157E308" promptText="Nhập ngày sinh" HBox.hgrow="ALWAYS" />
                      </children>
                      <padding>
@@ -107,14 +107,14 @@
                         <Insets top="10.0" />
                      </padding>
                      <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Số điện thoại" HBox.hgrow="ALWAYS" />
-                        <TextField fx:id="textFieldSoDienThoai" promptText="Nhập số điện thoai" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
+                        <Label prefHeight="16.0" prefWidth="92.0" styleClass="text-bold" text="Số điện thoại" HBox.hgrow="ALWAYS" />
+                        <TextField fx:id="textFieldSoDienThoai" prefWidth="104.0" promptText="Nhập số điện thoai" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
                   <HBox alignment="CENTER_LEFT" prefHeight="42.0" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Email" HBox.hgrow="ALWAYS" />
-                        <TextField fx:id="textFieldEmail" promptText="Nhập email" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
+                        <Label prefHeight="16.0" prefWidth="70.0" styleClass="text-bold" text="Email" HBox.hgrow="ALWAYS" />
+                        <TextField fx:id="textFieldEmail" prefWidth="202.0" promptText="Nhập email" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
                      </children>
                      <padding>
                         <Insets top="10.0" />
@@ -129,8 +129,8 @@
                <children>
                   <HBox alignment="CENTER_LEFT" prefHeight="42.0" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Mã căn hộ" HBox.hgrow="ALWAYS" />
-                        <TextField fx:id="textFieldMaCanHo" promptText="Nhập mã căn hộ" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
+                        <Label prefHeight="16.0" prefWidth="87.0" styleClass="text-bold" text="Mã căn hộ" HBox.hgrow="ALWAYS" />
+                        <TextField fx:id="textFieldMaCanHo" prefWidth="17.0" promptText="Nhập mã căn hộ (không bắt buộc)" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
                      </children>
                      <padding>
                         <Insets top="10.0" />
@@ -142,7 +142,7 @@
                      </padding>
                      <children>
                         <Label prefHeight="16.0" styleClass="text-bold" text="Trạng thái" HBox.hgrow="ALWAYS" />
-                        <ComboBox fx:id="comboBoxTrangThai" maxWidth="1.7976931348623157E308" promptText="Trạng thái" HBox.hgrow="ALWAYS" />
+                        <ComboBox fx:id="comboBoxTrangThai" maxWidth="1.7976931348623157E308" prefWidth="110.0" promptText="Trạng thái" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
                </children>
@@ -152,20 +152,16 @@
             </HBox>
             <HBox layoutX="11.0" layoutY="170.0" spacing="20.0">
                <children>
-                  <HBox alignment="CENTER_LEFT" spacing="20.0" HBox.hgrow="ALWAYS">
+                  <HBox fx:id="hBoxNgayChuyenDen" alignment="CENTER_LEFT" prefHeight="42.0" prefWidth="596.0" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Từ ngày" />
-                        <DatePicker fx:id="datePickerNgayChuyenDen" promptText="Nhập ngày chuyển đến" />
+                        <Label prefHeight="16.0" prefWidth="142.0" styleClass="text-bold" text="Ngày chuyển đến" />
+                        <DatePicker fx:id="datePickerNgayChuyenDen" prefWidth="197.0" promptText="Nhập ngày chuyển đến" />
                      </children>
                      <padding>
                         <Insets top="10.0" />
                      </padding>
                   </HBox>
-                  <HBox alignment="CENTER_LEFT" disable="true" spacing="20.0" HBox.hgrow="ALWAYS">
-                     <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Đến ngày" />
-                        <DatePicker fx:id="datePickerNgayChuyenDi" prefWidth="182.0" promptText="Nhập ngày chuyển đi" />
-                     </children>
+                  <HBox fx:id="hBoxNgayChuyenDi" alignment="CENTER_LEFT" disable="true" spacing="20.0" HBox.hgrow="ALWAYS">
                      <padding>
                         <Insets top="10.0" />
                      </padding>

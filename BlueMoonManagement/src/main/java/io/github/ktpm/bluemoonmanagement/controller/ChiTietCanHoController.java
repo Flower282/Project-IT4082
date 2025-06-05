@@ -1,9 +1,12 @@
 package io.github.ktpm.bluemoonmanagement.controller;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
@@ -11,11 +14,14 @@ import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.phuongTien.PhuongTienDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
+import io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -27,12 +33,18 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import java.io.IOException;
 
 /**
  * Controller cho trang chi tiết căn hộ
  */
 @Component
 public class ChiTietCanHoController implements Initializable {
+
+    // Static list to track open windows for refresh functionality
+    private static final List<ChiTietCanHoController> openWindows = new ArrayList<>();
 
     // Header buttons - Tab navigation
     @FXML private Button buttonThongTin;
@@ -76,7 +88,9 @@ public class ChiTietCanHoController implements Initializable {
     @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnTrangThaiCuDan;
     @FXML private ComboBox<String> comboBoxSoKetQuaCuDan;
     @FXML private TextField textFieldTimKiemCuDan;
+    @FXML private TextField textFieldMaDinhDanh;
     @FXML private Button buttonTimKiemCuDan;
+    @FXML private Label labelHienThiKetQuaCuDan;
 
     // Phương tiện tab
     @FXML private TableView<PhuongTienDto> tableViewPhuongTien;
@@ -84,11 +98,13 @@ public class ChiTietCanHoController implements Initializable {
     @FXML private TableColumn<PhuongTienDto, String> tableColumnBienSoXe;
     @FXML private TableColumn<PhuongTienDto, String> tableColumnLoaiPhuongTien;
     @FXML private TableColumn<PhuongTienDto, String> tableColumnNgayDangKi;
+    @FXML private TableColumn<PhuongTienDto, Void> tableColumnThaoTacPhuongTien;
     @FXML private TextField textFieldMaSoXe;
     @FXML private ComboBox<String> comboBoxLoaiPhuongTien;
     @FXML private Button buttonTimKiemPhuongTien;
     @FXML private ComboBox<String> comboBoxSoKetQuaPhuongTien;
     @FXML private Label labelHienThiKetQuaPhuongTien;
+    @FXML private Button buttonThemPhuongTien;
 
     // Thu phí tab
     @FXML private TableView<HoaDonDto> tableViewThuPhi;
@@ -115,23 +131,35 @@ public class ChiTietCanHoController implements Initializable {
     @Autowired
     private CanHoService canHoService;
 
+    @Autowired
+    private PhuongTienService phuongTienService;
+
+    @Autowired
+    private ApplicationContext applicationContext;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // Khởi tạo tab navigation
-        setupTabNavigation();
+        System.out.println("ChiTietCanHoController được khởi tạo");
         
-        // Khởi tạo tables
-        setupTables();
+        // Add this instance to tracking list
+        openWindows.add(this);
         
-        // Khởi tạo combo boxes
-        setupComboBoxes();
-        
-        // Khởi tạo danh sách rỗng
+        // Initialize lists
         cuDanList = FXCollections.observableArrayList();
         phuongTienList = FXCollections.observableArrayList();
         hoaDonList = FXCollections.observableArrayList();
         
-        // Hiển thị tab thông tin đầu tiên
+        // Đảm bảo services được khởi tạo nếu có ApplicationContext
+        if (applicationContext != null) {
+            ensureServicesAvailable();
+        }
+        
+        // Setup components
+        setupTabNavigation();
+        setupTables();
+        setupComboBoxes();
+        
+        // Default to first tab
         showThongTinTab();
     }
 
@@ -150,16 +178,27 @@ public class ChiTietCanHoController implements Initializable {
      * Thiết lập các table
      */
     private void setupTables() {
+        System.out.println("=== DEBUG: Setting up tables ===");
+        
         // Setup table cư dân
         if (tableColumnMaDinhDanhCuDan != null) {
+            System.out.println("tableColumnMaDinhDanhCuDan found");
             tableColumnMaDinhDanhCuDan.setCellValueFactory(cellData -> 
                 new javafx.beans.property.SimpleStringProperty(cellData.getValue().getMaDinhDanh()));
+        } else {
+            System.out.println("WARNING: tableColumnMaDinhDanhCuDan is NULL!");
         }
+        
         if (tableColumnHoVaTenCuDan != null) {
+            System.out.println("tableColumnHoVaTenCuDan found");
             tableColumnHoVaTenCuDan.setCellValueFactory(cellData -> 
                 new javafx.beans.property.SimpleStringProperty(cellData.getValue().getHoVaTen()));
+        } else {
+            System.out.println("WARNING: tableColumnHoVaTenCuDan is NULL!");
         }
+        
         if (tableColumnQuanHeChuHo != null) {
+            System.out.println("tableColumnQuanHeChuHo found");
             tableColumnQuanHeChuHo.setCellValueFactory(cellData -> {
                 // Determine relationship based on whether this person is the apartment owner
                 String relationship = "Cư dân";
@@ -170,7 +209,10 @@ public class ChiTietCanHoController implements Initializable {
                 }
                 return new javafx.beans.property.SimpleStringProperty(relationship);
             });
+        } else {
+            System.out.println("WARNING: tableColumnQuanHeChuHo is NULL!");
         }
+        
         if (tableColumnNgaySinhCuDan != null) {
             tableColumnNgaySinhCuDan.setCellValueFactory(cellData -> 
                 new javafx.beans.property.SimpleStringProperty(
@@ -180,8 +222,8 @@ public class ChiTietCanHoController implements Initializable {
         if (tableColumnTrangThaiCuDan != null) {
             tableColumnTrangThaiCuDan.setCellValueFactory(cellData -> 
                 new javafx.beans.property.SimpleStringProperty(
-                    cellData.getValue().getGioiTinh() != null ? 
-                    cellData.getValue().getGioiTinh() : ""));
+                    cellData.getValue().getTrangThaiCuTru() != null ? 
+                    cellData.getValue().getTrangThaiCuTru() : ""));
         }
 
         // Setup table phương tiện
@@ -203,6 +245,30 @@ public class ChiTietCanHoController implements Initializable {
                     cellData.getValue().getNgayDangKy() != null ? 
                     cellData.getValue().getNgayDangKy().toString() : ""));
         }
+        
+        // Thiết lập cell factory cho cột thao tác
+        tableColumnThaoTacPhuongTien.setCellFactory(param -> new javafx.scene.control.TableCell<PhuongTienDto, Void>() {
+            private final javafx.scene.control.Button deleteButton = new javafx.scene.control.Button("Xóa");
+
+            {
+                deleteButton.getStyleClass().addAll("action-button", "button-red");
+                deleteButton.setOnAction(event -> {
+                    PhuongTienDto phuongTien = getTableView().getItems().get(getIndex());
+                    handleDeletePhuongTien(phuongTien);
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(deleteButton);
+                    setAlignment(javafx.geometry.Pos.CENTER);
+                }
+            }
+        });
 
         // Setup table thu phí
         if (tableColumnMaHoaDon != null) {
@@ -222,6 +288,19 @@ public class ChiTietCanHoController implements Initializable {
                 new javafx.beans.property.SimpleStringProperty(
                     cellData.getValue().getNgayNop() != null ? 
                     cellData.getValue().getNgayNop().toString() : ""));
+        }
+
+        // Setup search functionality for Cư dân tab
+        if (textFieldTimKiemCuDan != null) {
+            textFieldTimKiemCuDan.textProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemCuDan();
+            });
+        }
+        
+        if (textFieldMaDinhDanh != null) {
+            textFieldMaDinhDanh.textProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemCuDan();
+            });
         }
     }
 
@@ -314,6 +393,12 @@ public class ChiTietCanHoController implements Initializable {
                 cuDanList.clear();
                 if (chiTiet.getCuDanList() != null) {
                     cuDanList.addAll(chiTiet.getCuDanList());
+                    System.out.println("=== DEBUG: UI loaded " + chiTiet.getCuDanList().size() + " residents ===");
+                    for (CuDanTrongCanHoDto cuDan : chiTiet.getCuDanList()) {
+                        System.out.println("- UI Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
+                    }
+                } else {
+                    System.out.println("=== DEBUG: No residents in DTO ===");
                 }
                 
                 phuongTienList.clear();
@@ -333,6 +418,8 @@ public class ChiTietCanHoController implements Initializable {
                 
                 // Cập nhật ComboBox với dữ liệu thực
                 updateComboBoxesWithRealData();
+                
+                System.out.println("=== DEBUG: UI update completed ===");
             } else {
                 showError("Không tìm thấy dữ liệu", "Không tìm thấy thông tin chi tiết cho căn hộ: " + maCanHo);
                 clearAllData();
@@ -342,10 +429,6 @@ public class ChiTietCanHoController implements Initializable {
             clearAllData();
         }
     }
-
-
-
-    
 
     /**
      * Xóa tất cả dữ liệu khi có lỗi
@@ -384,15 +467,27 @@ public class ChiTietCanHoController implements Initializable {
      * Set dữ liệu cho các table
      */
     private void setTableData() {
-        if (tableViewCuDan != null) {
+        System.out.println("=== DEBUG: Setting table data ===");
+        
+        // Set data for all tables
+        if (tableViewCuDan != null && cuDanList != null) {
             tableViewCuDan.setItems(cuDanList);
+            updateResultCount(); // Hiển thị số kết quả
+            System.out.println("=== DEBUG: Set cư dân table data ===");
+            System.out.println("Data size: " + cuDanList.size());
+            for (CuDanTrongCanHoDto cuDan : cuDanList) {
+                System.out.println("- " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
+            }
         }
+        
         if (tableViewPhuongTien != null) {
             tableViewPhuongTien.setItems(phuongTienList);
         }
         if (tableViewThuPhi != null) {
             tableViewThuPhi.setItems(hoaDonList);
         }
+        
+        System.out.println("=== END DEBUG: Setting table data ===");
     }
 
     /**
@@ -445,11 +540,22 @@ public class ChiTietCanHoController implements Initializable {
 
     @FXML
     private void showCuDanTab() {
+        System.out.println("=== DEBUG: Showing Cu Dan tab ===");
         hideAllTabs();
         if (anchorPaneCuDan != null) {
             anchorPaneCuDan.setVisible(true);
+            System.out.println("anchorPaneCuDan set to visible");
+        } else {
+            System.out.println("WARNING: anchorPaneCuDan is NULL!");
         }
         updateTabStyles("cudan");
+        
+        // Debug table visibility
+        if (tableViewCuDan != null) {
+            System.out.println("tableViewCuDan visible: " + tableViewCuDan.isVisible());
+            System.out.println("tableViewCuDan items: " + tableViewCuDan.getItems().size());
+        }
+        System.out.println("=== END DEBUG: Cu Dan tab ===");
     }
 
     @FXML
@@ -504,25 +610,38 @@ public class ChiTietCanHoController implements Initializable {
     // Search and filter methods
     @FXML
     private void handleTimKiemCuDan() {
-        String keyword = textFieldTimKiemCuDan != null ? textFieldTimKiemCuDan.getText().trim() : "";
-        if (keyword.isEmpty()) {
+        String keywordHoTen = textFieldTimKiemCuDan != null ? textFieldTimKiemCuDan.getText().trim() : "";
+        String keywordMaDinhDanh = textFieldMaDinhDanh != null ? textFieldMaDinhDanh.getText().trim() : "";
+        
+        // Nếu cả 2 ô tìm kiếm đều trống thì hiển thị toàn bộ danh sách
+        if (keywordHoTen.isEmpty() && keywordMaDinhDanh.isEmpty()) {
             setTableData(); // Reset to full list
+            updateResultCount();
             return;
         }
         
-        // Filter cư dân list based on search keyword
+        // Filter cư dân list based on search keywords
         if (cuDanList != null) {
             ObservableList<CuDanTrongCanHoDto> filteredList = cuDanList.stream()
-                .filter(cuDan -> 
-                    cuDan.getHoVaTen().toLowerCase().contains(keyword.toLowerCase()) ||
-                    cuDan.getMaDinhDanh().toLowerCase().contains(keyword.toLowerCase())
-                )
+                .filter(cuDan -> {
+                    boolean matchesHoTen = keywordHoTen.isEmpty() || 
+                        cuDan.getHoVaTen().toLowerCase().contains(keywordHoTen.toLowerCase());
+                    boolean matchesMaDinhDanh = keywordMaDinhDanh.isEmpty() ||
+                        cuDan.getMaDinhDanh().toLowerCase().contains(keywordMaDinhDanh.toLowerCase());
+                    // Cả 2 điều kiện phải thỏa mãn (AND logic)
+                    return matchesHoTen && matchesMaDinhDanh;
+                })
                 .collect(FXCollections::observableArrayList, 
                         ObservableList::add, 
                         ObservableList::addAll);
             
             if (tableViewCuDan != null) {
                 tableViewCuDan.setItems(filteredList);
+                updateResultCount(filteredList.size(), cuDanList.size());
+                System.out.println("=== DEBUG: Search completed ===");
+                System.out.println("Search by name: '" + keywordHoTen + "'");
+                System.out.println("Search by ID: '" + keywordMaDinhDanh + "'");
+                System.out.println("Results: " + filteredList.size() + "/" + cuDanList.size());
             }
         }
     }
@@ -554,6 +673,181 @@ public class ChiTietCanHoController implements Initializable {
             if (tableViewPhuongTien != null) {
                 tableViewPhuongTien.setItems(filteredList);
             }
+        }
+    }
+
+    @FXML
+    private void handleThemPhuongTien() {
+        try {
+            if (currentCanHo == null || currentCanHo.getMaCanHo() == null) {
+                showError("Lỗi", "Không có thông tin căn hộ để thêm phương tiện");
+                return;
+            }
+
+            // Sử dụng FXMLLoader và để FXML tự tạo controller
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/view/phuong_tien.fxml")
+            );
+            
+            // Load view - FXML sẽ tự tạo controller
+            javafx.scene.Parent root = loader.load();
+            
+            // Get controller được tạo bởi FXML
+            io.github.ktpm.bluemoonmanagement.controller.ThemPhuongTien controller = loader.getController();
+            
+            // Inject ApplicationContext trước tiên
+            if (applicationContext != null) {
+                System.out.println("DEBUG: Injecting ApplicationContext into ThemPhuongTien");
+                controller.setApplicationContext(applicationContext);
+            } else {
+                System.err.println("ERROR: ApplicationContext is null in ChiTietCanHoController!");
+            }
+            
+            // Inject services
+            if (phuongTienService != null) {
+                System.out.println("DEBUG: Injecting existing PhuongTienService");
+                controller.setPhuongTienService(phuongTienService);
+            } else {
+                System.out.println("DEBUG: PhuongTienService is null, relying on ApplicationContext injection");
+            }
+            
+            // Set mã căn hộ
+            controller.setMaCanHo(currentCanHo.getMaCanHo());
+            
+            // Set chế độ thêm mới
+            controller.setAddMode();
+
+            // Tạo cửa sổ mới
+            Stage newStage = new Stage();
+            newStage.setScene(new Scene(root));
+            newStage.setTitle("Thêm phương tiện - Căn hộ " + currentCanHo.getMaCanHo());
+
+            // Không cho tương tác cửa sổ cha khi đang mở
+            newStage.initModality(Modality.APPLICATION_MODAL);
+
+            // Gán owner là cửa sổ hiện tại
+            Stage currentStage = (Stage) button_close_up.getScene().getWindow();
+            newStage.initOwner(currentStage);
+
+            // Hiển thị cửa sổ và đợi đóng
+            newStage.showAndWait();
+            
+            // Refresh data sau khi đóng form thêm phương tiện
+            if (currentCanHo != null) {
+                loadDataFromService(currentCanHo.getMaCanHo());
+            }
+
+        } catch (IOException e) {
+            showError("Lỗi", "Không thể mở cửa sổ thêm phương tiện: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            showError("Lỗi", "Đã xảy ra lỗi: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Xử lý sự kiện chỉnh sửa phương tiện
+     */
+    private void handleEditPhuongTien(PhuongTienDto phuongTien) {
+        try {
+            // Sử dụng FXMLLoader và để FXML tự tạo controller
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/view/phuong_tien.fxml")
+            );
+            
+            // Load view - FXML sẽ tự tạo controller
+            javafx.scene.Parent root = loader.load();
+            
+            // Get controller được tạo bởi FXML
+            io.github.ktpm.bluemoonmanagement.controller.ThemPhuongTien controller = loader.getController();
+            
+            // Inject ApplicationContext và services
+            if (applicationContext != null) {
+                controller.setApplicationContext(applicationContext);
+            }
+            if (phuongTienService != null) {
+                controller.setPhuongTienService(phuongTienService);
+            }
+            
+            // Set chế độ chỉnh sửa
+            controller.setEditMode(phuongTien);
+
+            // Tạo cửa sổ mới
+            Stage newStage = new Stage();
+            newStage.setScene(new Scene(root));
+            newStage.setTitle("Chỉnh sửa phương tiện - " + phuongTien.getBienSo());
+
+            // Không cho tương tác cửa sổ cha khi đang mở
+            newStage.initModality(Modality.APPLICATION_MODAL);
+
+            // Gán owner là cửa sổ hiện tại
+            Stage currentStage = (Stage) button_close_up.getScene().getWindow();
+            newStage.initOwner(currentStage);
+
+            // Hiển thị cửa sổ và đợi đóng
+            newStage.showAndWait();
+            
+            // Refresh data sau khi đóng
+            if (currentCanHo != null) {
+                loadDataFromService(currentCanHo.getMaCanHo());
+            }
+
+        } catch (Exception e) {
+            showError("Lỗi", "Không thể mở cửa sổ chỉnh sửa phương tiện: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Xử lý sự kiện xóa phương tiện
+     */
+    private void handleDeletePhuongTien(PhuongTienDto phuongTien) {
+        try {
+            // Hiển thị dialog xác nhận
+            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmAlert.setTitle("Xác nhận xóa");
+            confirmAlert.setHeaderText("Xóa phương tiện");
+            confirmAlert.setContentText("Bạn có chắc chắn muốn xóa phương tiện " + phuongTien.getBienSo() + "?");
+            
+            confirmAlert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    if (phuongTienService != null) {
+                        // Gọi service để xóa phương tiện
+                        ResponseDto result = phuongTienService.xoaPhuongTien(phuongTien);
+                        
+                        // Sử dụng reflection để lấy kết quả
+                        try {
+                            java.lang.reflect.Field successField = ResponseDto.class.getDeclaredField("success");
+                            successField.setAccessible(true);
+                            boolean success = (Boolean) successField.get(result);
+                            
+                            java.lang.reflect.Field messageField = ResponseDto.class.getDeclaredField("message");
+                            messageField.setAccessible(true);
+                            String message = (String) messageField.get(result);
+                            
+                            if (success) {
+                                showSuccess("Thành công", "Đã xóa phương tiện thành công: " + message);
+                                
+                                // Refresh data
+                                if (currentCanHo != null) {
+                                    loadDataFromService(currentCanHo.getMaCanHo());
+                                }
+                            } else {
+                                showError("Lỗi", "Không thể xóa phương tiện: " + message);
+                            }
+                        } catch (Exception e) {
+                            showError("Lỗi", "Lỗi khi xử lý phản hồi: " + e.getMessage());
+                        }
+                    } else {
+                        showError("Lỗi", "Service chưa được khởi tạo");
+                    }
+                }
+            });
+            
+        } catch (Exception e) {
+            showError("Lỗi", "Đã xảy ra lỗi khi xóa phương tiện: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -639,12 +933,14 @@ public class ChiTietCanHoController implements Initializable {
 
     @FXML
     private void handleClose() {
-        // Đóng cửa sổ hiện tại
         try {
+            // Remove this instance from tracking list
+            openWindows.remove(this);
+            
             javafx.stage.Stage stage = (javafx.stage.Stage) button_close_up.getScene().getWindow();
             stage.close();
         } catch (Exception e) {
-            showError("Lỗi", "Không thể đóng cửa sổ: " + e.getMessage());
+            System.err.println("Lỗi khi đóng cửa sổ chi tiết căn hộ: " + e.getMessage());
         }
     }
 
@@ -676,6 +972,24 @@ public class ChiTietCanHoController implements Initializable {
         }
     }
 
+    /**
+     * Cập nhật số kết quả hiển thị
+     */
+    private void updateResultCount() {
+        if (cuDanList != null && labelHienThiKetQuaCuDan != null) {
+            labelHienThiKetQuaCuDan.setText("Hiển thị " + cuDanList.size() + "/" + cuDanList.size() + " kết quả");
+        }
+    }
+    
+    /**
+     * Cập nhật số kết quả hiển thị với số đã lọc
+     */
+    private void updateResultCount(int filtered, int total) {
+        if (labelHienThiKetQuaCuDan != null) {
+            labelHienThiKetQuaCuDan.setText("Hiển thị " + filtered + "/" + total + " kết quả");
+        }
+    }
+
     // Utility methods for showing alerts
     private void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -704,5 +1018,76 @@ public class ChiTietCanHoController implements Initializable {
     // Setter for dependency injection
     public void setCanHoService(CanHoService canHoService) {
         this.canHoService = canHoService;
+        System.out.println("CanHoService đã được inject vào ChiTietCanHoController");
+    }
+    
+    /**
+     * Setter để inject ApplicationContext từ bên ngoài
+     */
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        System.out.println("DEBUG: Setting ApplicationContext in ChiTietCanHoController");
+        this.applicationContext = applicationContext;
+        
+        // Sau khi có ApplicationContext, thử lấy các service nếu chưa có
+        ensureServicesAvailable();
+    }
+    
+    /**
+     * Setter để inject PhuongTienService từ bên ngoài
+     */
+    public void setPhuongTienService(io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService phuongTienService) {
+        System.out.println("DEBUG: Setting PhuongTienService in ChiTietCanHoController");
+        this.phuongTienService = phuongTienService;
+    }
+    
+    /**
+     * Đảm bảo các service luôn có sẵn
+     */
+    private void ensureServicesAvailable() {
+        if (applicationContext == null) {
+            System.err.println("ERROR: ApplicationContext is null, cannot get services");
+            return;
+        }
+        
+        try {
+            if (canHoService == null) {
+                canHoService = applicationContext.getBean(CanHoService.class);
+                System.out.println("DEBUG: Got CanHoService from ApplicationContext");
+            }
+            
+            if (phuongTienService == null) {
+                phuongTienService = applicationContext.getBean(io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService.class);
+                System.out.println("DEBUG: Got PhuongTienService from ApplicationContext");
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot get services from ApplicationContext: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Refresh dữ liệu từ database - gọi khi cần cập nhật sau khi thêm/sửa/xóa
+     */
+    public void refreshData() {
+        if (currentCanHo != null && currentCanHo.getMaCanHo() != null) {
+            System.out.println("Refreshing data for apartment: " + currentCanHo.getMaCanHo());
+            loadDataFromService(currentCanHo.getMaCanHo());
+        }
+    }
+    
+    /**
+     * Static method để refresh tất cả cửa sổ chi tiết đang mở cho một căn hộ
+     */
+    public static void refreshAllWindowsForApartment(String maCanHo) {
+        System.out.println("=== DEBUG: Refreshing all windows for apartment: " + maCanHo + " ===");
+        System.out.println("Number of open windows: " + openWindows.size());
+        
+        for (ChiTietCanHoController controller : new ArrayList<>(openWindows)) {
+            if (controller.currentCanHo != null && 
+                maCanHo.equals(controller.currentCanHo.getMaCanHo())) {
+                System.out.println("Found matching window for apartment: " + maCanHo);
+                controller.refreshData();
+            }
+        }
+        System.out.println("=== END DEBUG ===");
     }
 } 

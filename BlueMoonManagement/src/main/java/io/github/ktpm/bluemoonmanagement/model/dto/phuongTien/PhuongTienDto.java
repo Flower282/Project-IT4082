@@ -14,4 +14,5 @@ public class PhuongTienDto {
     private String loaiPhuongTien;
     private String bienSo;
     private LocalDate ngayDangKy;
+    private String maCanHo;  // Mã căn hộ để liên kết phương tiện với căn hộ
 }

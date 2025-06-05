@@ -57,7 +57,7 @@
             <HBox alignment="CENTER_LEFT" prefWidth="710.0" spacing="15.0">
                <children>
                   <ComboBox fx:id="comboBoxTinhTrangKiThuat" maxWidth="1.7976931348623157E308" prefWidth="200.0" promptText="Tình trạng kĩ thuật" HBox.hgrow="ALWAYS" />
-                  <ComboBox fx:id="comboBoxTinhTrangSuDung" maxWidth="1.7976931348623157E308" prefWidth="200.0" promptText="Tình trạng sử dụng" HBox.hgrow="ALWAYS" />
+                  <ComboBox fx:id="comboBoxTinhTrangSuDung" disable="true" maxWidth="1.7976931348623157E308" prefWidth="200.0" promptText="Tình trạng sử dụng" HBox.hgrow="ALWAYS" />
                </children>
                <padding>
                   <Insets left="20.0" right="20.0" top="8.0" />

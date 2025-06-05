@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.FxView;
 import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
@@ -17,8 +21,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 @Component
 public class KhungController implements Initializable{
@@ -62,18 +64,30 @@ public class KhungController implements Initializable{
     @Autowired
     private FxViewLoader fxViewLoader;
 
+    @Autowired
+    private CanHoService canHoService;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         
         buttonTaiKhoan.setDisable(true);
         
         System.out.println("KhungController được khởi tạo");
+        System.out.println("CanHoService trong KhungController: " + (canHoService != null ? "Có" : "NULL"));
+        
         String name = Session.getCurrentUser().getHoTen();
         setAccountName(name);
         try {
             FxView<Home_list> fxView = fxViewLoader.loadFxView("/view/trang_chu_danh_sach.fxml");
             mainBorderPane.setCenter(fxView.getView());
             this.centerController = fxView.getController(); // Gán đúng controller
+            
+            // Inject services vào Home_list controller
+            if (this.centerController != null) {
+                this.centerController.injectServices(canHoService);
+                this.centerController.setParentController(this);
+            }
+            
             updateScreenLabel("Trang chủ");
         } catch (IOException e) {
             System.err.println("Không thể load trang chủ: " + e.getMessage());

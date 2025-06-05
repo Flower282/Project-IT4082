@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
@@ -309,7 +311,7 @@ public class Home_list implements Initializable {
     private TableColumn<?, ?> tableColumnNgayChuyenDen;
 
     @FXML
-    private TableColumn<?, ?> tableColumnNgayChuyenDen1;
+    private TableColumn<?, ?> tableColumnSoDienThoai;
 
     @FXML
     private TableColumn<?, ?> tableColumnNgayNop;
@@ -369,6 +371,9 @@ public class Home_list implements Initializable {
     private TableColumn<?, ?> tableColumnVaiTro;
 
     @FXML
+    private TableColumn<?, ?> tableColumnThaoTacCuDan;
+
+    @FXML
     private TextField textFieldBoPhanQuanLy;
 
     @FXML
@@ -422,32 +427,74 @@ public class Home_list implements Initializable {
     @FXML
     private Label vaiTroLabel;
 
+    @FXML
+    private Button buttonPreviousPageCuDan;
+
+    @FXML
+    private Button buttonNextPageCuDan;
+
+    @FXML
+    private Label labelCurrentPageCuDan;
+
     @Autowired
     private CanHoService canHoService;
 
-    private List<Node> allPanes;
-
-    private KhungController parentController;
+    @Autowired
+    private ApplicationContext applicationContext;
     
-    // Data for CanHo table
+    @Autowired
+    private io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService cuDanService;
+
+    private List<Node> allPanes;
+    private KhungController parentController;
+
     private ObservableList<CanHoTableData> canHoList;
     private ObservableList<CanHoTableData> filteredList;
     
+    private ObservableList<CuDanTableData> cuDanList;
+    private ObservableList<CuDanTableData> filteredCuDanList;
+    
+    // Pagination variables
+    private int currentPageCuDan = 1;
+    private int itemsPerPageCuDan = 10;
+    private int totalPagesCuDan = 1;
+    private List<CuDanTableData> allCuDanData;
+
     // Reference to table view for CanHo được inject từ FXML
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         System.out.println("Home_list controller được khởi tạo");
+        System.out.println("CanHoService status: " + (canHoService != null ? "Đã inject" : "NULL - Chưa inject"));
+        System.out.println("CuDanService status: " + (cuDanService != null ? "Đã inject" : "NULL - Chưa inject"));
+        
         allPanes = List.of(gridPaneTrangChu, scrollPaneCanHo, scrollPaneCuDan, scrollPaneTaiKhoan, scrollPaneKhoanThu, scrollPaneLichSuThu, scrollPaneCanHo1);
         
-        // Setup table căn hộ ngay từ đầu
-        setupCanHoTable();
+        // Initialize data lists
+        canHoList = FXCollections.observableArrayList();
+        filteredList = FXCollections.observableArrayList();
+        cuDanList = FXCollections.observableArrayList();
+        filteredCuDanList = FXCollections.observableArrayList();
         
+        // Setup tables
+        setupCanHoTable();
+        setupCuDanTable();
+        
+        // Load data
+        loadData();
+        loadCuDanData();
+        
+        // Show default tab
         show("TrangChu");
-
-        hoTenLabel.setText("Họ Tên: " + Session.getCurrentUser().getHoTen());
-        emailLabel.setText("Email: " + Session.getCurrentUser().getEmail());
-        vaiTroLabel.setText("Vai Trò: " + Session.getCurrentUser().getVaiTro());
+        
+        // Setup user info labels
+        if (Session.getCurrentUser() != null) {
+            hoTenLabel.setText("Họ Tên: " + Session.getCurrentUser().getHoTen());
+            emailLabel.setText("Email: " + Session.getCurrentUser().getEmail());
+            vaiTroLabel.setText("Vai trò: " + Session.getCurrentUser().getVaiTro());
+        }
+        
+        System.out.println("Home_list đã được khởi tạo");
     }
 
     public void setParentController(KhungController controller) {
@@ -568,19 +615,21 @@ public class Home_list implements Initializable {
                 List<CanHoDto> canHoDtoList = canHoService.getAllCanHo();
                 canHoList = FXCollections.observableArrayList();
                 
-                for (CanHoDto dto : canHoDtoList) {
-                    String chuHoName = dto.getChuHo() != null ? dto.getChuHo().getHoVaTen() : "";
-                    CanHoTableData tableData = new CanHoTableData(
-                        dto.getMaCanHo(),
-                        dto.getToaNha(),
-                        dto.getTang(),
-                        dto.getSoNha(),
-                        dto.getDienTich() + " m²",
-                        chuHoName,
-                        dto.getTrangThaiSuDung(),
-                        dto.getTrangThaiKiThuat()
-                    );
-                    canHoList.add(tableData);
+                if (canHoDtoList != null) {
+                    for (CanHoDto dto : canHoDtoList) {
+                        String chuHoName = dto.getChuHo() != null ? dto.getChuHo().getHoVaTen() : "";
+                        CanHoTableData tableData = new CanHoTableData(
+                            dto.getMaCanHo(),
+                            dto.getToaNha(),
+                            dto.getTang(),
+                            dto.getSoNha(),
+                            dto.getDienTich() + " m²",
+                            chuHoName,
+                            dto.getTrangThaiSuDung(),
+                            dto.getTrangThaiKiThuat()
+                        );
+                        canHoList.add(tableData);
+                    }
                 }
                 
                 filteredList = FXCollections.observableArrayList(canHoList);
@@ -648,7 +697,7 @@ public class Home_list implements Initializable {
         alert.setContentText(message);
         alert.showAndWait();
     }
-    
+
     /**
      * Setup table for CanHo
      */
@@ -666,12 +715,129 @@ public class Home_list implements Initializable {
             ((TableColumn<CanHoTableData, String>) tableColumnChuSoHuu).setCellValueFactory(new PropertyValueFactory<>("chuHo"));
             ((TableColumn<CanHoTableData, String>) tableColumnSuDung).setCellValueFactory(new PropertyValueFactory<>("trangThaiSuDung"));
             ((TableColumn<CanHoTableData, String>) tableColumnKiThuat).setCellValueFactory(new PropertyValueFactory<>("trangThaiKiThuat"));
+            
+            // Thêm sự kiện single-click để xem chi tiết căn hộ
+            typedTableView.setRowFactory(tv -> {
+                javafx.scene.control.TableRow<CanHoTableData> row = new javafx.scene.control.TableRow<>();
+                row.setOnMouseClicked(event -> {
+                    // Single-click vào bất kỳ chỗ nào của dòng sẽ mở chi tiết
+                    if (!row.isEmpty() && event.getClickCount() == 1) {
+                        CanHoTableData rowData = row.getItem();
+                        handleXemChiTietCanHo(rowData);
+                    }
+                });
+                return row;
+            });
         }
+        
+        System.out.println("CanHo table setup completed");
     }
     
+    /**
+     * Xử lý sự kiện xem chi tiết căn hộ
+     */
+    private void handleXemChiTietCanHo(CanHoTableData canHo) {
+        try {
+            if (canHoService != null) {
+                CanHoDto canHoDto = new CanHoDto();
+                canHoDto.setMaCanHo(canHo.getMaCanHo());
+                
+                CanHoChiTietDto chiTiet = canHoService.getCanHoChiTiet(canHoDto);
+                
+                if (chiTiet != null) {
+                    openChiTietCanHo(chiTiet);
+                } else {
+                    showError("Lỗi", "Không tìm thấy thông tin chi tiết căn hộ");
+                }
+            } else {
+                CanHoChiTietDto chiTietMau = createSampleChiTiet(canHo);
+                openChiTietCanHo(chiTietMau);
+            }
+        } catch (Exception e) {
+            showError("Lỗi khi xem chi tiết", "Chi tiết: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Mở cửa sổ chi tiết căn hộ
+     */
+    private void openChiTietCanHo(CanHoChiTietDto chiTiet) {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/view/chi_tiet_can_ho.fxml")
+            );
+            javafx.scene.Parent root = loader.load();
+            
+            ChiTietCanHoController controller = loader.getController();
+            
+            // Inject ApplicationContext trước tiên
+            if (applicationContext != null) {
+                System.out.println("DEBUG: Injecting ApplicationContext from Home_list to ChiTietCanHoController");
+                controller.setApplicationContext(applicationContext);
+            } else {
+                System.err.println("ERROR: ApplicationContext is null in Home_list!");
+            }
+            
+            // Inject CanHoService
+            if (canHoService != null) {
+                controller.setCanHoService(canHoService);
+            }
+            
+            // Inject PhuongTienService từ ApplicationContext
+            try {
+                if (applicationContext != null) {
+                    io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService phuongTienService = 
+                        applicationContext.getBean(io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService.class);
+                    controller.setPhuongTienService(phuongTienService);
+                    System.out.println("DEBUG: Injected PhuongTienService from Home_list to ChiTietCanHoController");
+                }
+            } catch (Exception e) {
+                System.err.println("ERROR: Cannot get PhuongTienService from ApplicationContext in Home_list: " + e.getMessage());
+            }
+            
+            // Set data sau khi đã inject services
+            controller.setCanHoData(chiTiet);
+            
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("Chi tiết căn hộ - " + chiTiet.getMaCanHo());
+            stage.setScene(new javafx.scene.Scene(root, 1000, 700));
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            stage.initOwner(tabelViewCanHo.getScene().getWindow());
+            stage.show();
+        } catch (Exception e) {
+            showError("Lỗi mở chi tiết", "Không thể mở trang chi tiết căn hộ: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Tạo dữ liệu mẫu cho chi tiết căn hộ
+     */
+    private CanHoChiTietDto createSampleChiTiet(CanHoTableData canHo) {
+        CanHoChiTietDto chiTiet = new CanHoChiTietDto();
+        chiTiet.setMaCanHo(canHo.getMaCanHo());
+        chiTiet.setToaNha(canHo.getToaNha());
+        chiTiet.setTang(canHo.getTang());
+        chiTiet.setSoNha(canHo.getSoNha());
+        chiTiet.setDienTich(Double.parseDouble(canHo.getDienTich().replace(" m²", "")));
+        chiTiet.setTrangThaiKiThuat(canHo.getTrangThaiKiThuat());
+        chiTiet.setTrangThaiSuDung(canHo.getTrangThaiSuDung());
+        return chiTiet;
+    }
+
     // Setter for dependency injection
     public void setCanHoService(CanHoService canHoService) {
         this.canHoService = canHoService;
+        System.out.println("CanHoService đã được set thủ công: " + (canHoService != null));
+    }
+
+    /**
+     * Method để inject services từ parent controller nếu Spring DI không hoạt động
+     */
+    public void injectServices(CanHoService canHoService) {
+        if (this.canHoService == null && canHoService != null) {
+            this.canHoService = canHoService;
+            System.out.println("Đã inject CanHoService thủ công từ parent controller");
+        }
     }
 
     /**
@@ -720,6 +886,56 @@ public class Home_list implements Initializable {
         public void setTrangThaiKiThuat(String trangThaiKiThuat) { this.trangThaiKiThuat = trangThaiKiThuat; }
     }
 
+    /**
+     * Inner class để hiển thị dữ liệu cư dân trong table
+     */
+    public static class CuDanTableData {
+        private String maDinhDanh;
+        private String hoVaTen;
+        private String gioiTinh;
+        private String ngaySinh;
+        private String soDienThoai;
+        private String email;
+        private String maCanHo;
+        private String trangThaiCuTru;
+        private String ngayChuyenDen;
+
+        public CuDanTableData(String maDinhDanh, String hoVaTen, String gioiTinh, String ngaySinh,
+                             String soDienThoai, String email, String maCanHo, String trangThaiCuTru, String ngayChuyenDen) {
+            this.maDinhDanh = maDinhDanh;
+            this.hoVaTen = hoVaTen;
+            this.gioiTinh = gioiTinh;
+            this.ngaySinh = ngaySinh;
+            this.soDienThoai = soDienThoai;
+            this.email = email;
+            this.maCanHo = maCanHo;
+            this.trangThaiCuTru = trangThaiCuTru;
+            this.ngayChuyenDen = ngayChuyenDen;
+        }
+
+        // Getters
+        public String getMaDinhDanh() { return maDinhDanh; }
+        public String getHoVaTen() { return hoVaTen; }
+        public String getGioiTinh() { return gioiTinh; }
+        public String getNgaySinh() { return ngaySinh; }
+        public String getSoDienThoai() { return soDienThoai; }
+        public String getEmail() { return email; }
+        public String getMaCanHo() { return maCanHo; }
+        public String getTrangThaiCuTru() { return trangThaiCuTru; }
+        public String getNgayChuyenDen() { return ngayChuyenDen; }
+
+        // Setters
+        public void setMaDinhDanh(String maDinhDanh) { this.maDinhDanh = maDinhDanh; }
+        public void setHoVaTen(String hoVaTen) { this.hoVaTen = hoVaTen; }
+        public void setGioiTinh(String gioiTinh) { this.gioiTinh = gioiTinh; }
+        public void setNgaySinh(String ngaySinh) { this.ngaySinh = ngaySinh; }
+        public void setSoDienThoai(String soDienThoai) { this.soDienThoai = soDienThoai; }
+        public void setEmail(String email) { this.email = email; }
+        public void setMaCanHo(String maCanHo) { this.maCanHo = maCanHo; }
+        public void setTrangThaiCuTru(String trangThaiCuTru) { this.trangThaiCuTru = trangThaiCuTru; }
+        public void setNgayChuyenDen(String ngayChuyenDen) { this.ngayChuyenDen = ngayChuyenDen; }
+    }
+
     @Autowired
     private FxViewLoader fxViewLoader;
     @FXML
@@ -748,6 +964,9 @@ public class Home_list implements Initializable {
             e.printStackTrace();
         }
     }
+
+
+
     public void DoiMatKhauClicked(ActionEvent event){
         try {
             // Load view + controller
@@ -774,5 +993,257 @@ public class Home_list implements Initializable {
         }
     }
 
+    @FXML
+    public void themCuDanClicked(ActionEvent event) {
+        try {
+            System.out.println("Mở form thêm cư dân...");
+            
+            // Load view + controller using FxViewLoader
+            FxView<?> fxView = fxViewLoader.loadFxView("/view/cu_dan.fxml");
+
+            // Tạo cửa sổ mới
+            Stage newStage = new Stage();
+            newStage.setScene(new Scene(fxView.getView()));
+            newStage.setTitle("Thêm cư dân");
+
+            // Thiết lập modal
+            newStage.initModality(Modality.APPLICATION_MODAL);
+
+            // Gán owner là cửa sổ hiện tại
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            newStage.initOwner(currentStage);
+
+            // Thiết lập kích thước cửa sổ
+            newStage.setMinWidth(700);
+            newStage.setMinHeight(600);
+            newStage.setResizable(true);
+
+            // Hiển thị cửa sổ mới
+            newStage.show();
+
+        } catch (IOException e) {
+            System.err.println("Không thể mở cửa sổ Thêm cư dân:");
+            e.printStackTrace();
+            showError("Lỗi", "Không thể mở form thêm cư dân: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Setup table for CuDan
+     */
+    private void setupCuDanTable() {
+        if (tabelViewCuDan != null) {
+            // Cast table view to correct type
+            TableView<CuDanTableData> typedTableView = (TableView<CuDanTableData>) tabelViewCuDan;
+            
+            // Setup cell value factories
+            ((TableColumn<CuDanTableData, String>) tableColumnMaDinhDanh).setCellValueFactory(new PropertyValueFactory<>("maDinhDanh"));
+            ((TableColumn<CuDanTableData, String>) tableColumnHoVaTen).setCellValueFactory(new PropertyValueFactory<>("hoVaTen"));
+            ((TableColumn<CuDanTableData, String>) tableColumnGioiTinh).setCellValueFactory(new PropertyValueFactory<>("gioiTinh"));
+            ((TableColumn<CuDanTableData, String>) tableColumnNgaySinh).setCellValueFactory(new PropertyValueFactory<>("ngaySinh"));
+            ((TableColumn<CuDanTableData, String>) tableColumnSoDienThoai).setCellValueFactory(new PropertyValueFactory<>("soDienThoai"));
+            ((TableColumn<CuDanTableData, String>) tableColumnEmail).setCellValueFactory(new PropertyValueFactory<>("email"));
+            ((TableColumn<CuDanTableData, String>) tableColumnMaCanHoCuDan).setCellValueFactory(new PropertyValueFactory<>("maCanHo"));
+            ((TableColumn<CuDanTableData, String>) tableColumnTrangThaiCuDan).setCellValueFactory(new PropertyValueFactory<>("trangThaiCuTru"));
+            ((TableColumn<CuDanTableData, String>) tableColumnNgayChuyenDen).setCellValueFactory(new PropertyValueFactory<>("ngayChuyenDen"));
+            
+            // Setup action column with delete button
+            ((TableColumn<CuDanTableData, String>) tableColumnThaoTacCuDan).setCellFactory(col -> {
+                return new javafx.scene.control.TableCell<CuDanTableData, String>() {
+                    private final javafx.scene.control.Button deleteButton = new javafx.scene.control.Button("Xóa");
+                    
+                    {
+                        deleteButton.setOnAction(event -> {
+                            CuDanTableData cuDan = getTableView().getItems().get(getIndex());
+                            handleDeleteCuDan(cuDan);
+                        });
+                    }
+                    
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty) {
+                            setGraphic(null);
+                        } else {
+                            javafx.scene.layout.HBox hbox = new javafx.scene.layout.HBox();
+                            hbox.setAlignment(javafx.geometry.Pos.CENTER);
+                            hbox.getChildren().add(deleteButton);
+                            setGraphic(hbox);
+                        }
+                    }
+                };
+            });
+            
+            System.out.println("CuDan table setup completed");
+        } else {
+            System.out.println("WARNING: tabelViewCuDan is null");
+        }
+    }
+    
+    /**
+     * Xử lý xóa mềm cư dân
+     */
+    private void handleDeleteCuDan(CuDanTableData cuDan) {
+        try {
+            // Hiển thị dialog xác nhận
+            javafx.scene.control.Alert confirmDialog = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
+            confirmDialog.setTitle("Xác nhận xóa");
+            confirmDialog.setHeaderText("Xóa cư dân");
+            confirmDialog.setContentText("Bạn có chắc chắn muốn xóa cư dân " + cuDan.getHoVaTen() + " không?\nThao tác này sẽ cập nhật ngày chuyển đi cho cư dân.");
+            
+            java.util.Optional<javafx.scene.control.ButtonType> result = confirmDialog.showAndWait();
+            
+            if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+                if (cuDanService != null) {
+                    // Gọi service để xóa mềm cư dân
+                    boolean deleted = cuDanService.xoaMem(cuDan.getMaDinhDanh());
+                    
+                    if (deleted) {
+                        showSuccess("Thành công", "Đã xóa cư dân thành công!");
+                        // Reload dữ liệu để cập nhật danh sách
+                        loadCuDanData();
+                    } else {
+                        showError("Lỗi", "Không thể xóa cư dân. Vui lòng thử lại!");
+                    }
+                } else {
+                    showError("Lỗi", "Service không khả dụng!");
+                }
+            }
+        } catch (Exception e) {
+            showError("Lỗi", "Có lỗi xảy ra khi xóa cư dân: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Load dữ liệu cư dân từ service
+     */
+    private void loadCuDanData() {
+        try {
+            if (cuDanService != null) {
+                List<io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto> cuDanDtoList = cuDanService.getAllCuDan();
+                
+                // Clear existing data
+                if (cuDanList == null) {
+                    cuDanList = FXCollections.observableArrayList();
+                }
+                cuDanList.clear();
+                
+                if (cuDanDtoList != null) {
+                    for (io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto dto : cuDanDtoList) {
+                        CuDanTableData tableData = new CuDanTableData(
+                            dto.getMaDinhDanh(),
+                            dto.getHoVaTen(),
+                            dto.getGioiTinh(),
+                            dto.getNgaySinh() != null ? dto.getNgaySinh().toString() : "",
+                            dto.getSoDienThoai(),
+                            dto.getEmail(),
+                            dto.getMaCanHo() != null ? dto.getMaCanHo() : "",
+                            dto.getTrangThaiCuTru(),
+                            dto.getNgayChuyenDen() != null ? dto.getNgayChuyenDen().toString() : ""
+                        );
+                        cuDanList.add(tableData);
+                    }
+                }
+                
+                // Store all data for pagination
+                allCuDanData = new java.util.ArrayList<>(cuDanList);
+                
+                // Reset to first page and update display
+                currentPageCuDan = 1;
+                updateCurrentPageDisplay();
+                
+                System.out.println("Loaded " + allCuDanData.size() + " residents from service");
+            } else {
+                System.err.println("CuDanService is null");
+                // Initialize empty data
+                allCuDanData = new java.util.ArrayList<>();
+                currentPageCuDan = 1;
+                updateCurrentPageDisplay();
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi tải dữ liệu cư dân từ service: " + e.getMessage());
+            e.printStackTrace();
+            // Initialize empty data on error
+            allCuDanData = new java.util.ArrayList<>();
+            currentPageCuDan = 1;
+            updateCurrentPageDisplay();
+        }
+    }
+
+    /**
+     * Cập nhật label kết quả cho cư dân
+     */
+    private void updateCuDanKetQuaLabel() {
+        int total = allCuDanData != null ? allCuDanData.size() : 0;
+        int startItem = total > 0 ? (currentPageCuDan - 1) * itemsPerPageCuDan + 1 : 0;
+        int endItem = Math.min(currentPageCuDan * itemsPerPageCuDan, total);
+        
+        if (labelKetQuaHienThiCuDan != null) {
+            labelKetQuaHienThiCuDan.setText(String.format("Hiển thị %d - %d trên tổng số %d cư dân", startItem, endItem, total));
+        }
+        
+        if (labelCurrentPageCuDan != null) {
+            labelCurrentPageCuDan.setText(String.format("Trang %d / %d", currentPageCuDan, totalPagesCuDan));
+        }
+        
+        // Update button states
+        if (buttonPreviousPageCuDan != null) {
+            buttonPreviousPageCuDan.setDisable(currentPageCuDan <= 1);
+        }
+        if (buttonNextPageCuDan != null) {
+            buttonNextPageCuDan.setDisable(currentPageCuDan >= totalPagesCuDan);
+        }
+    }
+    
+    /**
+     * Cập nhật hiển thị trang hiện tại
+     */
+    private void updateCurrentPageDisplay() {
+        if (allCuDanData == null || allCuDanData.isEmpty()) {
+            filteredCuDanList = FXCollections.observableArrayList();
+            totalPagesCuDan = 1;
+            currentPageCuDan = 1;
+        } else {
+            totalPagesCuDan = (int) Math.ceil((double) allCuDanData.size() / itemsPerPageCuDan);
+            if (currentPageCuDan > totalPagesCuDan) {
+                currentPageCuDan = totalPagesCuDan;
+            }
+            
+            int startIndex = (currentPageCuDan - 1) * itemsPerPageCuDan;
+            int endIndex = Math.min(startIndex + itemsPerPageCuDan, allCuDanData.size());
+            
+            List<CuDanTableData> currentPageData = allCuDanData.subList(startIndex, endIndex);
+            filteredCuDanList = FXCollections.observableArrayList(currentPageData);
+        }
+        
+        if (tabelViewCuDan != null) {
+            ((TableView<CuDanTableData>) tabelViewCuDan).setItems(filteredCuDanList);
+        }
+        
+        updateCuDanKetQuaLabel();
+    }
+    
+    /**
+     * Chuyển đến trang trước
+     */
+    @FXML
+    private void previousPageCuDan() {
+        if (currentPageCuDan > 1) {
+            currentPageCuDan--;
+            updateCurrentPageDisplay();
+        }
+    }
+    
+    /**
+     * Chuyển đến trang sau
+     */
+    @FXML
+    private void nextPageCuDan() {
+        if (currentPageCuDan < totalPagesCuDan) {
+            currentPageCuDan++;
+            updateCurrentPageDisplay();
+        }
+    }
 
 }

@@ -13,4 +13,7 @@ public interface CuDanService {
     ResponseDto deleteCuDan(CudanDto cudanDto);    
     ResponseDto importFromExcel(MultipartFile file);
     ResponseDto exportToExcel(String filePath);
+    
+    // Soft delete method
+    boolean xoaMem(String maDinhDanh);
 }

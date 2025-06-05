@@ -249,7 +249,7 @@
                                  <children>
                                     <HBox prefWidth="560.0" spacing="20.0">
                                        <children>
-                                          <TextField fx:id="textFieldHoVaTen" promptText="Nhập họ và tên" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
+                                          <TextField fx:id="textFieldTimKiemCuDan" promptText="Nhập họ và tên" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
                                           <TextField fx:id="textFieldMaDinhDanh" layoutX="136.0" layoutY="10.0" prefWidth="199.0" promptText="Nhập mã định danh" styleClass="text-field-normal" />
                                           <Button fx:id="buttonTimKiemCuDan" mnemonicParsing="false" onAction="#handleTimKiemCuDan" text="Tìm kiếm">
                                              <styleClass>
@@ -266,12 +266,12 @@
                                           </Button>
                                        </children>
                                     </HBox>
-                                    <TableView prefWidth="565.0">
+                                    <TableView fx:id="tableViewCuDan" prefWidth="565.0">
                                        <columns>
-                                          <TableColumn fx:id="tableColumnMaDinhDanh" minWidth="-1.0" prefWidth="116.7999866604805" text="Mã định danh" />
-                                          <TableColumn fx:id="tableColumnHoVaTen" prefWidth="161.60006713867188" text="Họ và tên" />
-                                          <TableColumn fx:id="tableColumnNgaySinh" prefWidth="108.79998779296875" text="Ngày sinh" />
-                                          <TableColumn fx:id="tableColumnGioiTinh" prefWidth="76.0" text="Giới tính" />
+                                          <TableColumn fx:id="tableColumnMaDinhDanhCuDan" minWidth="-1.0" prefWidth="116.7999866604805" text="Mã định danh" />
+                                          <TableColumn fx:id="tableColumnHoVaTenCuDan" prefWidth="161.60006713867188" text="Họ và tên" />
+                                          <TableColumn fx:id="tableColumnQuanHeChuHo" prefWidth="108.79998779296875" text="Quan hệ chủ hộ" />
+                                          <TableColumn fx:id="tableColumnNgaySinhCuDan" prefWidth="76.0" text="Ngày sinh" />
                                           <TableColumn fx:id="tableColumnTrangThaiCuDan" prefWidth="99.99990844726562" text="Trạng thái" />
                                        </columns>
                                     </TableView>
@@ -337,14 +337,28 @@
                                                 </Group>
                                              </graphic>
                                           </Button>
+                                          <Button fx:id="buttonThemPhuongTien" mnemonicParsing="false" onAction="#handleThemPhuongTien" text="Thêm phương tiện">
+                                             <styleClass>
+                                                <String fx:value="action-button" />
+                                                <String fx:value="button-green" />
+                                             </styleClass>
+                                             <graphic>
+                                                <Group>
+                                                   <children>
+                                                      <FontAwesomeIcon glyphName="PLUS" styleClass="action-button-icon" />
+                                                   </children>
+                                                </Group>
+                                             </graphic>
+                                          </Button>
                                        </children>
                                     </HBox>
-                                    <TableView prefWidth="565.0">
+                                    <TableView fx:id="tableViewPhuongTien" prefWidth="565.0">
                                       <columns>
-                                        <TableColumn fx:id="tableColumnMaPhuongTien" minWidth="-1.0" prefWidth="132.79999428987503" text="Mã phương tiện" />
-                                          <TableColumn fx:id="tableColumnBienSoXe" minWidth="-1.0" prefWidth="118.40003967285156" text="Biển số xe" />
-                                        <TableColumn fx:id="tableColumnLoaiPhuongTien" prefWidth="178.40003967285156" text="Loại phương tiện" />
-                                          <TableColumn fx:id="tableColumnNgayDangKi" prefWidth="133.59988403320312" text="Ngày đăng kí" />
+                                        <TableColumn fx:id="tableColumnMaPhuongTien" minWidth="-1.0" prefWidth="100.0" text="Mã phương tiện" />
+                                          <TableColumn fx:id="tableColumnBienSoXe" minWidth="-1.0" prefWidth="100.0" text="Biển số xe" />
+                                        <TableColumn fx:id="tableColumnLoaiPhuongTien" prefWidth="130.0" text="Loại phương tiện" />
+                                          <TableColumn fx:id="tableColumnNgayDangKi" prefWidth="110.0" text="Ngày đăng kí" />
+                                          <TableColumn fx:id="tableColumnThaoTacPhuongTien" prefWidth="120.0" text="Thao tác" />
                                       </columns>
                                     </TableView>
                                  </children>
@@ -411,7 +425,7 @@
                                           </Button>
                                        </children>
                                     </HBox>
-                                    <TableView prefWidth="565.0">
+                                    <TableView fx:id="tableViewThuPhi" prefWidth="565.0">
                                        <columns>
                                           <TableColumn fx:id="tableColumnMaHoaDon" minWidth="-1.0" prefWidth="107.99999886751175" text="Mã hóa đơn" />
                                           <TableColumn fx:id="tableColumnTenKhoanThu" minWidth="-1.0" prefWidth="152.00003051757812" text="Tên khoản thu" />

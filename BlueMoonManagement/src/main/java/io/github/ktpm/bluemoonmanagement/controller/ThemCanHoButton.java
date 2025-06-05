@@ -12,8 +12,8 @@ import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -22,7 +22,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -179,6 +178,12 @@ public class ThemCanHoButton implements Initializable {
         vBoxChuSoHuu.setVisible(isSelected);
         vBoxChuSoHuu.setManaged(isSelected);
         
+        // Enable/disable comboBoxTinhTrangSuDung based on "Đã bán" selection
+        comboBoxTinhTrangSuDung.setDisable(!isSelected);
+        if (!isSelected) {
+            comboBoxTinhTrangSuDung.setValue(null); // Clear selection when disabled
+        }
+        
         // Nếu chọn thêm chủ sở hữu, thì bỏ chọn tạo cư dân mới
         if (isSelected) {
             choiceBoxTaoCuDanMoi.setSelected(false);
@@ -190,6 +195,7 @@ public class ThemCanHoButton implements Initializable {
         }
         
         System.out.println("Thêm chủ sở hữu: " + isSelected);
+        System.out.println("Tình trạng sử dụng enabled: " + !comboBoxTinhTrangSuDung.isDisabled());
     }
 
     @FXML
@@ -612,6 +618,9 @@ public class ThemCanHoButton implements Initializable {
         // Reset combo boxes to default
         comboBoxTinhTrangKiThuat.setValue("Tốt");
         comboBoxTinhTrangSuDung.setValue("Trống");
+        
+        // Disable tình trạng sử dụng when form is cleared
+        comboBoxTinhTrangSuDung.setDisable(true);
         
         // Clear owner fields
         clearOwnerFields();

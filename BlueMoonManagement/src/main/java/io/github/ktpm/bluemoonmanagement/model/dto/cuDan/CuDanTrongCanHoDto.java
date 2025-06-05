@@ -14,4 +14,5 @@ public class CuDanTrongCanHoDto {
     private String hoVaTen;
     private String gioiTinh;
     private LocalDate ngaySinh;
+    private String trangThaiCuTru;
 }
