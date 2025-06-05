@@ -251,7 +251,7 @@
                         </Button>
                         <VBox layoutY="40.0" prefWidth="970.0" spacing="10.0" AnchorPane.topAnchor="40.0">
                            <children>
-                              <TableView fx:id="tabelViewCanHo" prefWidth="970.0" prefHeight="400.0">
+                              <TableView fx:id="tabelViewCanHo" prefHeight="400.0" prefWidth="970.0">
                                  <columns>
                                     <TableColumn fx:id="tableColumnMaCanHo" prefWidth="120.00003510713577" text="Mã căn hộ" />
                                     <TableColumn fx:id="tableColumnToaNha" prefWidth="64.0" text="Tòa nhà" />
@@ -317,7 +317,7 @@
             <String fx:value="round-big" />
          </styleClass>
       </ScrollPane>
-      <ScrollPane fx:id="scrollPaneCuDan" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" fitToWidth="true" layoutX="30.0" layoutY="30.0" prefHeight="200.0" prefWidth="200.0" style="-fx-background: white;" visible="false">
+      <ScrollPane fx:id="scrollPaneCuDan" fitToWidth="true" hbarPolicy="NEVER" layoutX="30.0" layoutY="30.0" prefHeight="200.0" prefWidth="200.0" style="-fx-background: white;" vbarPolicy="AS_NEEDED" visible="false">
          <padding>
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </padding>
@@ -367,17 +367,17 @@
                         </Button>
                         <VBox layoutY="40.0" prefWidth="970.0" spacing="10.0" AnchorPane.topAnchor="40.0">
                            <children>
-                              <TableView fx:id="tabelViewCuDan" prefWidth="970.0">
+                              <TableView fx:id="tabelViewCuDan" prefHeight="400.0" prefWidth="970.0">
                                  <columns>
-                                    <TableColumn fx:id="tableColumnMaDinhDanh" prefWidth="121.59999924898148" resizable="false" text="Mã định danh" />
-                                    <TableColumn fx:id="tableColumnHoVaTen" prefWidth="136.00001525878906" resizable="false" text="Họ và tên" />
-                                    <TableColumn fx:id="tableColumnGioiTinh" resizable="false" text="Giới tính" />
-                                    <TableColumn fx:id="tableColumnNgaySinh" prefWidth="116.0" resizable="false" text="Ngày sinh" />
-                                    <TableColumn fx:id="tableColumnMaCanHoCuDan" prefWidth="101.5999755859375" resizable="false" text="Mã căn hộ" />
-                                    <TableColumn fx:id="tableColumnSoDienThoai" prefWidth="144.7999267578125" resizable="false" text="Số điện thoại" />
-                                    <TableColumn fx:id="tableColumnNgayChuyenDen" prefWidth="154.39996337890625" resizable="false" text="Ngày chuyển đến" />
-                                    <TableColumn fx:id="tableColumnTrangThaiCuDan" prefWidth="108.800048828125" resizable="false" text="Trạng thái" />
-                                    <TableColumn fx:id="tableColumnThaoTacCuDan" prefWidth="80.0" resizable="false" text="Thao tác" />
+                                    <TableColumn fx:id="tableColumnMaDinhDanh" prefWidth="89.59999924898148" resizable="false" text="Mã định danh" />
+                                    <TableColumn fx:id="tableColumnHoVaTen" prefWidth="129.59999084472656" resizable="false" text="Họ và tên" />
+                                    <TableColumn fx:id="tableColumnGioiTinh" prefWidth="65.60002136230469" resizable="false" text="Giới tính" />
+                                    <TableColumn fx:id="tableColumnNgaySinh" prefWidth="136.80007934570312" resizable="false" text="Ngày sinh" />
+                                    <TableColumn fx:id="tableColumnMaCanHoCuDan" prefWidth="117.5999755859375" resizable="false" text="Mã căn hộ" />
+                                    <TableColumn fx:id="tableColumnSoDienThoai" prefWidth="118.4000244140625" resizable="false" text="Số điện thoại" />
+                                    <TableColumn fx:id="tableColumnNgayChuyenDen" prefWidth="109.60003662109375" resizable="false" text="Ngày chuyển đến" />
+                                    <TableColumn fx:id="tableColumnTrangThaiCuDan" prefWidth="101.60003662109375" resizable="false" text="Trạng thái" />
+                                    <TableColumn fx:id="tableColumnThaoTacCuDan" prefWidth="96.80002441406248" resizable="false" text="Thao tác" />
                                  </columns>
                               </TableView>
                               <AnchorPane prefWidth="970.0">
@@ -388,7 +388,7 @@
                                        </font>
                                     </Label>
                                     <ComboBox fx:id="comboBoxResultNumberCuDan" layoutX="895.0" layoutY="4.0" prefWidth="74.0" promptText="10" AnchorPane.topAnchor="0.0" />
-                                    <Label fx:id="labelKetQuaHienThiCuDan" layoutX="768.0" layoutY="7.0" text="Số kết quả hiển thị">
+                                    <Label fx:id="labelKetQuaHienThiCuDan" layoutX="740.0" layoutY="7.0" prefHeight="16.0" prefWidth="144.0" text="Số kết quả hiển thị">
                                        <font>
                                           <Font name="Arial" size="14.0" />
                                        </font>
