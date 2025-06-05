@@ -1,23 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon?>
-<?import java.lang.String?>
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.Group?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.StackPane?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
+<?import de.jensd.fx.glyphs.fontawesome.*?>
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<VBox fx:controller="io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController" alignment="TOP_CENTER" spacing="10.0" stylesheets="@/view/style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<VBox alignment="TOP_CENTER" spacing="10.0" stylesheets="@/view/style/dashboard_style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController">
    <children>
       <AnchorPane>
          <children>
@@ -236,7 +227,7 @@
                   </Button>
                </children>
             </AnchorPane>
-            <AnchorPane fx:id="anchorPaneCuDan" layoutX="40.0" layoutY="10.0" prefHeight="370.0" visible="false">
+            <AnchorPane fx:id="anchorPaneCuDan" layoutX="40.0" layoutY="10.0" prefHeight="370.0">
                <children>
                   <ScrollPane hbarPolicy="NEVER" prefHeight="310.0" prefWidth="640.0" style="-fx-background: white;">
                      <padding>
