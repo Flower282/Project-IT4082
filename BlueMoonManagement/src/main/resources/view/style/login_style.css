@@ -84,3 +84,9 @@
 .background {
     -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, #ffffff, #ffffff);
 }
+
+.text-error {
+    -fx-fill: red;
+    -fx-font-size: 14px;
+    -fx-font-family: "Arial";
+}

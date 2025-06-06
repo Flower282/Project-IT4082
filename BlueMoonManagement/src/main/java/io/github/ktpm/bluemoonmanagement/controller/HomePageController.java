@@ -61,21 +61,13 @@ public class HomePageController {
      * Hiển thị thông báo lỗi
      */
     private void showErrorAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Lỗi");
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showError(title, message);
     }
     
     /**
      * Hiển thị thông báo thành công
      */
     protected void showSuccessAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Thành công");
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showSuccess(title, message);
     }
 } 

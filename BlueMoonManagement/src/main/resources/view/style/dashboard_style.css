@@ -213,7 +213,7 @@
 
 /* Styling cho dòng được chọn - TẮT HIGHLIGHT */
 .table-row-cell:selected {
-    -fx-background-color: transparent;
+    -fx-background-color: #92e2f8;
     /* Không đổi màu khi được chọn */
 }
 
@@ -224,13 +224,13 @@
 
 /* Styling cho dòng được chọn và hover - TẮT HIGHLIGHT */
 .table-row-cell:selected:hover {
-    -fx-background-color: transparent;
+    -fx-background-color: #92e2f8;
     /* Không đổi màu khi hover trên dòng đã chọn */
 }
 
 /* Styling cho dòng khi hover (chưa chọn) - TẮT HOVER */
 .table-row-cell:hover {
-    -fx-background-color: transparent;
+    -fx-background-color: #92e2f8;
     /* Không đổi màu khi hover */
 }
 

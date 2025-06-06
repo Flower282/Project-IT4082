@@ -28,7 +28,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.PieChart;
-import javafx.scene.control.Alert;
+
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -115,21 +115,6 @@ public class Home_list implements Initializable {
 
     @FXML
     private ComboBox<?> comboBoxLoaiKhoanThu1;
-
-    @FXML
-    private ComboBox<?> comboBoxResultNumber;
-
-    @FXML
-    private ComboBox<?> comboBoxResultNumberCuDan;
-
-    @FXML
-    private ComboBox<?> comboBoxResultNumberKhoanThu;
-
-    @FXML
-    private ComboBox<?> comboBoxResultNumberKhoanThu1;
-
-    @FXML
-    private ComboBox<?> comboBoxResultNumberThuPhi;
 
     @FXML
     private ComboBox<?> comboBoxTang;
@@ -449,6 +434,9 @@ public class Home_list implements Initializable {
 
     @Autowired
     private io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService cuDanService;
+    
+    @Autowired
+    private io.github.ktpm.bluemoonmanagement.service.cache.CacheDataService cacheDataService;
 
     private List<Node> allPanes;
     private KhungController parentController;
@@ -531,9 +519,9 @@ public class Home_list implements Initializable {
             parentController.updateScreenLabel("Danh sách căn hộ");
         }
         
-        // Setup table và load dữ liệu
+        // Setup table nhưng KHÔNG load dữ liệu lại (sử dụng cache)
         setupCanHoTable();
-        loadData();
+        loadDataFromCache();
     }
 
     @FXML
@@ -603,9 +591,9 @@ public class Home_list implements Initializable {
             // Hiển thị dialog và chờ đóng
             dialogStage.showAndWait();
             
-            // Sau khi đóng form, reload dữ liệu
-            System.out.println("Form thêm căn hộ đã đóng, reload dữ liệu...");
-            loadData();
+            // Sau khi đóng form, load dữ liệu từ cache (không refresh database)
+            System.out.println("Form thêm căn hộ đã đóng, load dữ liệu từ cache...");
+            loadDataFromCache();
             
         } catch (Exception e) {
             showError("Lỗi khi mở form thêm căn hộ", "Chi tiết: " + e.getMessage());
@@ -613,6 +601,53 @@ public class Home_list implements Initializable {
         }
     }
     
+    /**
+     * Loads data from cache (no database refresh)
+     */
+    private void loadDataFromCache() {
+        try {
+            if (cacheDataService != null) {
+                System.out.println("DEBUG: Loading apartment data from cache...");
+                List<CanHoDto> canHoDtoList = canHoService.getAllCanHo();
+                canHoList = FXCollections.observableArrayList();
+                
+                if (canHoDtoList != null) {
+                    for (CanHoDto dto : canHoDtoList) {
+                        // Sử dụng cache để kiểm tra cư dân thay vì gọi database
+                        if (shouldShowApartmentFromCache(dto)) {
+                            String chuHoName = dto.getChuHo() != null ? dto.getChuHo().getHoVaTen() : "";
+                            CanHoTableData tableData = new CanHoTableData(
+                                dto.getMaCanHo(),
+                                dto.getToaNha(),
+                                dto.getTang(),
+                                dto.getSoNha(),
+                                dto.getDienTich() + " m²",
+                                chuHoName,
+                                dto.getTrangThaiSuDung(),
+                                dto.getTrangThaiKiThuat()
+                            );
+                            canHoList.add(tableData);
+                        }
+                    }
+                }
+                
+                filteredList = FXCollections.observableArrayList(canHoList);
+                if (tabelViewCanHo != null) {
+                    ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
+                }
+                updateKetQuaLabel();
+                System.out.println("DEBUG: Loaded " + canHoList.size() + " apartments from cache");
+            } else {
+                System.out.println("DEBUG: Cache service not available, falling back to database load");
+                loadData();
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to load data from cache: " + e.getMessage());
+            // Fallback to database load
+            loadData();
+        }
+    }
+
     /**
      * Reloads data for all tables and views
      */
@@ -658,6 +693,40 @@ public class Home_list implements Initializable {
         }
     }
     
+    /**
+     * Kiểm tra xem căn hộ có nên hiển thị trong danh sách hay không (sử dụng cache)
+     * Ẩn những căn hộ có tất cả cư dân đã chuyển đi
+     */
+    private boolean shouldShowApartmentFromCache(io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto dto) {
+        try {
+            // Sử dụng cache service thay vì gọi database
+            io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto chiTiet = cacheDataService.getCanHoChiTietFromCache(dto.getMaCanHo());
+            
+            if (chiTiet == null || chiTiet.getCuDanList() == null || chiTiet.getCuDanList().isEmpty()) {
+                // Nếu không có cư dân thì vẫn hiển thị (căn hộ trống)
+                return true;
+            }
+            
+            // Kiểm tra xem có cư dân nào còn đang ở không
+            for (io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto cuDan : chiTiet.getCuDanList()) {
+                String trangThai = cuDan.getTrangThaiCuTru();
+                // Nếu có ít nhất 1 cư dân chưa chuyển đi thì hiển thị căn hộ
+                if (trangThai != null && !trangThai.equals("Đã chuyển đi")) {
+                    return true;
+                }
+            }
+            
+            // Tất cả cư dân đều đã chuyển đi thì ẩn căn hộ
+            System.out.println("DEBUG: Hiding apartment " + dto.getMaCanHo() + " - all residents moved out (from cache)");
+            return false;
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot check apartment residents from cache for " + dto.getMaCanHo() + ": " + e.getMessage());
+            // Nếu cache có lỗi thì fallback về method cũ
+            return shouldShowApartment(dto);
+        }
+    }
+
     /**
      * Kiểm tra xem căn hộ có nên hiển thị trong danh sách hay không
      * Ẩn những căn hộ có tất cả cư dân đã chuyển đi
@@ -719,27 +788,15 @@ public class Home_list implements Initializable {
      * Shows error dialog to user
      */
     private void showError(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Lỗi");
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showError(title != null ? title : "Lỗi", message);
     }
     
     private void showSuccess(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showSuccess(title, message);
     }
 
     private void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showInfo(title, message);
     }
 
     /**
@@ -1479,7 +1536,7 @@ public class Home_list implements Initializable {
             if (total <= 15) {
                 labelKetQuaHienThiCuDan.setText(String.format("Hiển thị %d/%d cư dân", total, total));
             } else {
-                labelKetQuaHienThiCuDan.setText(String.format("Hiển thị %d đầu tiên / %d cư dân (cuộn để xem thêm)", visibleRows, total));
+                labelKetQuaHienThiCuDan.setText(String.format("Hiển thị %d đầu tiên / %d cư dân", visibleRows, total));
             }
         }
     }

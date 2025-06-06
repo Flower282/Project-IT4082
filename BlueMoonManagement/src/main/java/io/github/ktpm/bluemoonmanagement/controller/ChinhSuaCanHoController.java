@@ -408,22 +408,17 @@ public class ChinhSuaCanHoController implements Initializable {
      * Xử lý xóa cư dân
      */
     private void handleDeleteCuDan(CuDanTrongCanHoDto cuDan) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Xác nhận xóa");
-        alert.setHeaderText("Bạn có chắc chắn muốn xóa cư dân này?");
-        alert.setContentText("Cư dân: " + cuDan.getHoVaTen());
-        
-        alert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                try {
-                    // TODO: Call service to delete cư dân
-                    cuDanList.remove(cuDan);
-                    showSuccess("Thành công", "Đã xóa cư dân thành công");
-                } catch (Exception e) {
-                    showError("Lỗi", "Không thể xóa cư dân: " + e.getMessage());
-                }
+        boolean confirm = ThongBaoController.showConfirmation("Xác nhận xóa", "Bạn có chắc chắn muốn xóa cư dân này?\nCư dân: " + cuDan.getHoVaTen());
+
+        if (confirm) {
+            try {
+                // TODO: Call service to delete cư dân
+                cuDanList.remove(cuDan);
+                showSuccess("Thành công", "Đã xóa cư dân thành công");
+            } catch (Exception e) {
+                showError("Lỗi", "Không thể xóa cư dân: " + e.getMessage());
             }
-        });
+        }
     }
 
     /**
@@ -449,22 +444,17 @@ public class ChinhSuaCanHoController implements Initializable {
      * Xử lý xóa phương tiện
      */
     private void handleDeletePhuongTien(PhuongTienDto phuongTien) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Xác nhận xóa");
-        alert.setHeaderText("Bạn có chắc chắn muốn xóa phương tiện này?");
-        alert.setContentText("Biển số: " + phuongTien.getBienSo());
-        
-        alert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                try {
-                    // TODO: Call service to delete phương tiện
-                    phuongTienList.remove(phuongTien);
-                    showSuccess("Thành công", "Đã xóa phương tiện thành công");
-                } catch (Exception e) {
-                    showError("Lỗi", "Không thể xóa phương tiện: " + e.getMessage());
-                }
+        boolean confirm = ThongBaoController.showConfirmation("Xác nhận xóa", "Bạn có chắc chắn muốn xóa phương tiện này?\nBiển số: " + phuongTien.getBienSo());
+
+        if (confirm) {
+            try {
+                // TODO: Call service to delete phương tiện
+                phuongTienList.remove(phuongTien);
+                showSuccess("Thành công", "Đã xóa phương tiện thành công");
+            } catch (Exception e) {
+                showError("Lỗi", "Không thể xóa phương tiện: " + e.getMessage());
             }
-        });
+        }
     }
 
     /**
@@ -798,33 +788,21 @@ public class ChinhSuaCanHoController implements Initializable {
      * Show error message
      */
     private void showError(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showError(title, message);
     }
 
     /**
      * Show success message
      */
     private void showSuccess(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showSuccess(title, message);
     }
 
     /**
      * Show info message
      */
     private void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showInfo(title, message);
     }
 
     // Setters for dependency injection
@@ -884,12 +862,8 @@ public class ChinhSuaCanHoController implements Initializable {
         } catch (Exception e) {
             System.err.println("ERROR: Cannot open edit apartment form: " + e.getMessage());
             e.printStackTrace();
-            
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
-            alert.setTitle("Lỗi");
-            alert.setHeaderText("Không thể mở form chỉnh sửa");
-            alert.setContentText("Chi tiết: " + e.getMessage());
-            alert.showAndWait();
+
+            ThongBaoController.showError("Không thể mở form chỉnh sửa", "Chi tiết: " + e.getMessage());
         }
     }
     

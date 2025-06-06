@@ -390,13 +390,18 @@ public class ThemCuDanController implements Initializable {
                 
                 // Refresh apartment detail windows if apartment code was provided
                 if (cuDanDto.getMaCanHo() != null && !cuDanDto.getMaCanHo().trim().isEmpty()) {
-                    // Small delay to ensure transaction is committed
-                    try {
-                        Thread.sleep(100); // 100ms delay
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                    ChiTietCanHoController.refreshAllWindowsForApartment(cuDanDto.getMaCanHo());
+                    System.out.println("=== DEBUG: About to refresh apartment windows for: " + cuDanDto.getMaCanHo() + " ===");
+                    
+                    // Use Platform.runLater to refresh on JavaFX thread with slight delay
+                    javafx.application.Platform.runLater(() -> {
+                        try {
+                            System.out.println("DEBUG: Refreshing apartment detail windows...");
+                            ChiTietCanHoController.refreshAllWindowsForApartment(cuDanDto.getMaCanHo());
+                        } catch (Exception e) {
+                            System.err.println("ERROR: Exception during refresh: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    });
                 }
                 
                 clearForm();
@@ -588,10 +593,7 @@ public class ThemCuDanController implements Initializable {
      * Error message handling
      */
     private void showErrorMessage(String message) {
-        if (textError != null) {
-            textError.setText(message);
-            textError.setVisible(true);
-        }
+        ThongBaoController.showError("Lỗi", message);
     }
 
     private void clearErrorMessage() {
@@ -605,11 +607,7 @@ public class ThemCuDanController implements Initializable {
      * Success message
      */
     private void showSuccessMessage(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Thành công");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showSuccess("Thành công", message);
     }
 
     /**
@@ -666,15 +664,10 @@ public class ThemCuDanController implements Initializable {
         } catch (Exception e) {
             System.err.println("Lỗi khi hiển thị dialog xác nhận: " + e.getMessage());
             e.printStackTrace();
-            
-            // Fallback to default dialog
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Xác nhận xóa");
-            alert.setHeaderText("Xóa cư dân");
-            alert.setContentText("Bạn có chắc chắn muốn xóa cư dân:\n" + 
+
+            // Fallback to standard alert if custom dialog fails
+            return ThongBaoController.showConfirmation("Xác nhận xóa", "Bạn có chắc chắn muốn xóa cư dân:\n" + 
                                hoVaTen + " (" + maDinhDanh + ")?");
-            Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
-            return result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK;
         }
     }
 

@@ -1,5 +1,6 @@
 package io.github.ktpm.bluemoonmanagement.controller;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,14 +10,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.phuongTien.PhuongTienDto;
-import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService;
+import io.github.ktpm.bluemoonmanagement.service.cache.CacheDataService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -36,7 +38,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import java.io.IOException;
 
 /**
  * Controller cho trang chi tiết căn hộ
@@ -139,6 +140,9 @@ public class ChiTietCanHoController implements Initializable {
     private PhuongTienService phuongTienService;
 
     @Autowired
+    private CacheDataService cacheDataService;
+
+    @Autowired
     private ApplicationContext applicationContext;
 
     @Override
@@ -156,6 +160,13 @@ public class ChiTietCanHoController implements Initializable {
         // Đảm bảo services được khởi tạo nếu có ApplicationContext
         if (applicationContext != null) {
             ensureServicesAvailable();
+        }
+        
+        // Debug cache status
+        System.out.println("=== DEBUG: ChiTietCanHoController initialized ===");
+        System.out.println("  - cacheDataService: " + (cacheDataService != null ? "Available" : "NULL"));
+        if (cacheDataService != null) {
+            System.out.println("  - cache loaded: " + cacheDataService.isCacheLoaded());
         }
         
         // Setup components
@@ -377,7 +388,6 @@ public class ChiTietCanHoController implements Initializable {
             if (isToTruong) {
                 // Disable/làm mờ các nút cho Tổ trưởng (trừ nút tìm kiếm)
                 disableButtonsForToTruong();
-                System.out.println("DEBUG: ✅ DISABLED buttons for Tổ trưởng");
             } else {
                 System.out.println("DEBUG: ❌ NOT disabling buttons - User role: '" + userRole + "' - buttons enabled");
             }
@@ -412,7 +422,6 @@ public class ChiTietCanHoController implements Initializable {
         if (buttonChinhSua != null) {
             buttonChinhSua.setDisable(true);
             buttonChinhSua.setOpacity(0.5);
-            System.out.println("DEBUG: ✅ Disabled buttonChinhSua");
         } else {
             System.out.println("DEBUG: ❌ buttonChinhSua is NULL!");
         }
@@ -424,7 +433,6 @@ public class ChiTietCanHoController implements Initializable {
         if (buttonThemPhuongTien != null) {
             buttonThemPhuongTien.setDisable(true);
             buttonThemPhuongTien.setOpacity(0.5);
-            System.out.println("DEBUG: ✅ Disabled buttonThemPhuongTien");
         } else {
             System.out.println("DEBUG: ❌ buttonThemPhuongTien is NULL!");
         }
@@ -441,7 +449,6 @@ public class ChiTietCanHoController implements Initializable {
         if (buttonXemLichSu != null) {
             buttonXemLichSu.setDisable(true);
             buttonXemLichSu.setOpacity(0.5);
-            System.out.println("DEBUG: ✅ Disabled buttonXemLichSu");
         } else {
             System.out.println("DEBUG: ❌ buttonXemLichSu is NULL!");
         }
@@ -486,29 +493,57 @@ public class ChiTietCanHoController implements Initializable {
     }
 
     /**
-     * Load dữ liệu thật từ service cho căn hộ cụ thể
+     * Load dữ liệu từ cache hoặc service tùy theo mode
+     * @param maCanHo mã căn hộ cần load
+     * @param forceFromService true để bắt buộc load từ service, false để ưu tiên cache
      */
-    private void loadDataFromService(String maCanHo) {
+    private void loadData(String maCanHo, boolean forceFromService) {
         try {
-            if (canHoService == null) {
-                showError("Lỗi hệ thống", "Service chưa được khởi tạo. Vui lòng liên hệ admin.");
-                return;
-            }
-            
             if (maCanHo == null || maCanHo.trim().isEmpty()) {
                 showError("Lỗi dữ liệu", "Mã căn hộ không hợp lệ.");
                 return;
             }
 
-            CanHoDto canHoDto = new CanHoDto();
-            canHoDto.setMaCanHo(maCanHo);
+            CanHoChiTietDto chiTiet = null;
             
-            CanHoChiTietDto chiTiet = canHoService.getCanHoChiTiet(canHoDto);
+            System.out.println("=== DEBUG: loadData called ===");
+            System.out.println("  - maCanHo: " + maCanHo);
+            System.out.println("  - forceFromService: " + forceFromService);
+            System.out.println("  - cacheDataService != null: " + (cacheDataService != null));
+            if (cacheDataService != null) {
+                System.out.println("  - cacheDataService.isCacheLoaded(): " + cacheDataService.isCacheLoaded());
+            }
+            
+            if (!forceFromService && cacheDataService != null && cacheDataService.isCacheLoaded()) {
+                System.out.println("=== DEBUG: Attempting to load data from cache for: " + maCanHo + " ===");
+                chiTiet = cacheDataService.getCanHoChiTietFromCache(maCanHo);
+                if (chiTiet != null) {
+                    System.out.println("✅ SUCCESS: Found data in cache for: " + maCanHo);
+                } else {
+                    System.out.println("❌ FAIL: Cache returned null for: " + maCanHo);
+                }
+            } else {
+                System.out.println("=== DEBUG: Skipping cache, reasons: ===");
+                if (forceFromService) System.out.println("  - forceFromService = true");
+                if (cacheDataService == null) System.out.println("  - cacheDataService is null");
+                if (cacheDataService != null && !cacheDataService.isCacheLoaded()) System.out.println("  - cache not loaded yet");
+            }
+            
+            // Fallback to service if cache fails or forced
+            if (chiTiet == null) {
+                System.out.println("=== DEBUG: Loading data from service for: " + maCanHo + " ===");
+                chiTiet = loadDataFromService(maCanHo);
+                if (chiTiet != null) {
+                    System.out.println("✅ SUCCESS: Loaded from service for: " + maCanHo);
+                } else {
+                    System.out.println("❌ FAIL: Service also returned null for: " + maCanHo);
+                }
+            }
             
             if (chiTiet != null) {
                 currentCanHo = chiTiet;
                 
-                // Load danh sách từ service data và lọc chỉ hiển thị cư dân chưa bị xóa (chưa có ngày chuyển đi)
+                // Load danh sách từ data và lọc chỉ hiển thị cư dân chưa bị xóa (chưa có ngày chuyển đi)
                 cuDanList.clear();
                 if (chiTiet.getCuDanList() != null) {
                     // Lọc chỉ hiển thị cư dân chưa có ngày chuyển đi
@@ -549,8 +584,28 @@ public class ChiTietCanHoController implements Initializable {
                 clearAllData();
             }
         } catch (Exception e) {
-            showError("Lỗi kết nối", "Không thể tải dữ liệu từ database: " + e.getMessage());
+            showError("Lỗi kết nối", "Không thể tải dữ liệu: " + e.getMessage());
             clearAllData();
+        }
+    }
+    
+    /**
+     * Load dữ liệu từ service (chỉ khi cần thiết)
+     */
+    private CanHoChiTietDto loadDataFromService(String maCanHo) {
+        try {
+            if (canHoService == null) {
+                System.err.println("CanHoService is null");
+                return null;
+            }
+
+            CanHoDto canHoDto = new CanHoDto();
+            canHoDto.setMaCanHo(maCanHo);
+            
+            return canHoService.getCanHoChiTiet(canHoDto);
+        } catch (Exception e) {
+            System.err.println("Error loading from service: " + e.getMessage());
+            return null;
         }
     }
 
@@ -593,25 +648,39 @@ public class ChiTietCanHoController implements Initializable {
     private void setTableData() {
         System.out.println("=== DEBUG: Setting table data ===");
         
-        // Set data for all tables
-        if (tableViewCuDan != null && cuDanList != null) {
-            tableViewCuDan.setItems(cuDanList);
-            updateResultCount(); // Hiển thị số kết quả
-            System.out.println("=== DEBUG: Set cư dân table data ===");
-            System.out.println("Data size: " + cuDanList.size());
-            for (CuDanTrongCanHoDto cuDan : cuDanList) {
-                System.out.println("- " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
+        // Ensure this runs on JavaFX Application Thread
+        javafx.application.Platform.runLater(() -> {
+            try {
+                // Set data for all tables
+                if (tableViewCuDan != null && cuDanList != null) {
+                    tableViewCuDan.setItems(cuDanList);
+                    tableViewCuDan.refresh(); // Force refresh
+                    updateResultCount(); // Hiển thị số kết quả
+                    System.out.println("=== DEBUG: Set cư dân table data ===");
+                    System.out.println("Data size: " + cuDanList.size());
+                    for (CuDanTrongCanHoDto cuDan : cuDanList) {
+                        System.out.println("- " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
+                    }
+                }
+                
+                if (tableViewPhuongTien != null && phuongTienList != null) {
+                    tableViewPhuongTien.setItems(phuongTienList);
+                    tableViewPhuongTien.refresh();
+                    System.out.println("DEBUG: Set phương tiện table data - " + phuongTienList.size() + " items");
+                }
+                
+                if (tableViewThuPhi != null && hoaDonList != null) {
+                    tableViewThuPhi.setItems(hoaDonList);
+                    tableViewThuPhi.refresh();
+                    System.out.println("DEBUG: Set hóa đơn table data - " + hoaDonList.size() + " items");
+                }
+                
+                System.out.println("=== END DEBUG: Setting table data ===");
+            } catch (Exception e) {
+                System.err.println("ERROR: Exception in setTableData: " + e.getMessage());
+                e.printStackTrace();
             }
-        }
-        
-        if (tableViewPhuongTien != null) {
-            tableViewPhuongTien.setItems(phuongTienList);
-        }
-        if (tableViewThuPhi != null) {
-            tableViewThuPhi.setItems(hoaDonList);
-        }
-        
-        System.out.println("=== END DEBUG: Setting table data ===");
+        });
     }
 
     /**
@@ -936,46 +1005,41 @@ public class ChiTietCanHoController implements Initializable {
     private void handleDeletePhuongTien(PhuongTienDto phuongTien) {
         try {
             // Hiển thị dialog xác nhận
-            Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-            confirmAlert.setTitle("Xác nhận xóa");
-            confirmAlert.setHeaderText("Xóa phương tiện");
-            confirmAlert.setContentText("Bạn có chắc chắn muốn xóa phương tiện " + phuongTien.getBienSo() + "?");
-            
-            confirmAlert.showAndWait().ifPresent(response -> {
-                if (response == ButtonType.OK) {
-                    if (phuongTienService != null) {
-                        // Gọi service để xóa phương tiện
-                        ResponseDto result = phuongTienService.xoaPhuongTien(phuongTien);
-                        
-                        // Sử dụng reflection để lấy kết quả
-                        try {
-                            java.lang.reflect.Field successField = ResponseDto.class.getDeclaredField("success");
-                            successField.setAccessible(true);
-                            boolean success = (Boolean) successField.get(result);
-                            
-                            java.lang.reflect.Field messageField = ResponseDto.class.getDeclaredField("message");
-                            messageField.setAccessible(true);
-                            String message = (String) messageField.get(result);
-                            
-                            if (success) {
-                                showSuccess("Thành công", "Đã xóa phương tiện thành công: " + message);
-                                
-                                // Refresh data
-                                if (currentCanHo != null) {
-                                    loadDataFromService(currentCanHo.getMaCanHo());
-                                }
-                            } else {
-                                showError("Lỗi", "Không thể xóa phương tiện: " + message);
+            boolean confirm = ThongBaoController.showConfirmation("Xác nhận xóa", "Bạn có chắc chắn muốn xóa phương tiện " + phuongTien.getBienSo() + "?");
+
+            if (confirm) {
+                if (phuongTienService != null) {
+                    // Gọi service để xóa phương tiện
+                    ResponseDto result = phuongTienService.xoaPhuongTien(phuongTien);
+
+                    // Sử dụng reflection để lấy kết quả
+                    try {
+                        java.lang.reflect.Field successField = ResponseDto.class.getDeclaredField("success");
+                        successField.setAccessible(true);
+                        boolean success = (Boolean) successField.get(result);
+
+                        java.lang.reflect.Field messageField = ResponseDto.class.getDeclaredField("message");
+                        messageField.setAccessible(true);
+                        String message = (String) messageField.get(result);
+
+                        if (success) {
+                            showSuccess("Thành công", "Đã xóa phương tiện thành công: " + message);
+
+                            // Refresh data
+                            if (currentCanHo != null) {
+                                loadDataFromService(currentCanHo.getMaCanHo());
                             }
-                        } catch (Exception e) {
-                            showError("Lỗi", "Lỗi khi xử lý phản hồi: " + e.getMessage());
+                        } else {
+                            showError("Lỗi", "Không thể xóa phương tiện: " + message);
                         }
-                    } else {
-                        showError("Lỗi", "Service chưa được khởi tạo");
+                    } catch (Exception e) {
+                        showError("Lỗi", "Lỗi khi xử lý phản hồi: " + e.getMessage());
                     }
+                } else {
+                    showError("Lỗi", "Service chưa được khởi tạo");
                 }
-            });
-            
+            }
+
         } catch (Exception e) {
             showError("Lỗi", "Đã xảy ra lỗi khi xóa phương tiện: " + e.getMessage());
             e.printStackTrace();
@@ -1046,22 +1110,18 @@ public class ChiTietCanHoController implements Initializable {
             return;
         }
         
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("Xác nhận thu phí");
-        confirmAlert.setHeaderText("Thu toàn bộ phí");
-        confirmAlert.setContentText(String.format("Tổng số tiền: %,d VNĐ\nBạn có chắc chắn muốn thu toàn bộ?", tongTien));
-        
-        confirmAlert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                // Implement thu phí logic here
-                showSuccess("Thành công", "Đã thu toàn bộ phí thành công");
-                // Reload data after payment
-                if (currentCanHo != null) {
-                    loadDataFromService(currentCanHo.getMaCanHo());
-                }
+        boolean confirm = ThongBaoController.showConfirmation("Xác nhận thu phí", String.format("Tổng số tiền: %,d VNĐ\nBạn có chắc chắn muốn thu toàn bộ?", tongTien));
+
+        if (confirm) {
+            // Implement thu phí logic here
+            showSuccess("Thành công", "Đã thu toàn bộ phí thành công");
+            // Reload data after payment
+            if (currentCanHo != null) {
+                loadDataFromService(currentCanHo.getMaCanHo());
             }
-        });
+        }
     }
+    
 
     @FXML
     private void handleXemLichSu() {
@@ -1312,10 +1372,10 @@ public class ChiTietCanHoController implements Initializable {
             System.out.println("DEBUG: setCanHoData called with: " + (canHoData != null ? canHoData.getMaCanHo() : "NULL"));
             
             if (canHoData != null) {
-                System.out.println("DEBUG: About to call loadDataFromService for: " + canHoData.getMaCanHo());
-                // Luôn luôn load dữ liệu đầy đủ từ service/database
-                loadDataFromService(canHoData.getMaCanHo());
-                System.out.println("DEBUG: loadDataFromService completed successfully");
+                System.out.println("DEBUG: About to call loadData for: " + canHoData.getMaCanHo());
+                // Load từ cache khi xem, chỉ từ service khi cần refresh
+                loadData(canHoData.getMaCanHo(), false);
+                System.out.println("DEBUG: loadData completed successfully");
             } else {
                 System.err.println("ERROR: CanHoData is null");
                 showError("Lỗi dữ liệu", "Không có thông tin căn hộ để hiển thị");
@@ -1363,27 +1423,15 @@ public class ChiTietCanHoController implements Initializable {
 
     // Utility methods for showing alerts
     private void showError(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showError(title, message);
     }
 
     private void showSuccess(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showSuccess(title, message);
     }
 
     private void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showInfo(title, message);
     }
 
     // Setter for dependency injection
@@ -1430,6 +1478,11 @@ public class ChiTietCanHoController implements Initializable {
                 phuongTienService = applicationContext.getBean(io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService.class);
                 System.out.println("DEBUG: Got PhuongTienService from ApplicationContext");
             }
+            
+            if (cacheDataService == null) {
+                cacheDataService = applicationContext.getBean(CacheDataService.class);
+                System.out.println("DEBUG: Got CacheDataService from ApplicationContext");
+            }
         } catch (Exception e) {
             System.err.println("ERROR: Cannot get services from ApplicationContext: " + e.getMessage());
         }
@@ -1440,8 +1493,40 @@ public class ChiTietCanHoController implements Initializable {
      */
     public void refreshData() {
         if (currentCanHo != null && currentCanHo.getMaCanHo() != null) {
-            System.out.println("Refreshing data for apartment: " + currentCanHo.getMaCanHo());
-            loadDataFromService(currentCanHo.getMaCanHo());
+            System.out.println("=== DEBUG: Refreshing data for apartment: " + currentCanHo.getMaCanHo() + " ===");
+            
+            // Load fresh data from service (force refresh)
+            loadData(currentCanHo.getMaCanHo(), true);
+            
+            // Force table refresh on JavaFX Application Thread
+            javafx.application.Platform.runLater(() -> {
+                try {
+                    System.out.println("=== DEBUG: Platform.runLater - Force refreshing table views ===");
+                    
+                    // Force refresh table views
+                    if (tableViewCuDan != null && cuDanList != null) {
+                        tableViewCuDan.refresh();
+                        tableViewCuDan.getColumns().get(0).setVisible(false);
+                        tableViewCuDan.getColumns().get(0).setVisible(true);
+                        System.out.println("DEBUG: Forced refresh cư dân table with " + cuDanList.size() + " items");
+                    }
+                    
+                    if (tableViewPhuongTien != null && phuongTienList != null) {
+                        tableViewPhuongTien.refresh();
+                        System.out.println("DEBUG: Forced refresh phương tiện table with " + phuongTienList.size() + " items");
+                    }
+                    
+                    if (tableViewThuPhi != null && hoaDonList != null) {
+                        tableViewThuPhi.refresh();
+                        System.out.println("DEBUG: Forced refresh hóa đơn table with " + hoaDonList.size() + " items");
+                    }
+                    
+                    System.out.println("=== DEBUG: Table refresh completed ===");
+                } catch (Exception e) {
+                    System.err.println("ERROR: Exception during table refresh: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
         }
     }
     
@@ -1452,13 +1537,19 @@ public class ChiTietCanHoController implements Initializable {
         System.out.println("=== DEBUG: Refreshing all windows for apartment: " + maCanHo + " ===");
         System.out.println("Number of open windows: " + openWindows.size());
         
+        int refreshedCount = 0;
         for (ChiTietCanHoController controller : new ArrayList<>(openWindows)) {
             if (controller.currentCanHo != null && 
                 maCanHo.equals(controller.currentCanHo.getMaCanHo())) {
-                System.out.println("Found matching window for apartment: " + maCanHo);
+                System.out.println("Found matching window for apartment: " + maCanHo + " - Refreshing...");
                 controller.refreshData();
+                refreshedCount++;
+            } else {
+                System.out.println("Window for different apartment: " + 
+                    (controller.currentCanHo != null ? controller.currentCanHo.getMaCanHo() : "NULL"));
             }
         }
-        System.out.println("=== END DEBUG ===");
+        
+        System.out.println("=== END DEBUG: Refreshed " + refreshedCount + " windows for apartment " + maCanHo + " ===");
     }
 } 

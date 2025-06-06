@@ -188,7 +188,7 @@
                         </HBox>
                         <ScrollPane hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" pannable="true">
                            <content>
-                              <TableView fx:id="tabelViewCuDan" prefHeight="300.0" prefWidth="970.0">
+                              <TableView fx:id="tabelViewCuDan" prefHeight="400.0" prefWidth="970.0">
                                  <columns>
                                     <TableColumn fx:id="tableColumnMaDinhDanh" prefWidth="120.0" resizable="false" text="Mã định danh" />
                                     <TableColumn fx:id="tableColumnHoVaTen" prefWidth="170.0" resizable="false" text="Họ và tên" />

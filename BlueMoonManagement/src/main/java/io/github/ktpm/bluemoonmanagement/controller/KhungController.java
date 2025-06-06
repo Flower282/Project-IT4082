@@ -150,7 +150,7 @@ public class KhungController implements Initializable{
     @FXML
     void gotoLichSuThu(ActionEvent event) {
         centerController.show("LichSuThu");
-        updateScreenLabel("Lịch sử thu phí");
+        updateScreenLabel("Hóa đơn");
     }
 
     @FXML
