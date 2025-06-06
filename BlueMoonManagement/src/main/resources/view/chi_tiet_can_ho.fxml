@@ -266,13 +266,18 @@
                                           </Button>
                                        </children>
                                     </HBox>
-                                    <TableView fx:id="tableViewCuDan" prefWidth="565.0">
+                                    <TableView fx:id="tableViewCuDan" prefWidth="900.0">
                                        <columns>
-                                          <TableColumn fx:id="tableColumnMaDinhDanhCuDan" minWidth="-1.0" prefWidth="116.7999866604805" text="Mã định danh" />
-                                          <TableColumn fx:id="tableColumnHoVaTenCuDan" prefWidth="161.60006713867188" text="Họ và tên" />
-                                          <TableColumn fx:id="tableColumnQuanHeChuHo" prefWidth="108.79998779296875" text="Quan hệ chủ hộ" />
-                                          <TableColumn fx:id="tableColumnNgaySinhCuDan" prefWidth="76.0" text="Ngày sinh" />
-                                          <TableColumn fx:id="tableColumnTrangThaiCuDan" prefWidth="99.99990844726562" text="Trạng thái" />
+                                          <TableColumn fx:id="tableColumnMaCanHoCuDan" minWidth="-1.0" prefWidth="80.0" text="Mã căn hộ" />
+                                          <TableColumn fx:id="tableColumnMaDinhDanhCuDan" minWidth="-1.0" prefWidth="100.0" text="Mã định danh" />
+                                          <TableColumn fx:id="tableColumnHoVaTenCuDan" prefWidth="120.0" text="Họ và tên" />
+                                          <TableColumn fx:id="tableColumnGioiTinhCuDan" prefWidth="60.0" text="Giới tính" />
+                                          <TableColumn fx:id="tableColumnNgaySinhCuDan" prefWidth="80.0" text="Ngày sinh" />
+                                          <TableColumn fx:id="tableColumnSoDienThoaiCuDan" prefWidth="100.0" text="Số điện thoại" />
+                                          <TableColumn fx:id="tableColumnEmailCuDan" prefWidth="130.0" text="Email" />
+                                          <TableColumn fx:id="tableColumnQuanHeChuHo" prefWidth="80.0" text="Quan hệ" />
+                                          <TableColumn fx:id="tableColumnTrangThaiCuDan" prefWidth="80.0" text="Trạng thái" />
+                                          <TableColumn fx:id="tableColumnThaoTacCuDan" prefWidth="90.0" text="Thao tác" />
                                        </columns>
                                     </TableView>
                                  </children>

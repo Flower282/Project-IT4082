@@ -149,9 +149,29 @@ public class CanHoServiceImpl implements CanHoService {
                             canHoDto.getChuHo().getNgayChuyenDen() : LocalDate.now());
                     }
                     
-                    // Lưu cư dân trước
+                    // QUAN TRỌNG: Gán căn hộ cho cư dân mới tạo
+                    // Tạo temporary CanHo entity để gán cho cư dân
+                    CanHo tempCanHo = new CanHo();
+                    tempCanHo.setMaCanHo(canHoDto.getMaCanHo());
+                    tempCanHo.setToaNha(canHoDto.getToaNha());
+                    tempCanHo.setTang(canHoDto.getTang());
+                    tempCanHo.setSoNha(canHoDto.getSoNha());
+                    tempCanHo.setDienTich(canHoDto.getDienTich());
+                    tempCanHo.setDaBanChua(canHoDto.isDaBanChua());
+                    tempCanHo.setTrangThaiKiThuat(canHoDto.getTrangThaiKiThuat());
+                    tempCanHo.setTrangThaiSuDung(canHoDto.getTrangThaiSuDung());
+                    
+                    // Lưu căn hộ trước để có thể reference
+                    canHoRepository.save(tempCanHo);
+                    
+                    // Gán căn hộ cho cư dân
+                    cuDanMoi.setCanHo(tempCanHo);
+                    
+                    // Lưu cư dân với thông tin căn hộ
                     cuDanRepository.save(cuDanMoi);
-                    System.out.println("Đã tạo cư dân mới với mã định danh: " + maDinhDanh);
+                    System.out.println("=== DEBUG: Đã tạo cư dân mới và gán vào căn hộ ===");
+                    System.out.println("Cư dân: " + cuDanMoi.getHoVaTen() + " (" + maDinhDanh + ")");
+                    System.out.println("Căn hộ: " + canHoDto.getMaCanHo());
                 } else {
                     // Chỉ có mã định danh, cư dân chưa tồn tại
                     return new ResponseDto(false, "Cư dân với mã định danh '" + maDinhDanh + "' không tồn tại trong hệ thống. Vui lòng tạo cư dân trước hoặc kiểm tra lại mã định danh.");
@@ -164,8 +184,21 @@ public class CanHoServiceImpl implements CanHoService {
         // Convert DTO to entity using the mapper
         CanHo canHo = canHoMapper.fromCanHoDto(canHoDto);
         
-        // Lưu căn hộ
-        canHoRepository.save(canHo);
+        // Kiểm tra xem căn hộ đã được tạo chưa (trong trường hợp tạo cư dân mới)
+        CanHo existingCanHo = canHoRepository.findById(canHoDto.getMaCanHo()).orElse(null);
+        if (existingCanHo == null) {
+            // Căn hộ chưa tồn tại, tạo mới
+            canHoRepository.save(canHo);
+            System.out.println("DEBUG: Tạo căn hộ mới: " + canHoDto.getMaCanHo());
+        } else {
+            // Căn hộ đã tồn tại (đã tạo khi tạo cư dân), chỉ cập nhật thông tin chủ hộ
+            if (canHoDto.getChuHo() != null) {
+                CuDan chuHo = cuDanRepository.findById(canHoDto.getChuHo().getMaDinhDanh()).orElse(null);
+                existingCanHo.setChuHo(chuHo);
+                canHoRepository.save(existingCanHo);
+                System.out.println("DEBUG: Cập nhật chủ hộ cho căn hộ: " + canHoDto.getMaCanHo());
+            }
+        }
         
         return new ResponseDto(true, "Căn hộ đã được thêm thành công" + 
             (canHoDto.getChuHo() != null ? " với chủ hộ có mã: " + canHoDto.getChuHo().getMaDinhDanh() : ""));
