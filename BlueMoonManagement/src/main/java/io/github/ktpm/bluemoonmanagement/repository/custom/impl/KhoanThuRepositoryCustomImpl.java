@@ -4,10 +4,9 @@ import io.github.ktpm.bluemoonmanagement.repository.custom.KhoanThuRepositoryCus
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import org.springframework.stereotype.Repository;
 
-/**
- * Implementation class cho KhoanThuRepositoryCustom
- */
+@Repository
 public class KhoanThuRepositoryCustomImpl implements KhoanThuRepositoryCustom {
 
     @PersistenceContext
@@ -15,12 +14,18 @@ public class KhoanThuRepositoryCustomImpl implements KhoanThuRepositoryCustom {
 
     @Override
     public long countByBatBuocAndMonthAndYear(boolean batBuoc, int month, int year) {
-        Query query = entityManager.createQuery(
-                "SELECT COUNT(k) FROM KhoanThu k WHERE k.batBuoc = :batBuoc AND FUNCTION('MONTH', k.ngayTao) = :month AND FUNCTION('YEAR', k.ngayTao) = :year");
+        String sql = "SELECT COUNT(*) " +
+                "FROM khoan_thu k " +
+                "WHERE k.bat_buoc = CAST(:batBuoc AS boolean) " +
+                "AND EXTRACT(MONTH FROM k.ngay_tao) = CAST(:month AS int) " +
+                "AND EXTRACT(YEAR FROM k.ngay_tao) = CAST(:year AS int)";
+
+        Query query = entityManager.createNativeQuery(sql);
         query.setParameter("batBuoc", batBuoc);
         query.setParameter("month", month);
         query.setParameter("year", year);
-        
-        return (long) query.getSingleResult();
+
+        Number result = (Number) query.getSingleResult();
+        return result.longValue();
     }
-} 
+}

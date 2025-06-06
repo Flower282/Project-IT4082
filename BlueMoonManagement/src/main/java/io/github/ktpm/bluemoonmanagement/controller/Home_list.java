@@ -2,6 +2,7 @@ package io.github.ktpm.bluemoonmanagement.controller;
 
 import java.io.IOException;
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -1130,49 +1131,63 @@ public class Home_list implements Initializable {
     }
 
     private void handleXemChiTietTaiKhoan(TaiKhoanTableData rowData) {
-//        try {
-//            if (taiKhoanService != null) {
-//
-//                String email = rowData.getEmail();
-//                String hoVaTen = rowData.getHoVaTen();
-//                String vaiTro = rowData.getVaiTro();
-//                String ngayTao = rowData.getNgayTao();
-//                String ngayCapNhat = rowData.getNgayCapNhat();
-//
-//
-//                ThongTinTaiKhoanDto thongTinTaiKhoanDto = new ThongTinTaiKhoanDto(email, hoVaTen, vaiTro);
-//                if (thongTinTaiKhoanDto != null) {
-//                    openChiTietTaiKhoan(thongTinTaiKhoanDto);
-//                } else {
-//                    showError("Lỗi", "Không tìm thấy thông tin chi tiết tài khoản");
-//                }
-//            } else {
-//                showError("Lỗi", "Dịch vụ tài khoản không khả dụng");
-//            }
-//        } catch (Exception e) {
-//            showError("Lỗi khi xem chi tiết", "Chi tiết: " + e.getMessage());
-//        }
+        try {
+            if (taiKhoanService != null) {
+
+                String email = rowData.getEmail();
+                String hoVaTen = rowData.getHoVaTen();
+                String vaiTro = rowData.getVaiTro();
+
+                LocalDateTime ngayTao = LocalDateTime.parse(rowData.getNgayTao());
+                LocalDateTime ngayCapNhat = LocalDateTime.parse(rowData.getNgayCapNhat());
+
+                ThongTinTaiKhoanDto taiKhoanDto = new ThongTinTaiKhoanDto(email, hoVaTen, vaiTro, ngayTao, ngayCapNhat);
+                if (taiKhoanDto != null) {
+                    openChiTietTaiKhoan(taiKhoanDto);
+                } else {
+                    showError("Lỗi", "Không tìm thấy thông tin chi tiết tài khoản");
+                }
+            } else {
+                showError("Lỗi", "Dịch vụ quản lý tài khoản không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi khi xem chi tiết", "Chi tiết: " + e.getMessage());
+        }
     }
 
-//    private void openChiTietTaiKhoan(ThongTinTaiKhoanDto thongTinTaiKhoanDto) {
-//        try {
-//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/tai_khoan.fxml"));
-//            Parent root = loader.load();
-//
-//            ChiTietTaiKhoanController controller = loader.getController();
-//            controller.setTaiKhoanService(taiKhoanService);
-//            controller.setThongTinTaiKhoan(thongTinTaiKhoanDto);
-//
-//            Stage stage = new Stage();
-//            stage.setTitle("Chi tiết tài khoản - " + thongTinTaiKhoanDto.getEmail());
-//            stage.setScene(new Scene(root, 600, 400));
-//            stage.initModality(Modality.WINDOW_MODAL);
-//            stage.initOwner(tabelViewTaiKhoan.getScene().getWindow());
-//            stage.show();
-//        } catch (IOException e) {
-//            showError("Lỗi mở chi tiết", "Không thể mở trang chi tiết tài khoản: " + e.getMessage());
-//        }
-//    }
+    private void openChiTietTaiKhoan(ThongTinTaiKhoanDto taiKhoanDto) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/tai_khoan.fxml"));
+            Parent root = loader.load();
+
+            ChiTietTaiKhoanController controller = loader.getController();
+            // Inject ApplicationContext trước tiên
+            if (applicationContext != null) {
+                System.out.println("DEBUG: Injecting ApplicationContext from Home_list to ChiTietTaiKhoanController");
+                controller.setApplicationContext(applicationContext);
+            } else {
+                System.err.println("ERROR: ApplicationContext is null in Home_list!");
+            }
+            // Inject TaiKhoanService
+            if (taiKhoanService != null) {
+                controller.setTaiKhoanService(taiKhoanService);
+            } else {
+                System.err.println("ERROR: TaiKhoanService is null in Home_list!");
+            }
+            // Set data sau khi đã inject services
+            controller.setTaiKhoanData(taiKhoanDto);
+            // Tạo cửa sổ mới
+            Stage stage = new Stage();
+            stage.setTitle("Chi tiết tài khoản - " + taiKhoanDto.getEmail());
+            stage.setScene(new Scene(root, 800, 600));
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(tabelViewTaiKhoan.getScene().getWindow());
+            stage.show();
+        } catch (IOException e) {
+            showError("Lỗi mở chi tiết", "Không thể mở trang chi tiết tài khoản: " + e.getMessage());
+        }
+    }
+
 
     private void loadTaiKhoanData() {
         try {
@@ -1233,9 +1248,6 @@ public class Home_list implements Initializable {
             e.printStackTrace();
         }
     }
-
-
-
     public void DoiMatKhauClicked(ActionEvent event){
         try {
             // Load view + controller
@@ -1258,6 +1270,31 @@ public class Home_list implements Initializable {
 
         } catch (IOException e) {
             System.err.println("Không thể mở cửa sổ Đổi mật khẩu:");
+            e.printStackTrace();
+        }
+    }
+    public void ThemKhoanThuClicked(ActionEvent event) {
+        try {
+            // Load view + controller
+            FxView<?> fxView = fxViewLoader.loadFxView("/view/them_khoan_thu.fxml");
+
+            // Tạo cửa sổ mới
+            Stage newStage = new Stage();
+            newStage.setScene(new Scene(fxView.getView()));
+            newStage.setTitle("Thêm khoản thu");
+
+            // Tuỳ chọn: không cho tương tác cửa sổ cha khi đang mở
+            newStage.initModality(Modality.APPLICATION_MODAL);
+
+            // Tuỳ chọn: gán owner là cửa sổ hiện tại (giúp bố cục và quản lý tốt hơn)
+            Stage currentStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            newStage.initOwner(currentStage);
+
+            // Hiển thị cửa sổ mới
+            newStage.show();
+
+        } catch (IOException e) {
+            System.err.println("Không thể mở cửa sổ Thêm khoản thu:");
             e.printStackTrace();
         }
     }
