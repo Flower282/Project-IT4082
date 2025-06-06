@@ -1036,14 +1036,11 @@ public class ThemCanHoButton implements Initializable {
     }
 
     private void showErrorMessage(String message) {
-        textError.setText(message);
-        textError.setVisible(true);
-        textError.getStyleClass().add("error-text");
+        ThongBaoController.showError("Lỗi", message);
     }
 
     private void showSuccessMessage(String message) {
-        // In thực tế, có thể hiển thị thông báo thành công
-        System.out.println("Success: " + message);
+        ThongBaoController.showSuccess("Thành công", message);
     }
     
     /**
