@@ -50,6 +50,9 @@ public class ThemKhoanThuController {
     private HBox text11;
 
     @FXML
+    private HBox phuongTienHbox;
+
+    @FXML
     private Text textError;
 
     @FXML
@@ -80,19 +83,52 @@ public class ThemKhoanThuController {
         comboBoxBoPhanQuanLy.getItems().addAll("Ban quản lý", "Bên thứ ba");
         comboBoxDonViTinh.getItems().addAll("Diện tích", "Căn hộ", "Phương tiện");
         comboBoxPhamVi.getItems().addAll("Tất cả căn hộ", "Căn hộ đang sử dụng");
-    }
 
+        // Lắng nghe sự thay đổi của comboBoxDonViTinh để kiểm tra giá trị
+        comboBoxDonViTinh.setOnAction(this::onDonViTinhChanged);
+
+        // Gọi hàm xử lý ban đầu
+        onDonViTinhChanged(null); // Kiểm tra ngay khi bắt đầu
+    }
+    @FXML
+    private void onDonViTinhChanged(ActionEvent event) {
+        // Kiểm tra nếu "Phương tiện" được chọn
+        if ("Phương tiện".equals(comboBoxDonViTinh.getValue())) {
+            phuongTienHbox.setVisible(true);
+            // Hiển thị các trường nhập liệu cho phương tiện và cho phép nhập
+            textFieldGiaXeDap.setDisable(false);
+            textFieldGiaXeMay.setDisable(false);
+            textFieldGiaXeOTo.setDisable(false);
+
+            textFieldGiaXeDap.setVisible(true);
+            textFieldGiaXeMay.setVisible(true);
+            textFieldGiaXeOTo.setVisible(true);
+        } else {
+            phuongTienHbox.setVisible(false);
+            // Ẩn các trường nhập liệu cho phương tiện và vô hiệu hóa chúng
+            textFieldGiaXeDap.setDisable(true);
+            textFieldGiaXeMay.setDisable(true);
+            textFieldGiaXeOTo.setDisable(true);
+
+            textFieldGiaXeDap.setVisible(false);
+            textFieldGiaXeMay.setVisible(false);
+            textFieldGiaXeOTo.setVisible(false);
+        }
+    }
     @FXML
     void ThemKhoanThuClicked(ActionEvent event) {
 
-
+        if (isAnyFieldEmpty()) {
+            textError.setText("Vui lòng điền đầy đủ thông tin!");
+            textError.setStyle("-fx-fill: red;");
+            return; // Ngừng xử lý nếu có trường trống
+        }
         // Lấy thông tin từ các trường nhập liệu
         String tenKhoanThu = textFieldTenKhoanThu.getText();  // Tên khoản thu
         String loaiKhoanThu = comboBoxLoaiKhoanThu.getValue().toString();  // Loại khoản thu
         String boPhanQuanLy = comboBoxBoPhanQuanLy.getValue().toString();  // Bộ phận quản lý
         String thoiHanNop = datePickerHanNop.getValue().toString();  // Thời hạn (ngày nộp)
         String donViTinh = comboBoxDonViTinh.getValue().toString();  // Đơn vị tính
-        String tenCoQuan = textFieldTenCoQuan.getText();  // Tên cơ quan
         int soTien = Integer.parseInt(textFieldDonGia.getText());  // Số tiền
         String phamVi = comboBoxPhamVi.getValue().toString();  // Phạm vi
         // Lấy số tiền từ các TextField
@@ -109,11 +145,10 @@ public class ThemKhoanThuController {
         khoanThuDto.setBatBuoc("Bắt buộc".equals(loaiKhoanThu));  // Kiểm tra loại khoản thu
         khoanThuDto.setDonViTinh(donViTinh);
         khoanThuDto.setSoTien(soTien);
-        khoanThuDto.setPhamVi(boPhanQuanLy);
         khoanThuDto.setPhamVi(phamVi);
         khoanThuDto.setNgayTao(java.time.LocalDate.parse(ngayTao));
         khoanThuDto.setThoiHan(java.time.LocalDate.parse(thoiHanNop));
-        khoanThuDto.setGhiChu(tenCoQuan);
+        khoanThuDto.setGhiChu(boPhanQuanLy);
 
         // Tạo danh sách các khoản phí gửi xe
         PhiGuiXeDto phiGuiXeDto = new PhiGuiXeDto();
@@ -134,5 +169,36 @@ public class ThemKhoanThuController {
             textError.setText("Lỗi: " + response.getMessage());
             textError.setStyle("-fx-fill: red;");
         }
+    }
+    private boolean isAnyFieldEmpty() {
+        // Kiểm tra các trường ComboBox có giá trị không
+        if (comboBoxLoaiKhoanThu.getValue() == null ||
+                comboBoxBoPhanQuanLy.getValue() == null ||
+                comboBoxDonViTinh.getValue() == null ||
+                comboBoxPhamVi.getValue() == null) {
+            return true;
+        }
+
+        // Kiểm tra các TextField có giá trị không
+        if (textFieldTenKhoanThu.getText().isEmpty() ||
+                textFieldDonGia.getText().isEmpty()) {
+            return true;
+        }
+
+        // Kiểm tra DatePicker có giá trị không
+        if (datePickerHanNop.getValue() == null) {
+            return true;
+        }
+
+        // Kiểm tra nếu giá trị xe đạp, xe máy, và ô tô có bị trống không nếu bạn muốn kiểm tra chúng
+        if ("Phương tiện".equals(comboBoxDonViTinh.getValue())) {
+            if (textFieldGiaXeDap.getText().isEmpty() ||
+                    textFieldGiaXeMay.getText().isEmpty() ||
+                    textFieldGiaXeOTo.getText().isEmpty()) {
+                return true;
+            }
+        }
+
+        return false; // Tất cả các trường đều có giá trị
     }
 }
