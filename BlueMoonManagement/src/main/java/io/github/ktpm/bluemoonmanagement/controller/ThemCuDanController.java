@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.ResourceBundle;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
@@ -15,7 +16,6 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -44,6 +44,7 @@ public class ThemCuDanController implements Initializable {
     @FXML private Button buttonThemCuDan;
     @FXML private Button buttonLuu;
     @FXML private Button buttonChinhSua;
+    @FXML private Button buttonXoa;
     
     // HBox containers for date fields (to hide entire rows)
     @FXML private javafx.scene.layout.HBox hBoxNgayChuyenDen;
@@ -52,6 +53,8 @@ public class ThemCuDanController implements Initializable {
     // Services
     @Autowired
     private CuDanService cuDanService;
+
+    private ApplicationContext applicationContext;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -164,6 +167,207 @@ public class ThemCuDanController implements Initializable {
     }
 
     /**
+     * Setup cho EDIT mode từ màn hình Chi Tiết Căn Hộ
+     * @param cuDanData DTO chứa thông tin chi tiết của cư dân trong căn hộ
+     * @param maCanHo Mã căn hộ hiện tại, sẽ được tự động gán
+     */
+    public void setupEditModeFromApartmentDetail(io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto cuDanData, String maCanHo) {
+        setCommonEditModeUI("Chỉnh sửa cư dân");
+
+        // Populate form với dữ liệu
+        if (textFieldMaDinhDanh != null) {
+            textFieldMaDinhDanh.setText(cuDanData.getMaDinhDanh());
+            textFieldMaDinhDanh.setEditable(false);
+        }
+        if (textFieldHoVaTen != null) {
+            textFieldHoVaTen.setText(cuDanData.getHoVaTen());
+        }
+        if (datePickerNgaySinh != null) {
+            datePickerNgaySinh.setValue(cuDanData.getNgaySinh());
+        }
+        if (comboBoxTrangThai != null) {
+            comboBoxTrangThai.setValue(cuDanData.getTrangThaiCuTru());
+        }
+        // Gán và khóa mã căn hộ
+        if (textFieldMaCanHo != null) {
+            textFieldMaCanHo.setText(maCanHo);
+            textFieldMaCanHo.setEditable(false);
+        }
+
+        // Các trường còn lại không có trong DTO này, người dùng cần tự nhập nếu muốn cập nhật
+    }
+
+    /**
+     * Setup cho EDIT mode với dữ liệu cư dân từ Home_list
+     */
+    public void setupEditMode(io.github.ktpm.bluemoonmanagement.controller.Home_list.CuDanTableData cuDanData) {
+        try {
+            System.out.println("Setup edit mode cho cư dân: " + cuDanData.getHoVaTen());
+            
+            // Thay đổi UI cho edit mode
+            setCommonEditModeUI("Chỉnh sửa cư dân");
+            
+            // Populate form với dữ liệu hiện tại
+            populateFormWithData(cuDanData);
+            
+        } catch (Exception e) {
+            System.err.println("Lỗi khi setup edit mode: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Populate form với dữ liệu cư dân
+     */
+    private void populateFormWithData(io.github.ktpm.bluemoonmanagement.controller.Home_list.CuDanTableData cuDanData) {
+        try {
+            // Fill form fields
+            if (textFieldMaDinhDanh != null) {
+                textFieldMaDinhDanh.setText(cuDanData.getMaDinhDanh());
+                textFieldMaDinhDanh.setEditable(false); // Không cho phép chỉnh sửa mã định danh
+            }
+            
+            if (textFieldHoVaTen != null) {
+                textFieldHoVaTen.setText(cuDanData.getHoVaTen());
+            }
+            
+            if (comboBoxGioiTinh != null) {
+                comboBoxGioiTinh.setValue(cuDanData.getGioiTinh());
+            }
+            
+            if (datePickerNgaySinh != null && cuDanData.getNgaySinh() != null && !cuDanData.getNgaySinh().isEmpty()) {
+                try {
+                    datePickerNgaySinh.setValue(LocalDate.parse(cuDanData.getNgaySinh()));
+                } catch (Exception e) {
+                    System.err.println("Lỗi parse ngày sinh: " + e.getMessage());
+                }
+            }
+            
+            if (textFieldSoDienThoai != null) {
+                textFieldSoDienThoai.setText(cuDanData.getSoDienThoai());
+            }
+            
+            if (textFieldEmail != null) {
+                textFieldEmail.setText(cuDanData.getEmail());
+            }
+            
+            if (textFieldMaCanHo != null) {
+                textFieldMaCanHo.setText(cuDanData.getMaCanHo());
+            }
+            
+            if (comboBoxTrangThai != null) {
+                comboBoxTrangThai.setValue(cuDanData.getTrangThaiCuTru());
+            }
+            
+            if (datePickerNgayChuyenDen != null && cuDanData.getNgayChuyenDen() != null && !cuDanData.getNgayChuyenDen().isEmpty()) {
+                try {
+                    datePickerNgayChuyenDen.setValue(LocalDate.parse(cuDanData.getNgayChuyenDen()));
+                } catch (Exception e) {
+                    System.err.println("Lỗi parse ngày chuyển đến: " + e.getMessage());
+                }
+            }
+            
+            // Xử lý logic hiển thị/ẩn các field ngày
+            handleTrangThaiChange(cuDanData.getTrangThaiCuTru());
+            
+        } catch (Exception e) {
+            System.err.println("Lỗi khi populate form: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Xử lý xóa cư dân (edit mode)
+     */
+    @FXML
+    private void handleXoaCuDan(ActionEvent event) {
+        try {
+            // Check permission
+            if (!hasPermission()) {
+                showErrorMessage("Bạn không có quyền xóa cư dân. Chỉ Tổ phó mới được phép.");
+                return;
+            }
+
+            String maDinhDanh = textFieldMaDinhDanh.getText();
+            String hoVaTen = textFieldHoVaTen.getText();
+            
+            if (maDinhDanh == null || maDinhDanh.trim().isEmpty()) {
+                showErrorMessage("Không thể xóa: Mã định danh không hợp lệ.");
+                return;
+            }
+
+            // Hiển thị dialog xác nhận tùy chỉnh
+            boolean confirmed = showCustomConfirmDialog(hoVaTen, maDinhDanh);
+            
+            if (confirmed) {
+                // Call service to delete
+                boolean deleted = cuDanService.xoaMem(maDinhDanh);
+
+                if (deleted) {
+                    showSuccessMessage("Xóa cư dân thành công!");
+                    
+                    // Close window after successful deletion
+                    javafx.application.Platform.runLater(() -> {
+                        try {
+                            Thread.sleep(1000); // Show success message for 1 second
+                            closeWindow();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            closeWindow();
+                        }
+                    });
+                } else {
+                    showErrorMessage("Không thể xóa cư dân. Vui lòng thử lại.");
+                }
+            }
+
+        } catch (Exception e) {
+            showErrorMessage("Có lỗi xảy ra khi xóa cư dân: " + e.getMessage());
+            System.err.println("Error in handleXoaCuDan: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Xử lý cập nhật cư dân (edit mode)
+     */
+    @FXML
+    private void handleCapNhatCuDan(ActionEvent event) {
+        try {
+            clearErrorMessage();
+            
+            // Validate input
+            if (!validateInput()) {
+                return;
+            }
+
+            // Check permission
+            if (!hasPermission()) {
+                showErrorMessage("Bạn không có quyền cập nhật cư dân. Chỉ Tổ phó mới được phép.");
+                return;
+            }
+
+            // Create DTO
+            CudanDto cuDanDto = createCuDanDto();
+
+            // Call service to update
+            ResponseDto response = cuDanService.updateCuDan(cuDanDto);
+
+            if (response.isSuccess()) {
+                // Close window immediately after successful update
+                closeWindow();
+            } else {
+                showErrorMessage("Lỗi: " + response.getMessage());
+            }
+
+        } catch (Exception e) {
+            showErrorMessage("Có lỗi xảy ra: " + e.getMessage());
+            System.err.println("Error in handleCapNhatCuDan: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Xử lý sự kiện thêm cư dân
      */
     @FXML
@@ -193,13 +397,18 @@ public class ThemCuDanController implements Initializable {
                 
                 // Refresh apartment detail windows if apartment code was provided
                 if (cuDanDto.getMaCanHo() != null && !cuDanDto.getMaCanHo().trim().isEmpty()) {
-                    // Small delay to ensure transaction is committed
-                    try {
-                        Thread.sleep(100); // 100ms delay
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                    ChiTietCanHoController.refreshAllWindowsForApartment(cuDanDto.getMaCanHo());
+                    System.out.println("=== DEBUG: About to refresh apartment windows for: " + cuDanDto.getMaCanHo() + " ===");
+                    
+                    // Use Platform.runLater to refresh on JavaFX thread with slight delay
+                    javafx.application.Platform.runLater(() -> {
+                        try {
+                            System.out.println("DEBUG: Refreshing apartment detail windows...");
+                            ChiTietCanHoController.refreshAllWindowsForApartment(cuDanDto.getMaCanHo());
+                        } catch (Exception e) {
+                            System.err.println("ERROR: Exception during refresh: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    });
                 }
                 
                 clearForm();
@@ -391,10 +600,7 @@ public class ThemCuDanController implements Initializable {
      * Error message handling
      */
     private void showErrorMessage(String message) {
-        if (textError != null) {
-            textError.setText(message);
-            textError.setVisible(true);
-        }
+        ThongBaoController.showError("Lỗi", message);
     }
 
     private void clearErrorMessage() {
@@ -408,11 +614,7 @@ public class ThemCuDanController implements Initializable {
      * Success message
      */
     private void showSuccessMessage(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Thành công");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showSuccess("Thành công", message);
     }
 
     /**
@@ -427,8 +629,89 @@ public class ThemCuDanController implements Initializable {
         }
     }
 
+    /**
+     * Hiển thị dialog xác nhận tùy chỉnh
+     */
+    private boolean showCustomConfirmDialog(String hoVaTen, String maDinhDanh) {
+        try {
+            // Load FXML file
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/view/xac_nhan.fxml")
+            );
+            javafx.scene.Parent root = loader.load();
+            
+            // Get controller
+            XacNhanController controller = loader.getController();
+            
+            // Set content
+            controller.setTitle("Xác nhận xóa cư dân");
+            controller.setContent("Bạn có chắc chắn muốn xóa cư dân:\n" + 
+                                hoVaTen + " (" + maDinhDanh + ")?");
+            
+            // Create and show dialog
+            javafx.stage.Stage dialogStage = new javafx.stage.Stage();
+            dialogStage.setTitle("Xác nhận");
+            dialogStage.setScene(new javafx.scene.Scene(root));
+            dialogStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            
+            // Set owner
+            javafx.stage.Stage ownerStage = (javafx.stage.Stage) buttonXoa.getScene().getWindow();
+            dialogStage.initOwner(ownerStage);
+            
+            // Set position to center of parent
+            dialogStage.setX(ownerStage.getX() + (ownerStage.getWidth() - 450) / 2);
+            dialogStage.setY(ownerStage.getY() + (ownerStage.getHeight() - 220) / 2);
+            
+            // Show and wait
+            dialogStage.showAndWait();
+            
+            // Return result
+            return controller.isConfirmed();
+            
+        } catch (Exception e) {
+            System.err.println("Lỗi khi hiển thị dialog xác nhận: " + e.getMessage());
+            e.printStackTrace();
+
+            // Fallback to standard alert if custom dialog fails
+            return ThongBaoController.showConfirmation("Xác nhận xóa", "Bạn có chắc chắn muốn xóa cư dân:\n" + 
+                               hoVaTen + " (" + maDinhDanh + ")?");
+        }
+    }
+
+    /**
+     * Thiết lập UI chung cho các chế độ chỉnh sửa
+     * @param title Tiêu đề của cửa sổ
+     */
+    private void setCommonEditModeUI(String title) {
+        if (labelTieuDe != null) {
+            labelTieuDe.setText(title);
+        }
+        if (buttonThemCuDan != null) {
+            buttonThemCuDan.setVisible(false);
+        }
+        if (buttonLuu != null) {
+            buttonLuu.setVisible(true);
+            buttonLuu.setOnAction(this::handleCapNhatCuDan);
+        }
+        if (buttonChinhSua != null) {
+            buttonChinhSua.setVisible(false);
+        }
+        if (buttonXoa != null) {
+            buttonXoa.setVisible(true);
+            buttonXoa.setOnAction(this::handleXoaCuDan);
+        }
+    }
+
     // Setter for dependency injection
     public void setCuDanService(CuDanService cuDanService) {
         this.cuDanService = cuDanService;
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+        // Đảm bảo service được khởi tạo nếu chưa có
+        if (this.cuDanService == null) {
+            this.cuDanService = applicationContext.getBean(CuDanService.class);
+        }
     }
 } 

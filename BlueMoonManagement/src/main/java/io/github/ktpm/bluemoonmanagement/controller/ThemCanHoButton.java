@@ -35,6 +35,12 @@ public class ThemCanHoButton implements Initializable {
     private Button buttonTaoCanHo;
 
     @FXML
+    private Button buttonXoaCanHo;
+
+    @FXML
+    private Label labelTitle;
+
+    @FXML
     private Button button_close_up;
 
     @FXML
@@ -102,10 +108,40 @@ public class ThemCanHoButton implements Initializable {
 
     // Service instance - sẽ được inject từ bên ngoài
     private CanHoService canHoService;
+    
+    // Edit mode tracking
+    private boolean isEditMode = false;
+    private String originalMaCanHo;
+    private Long originalChuHoId;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        // Reset về create mode mỗi khi initialize
+        resetToCreateMode();
         setupUI();
+    }
+    
+    /**
+     * Reset về chế độ tạo mới
+     */
+    private void resetToCreateMode() {
+        this.isEditMode = false;
+        this.originalMaCanHo = null;
+        this.originalChuHoId = null;
+        
+        // Reset UI elements
+        if (labelTitle != null) {
+            labelTitle.setText("Thêm căn hộ mới");
+        }
+        if (buttonTaoCanHo != null) {
+            buttonTaoCanHo.setText("Tạo căn hộ");
+        }
+        if (buttonXoaCanHo != null) {
+            buttonXoaCanHo.setVisible(false);
+            buttonXoaCanHo.setManaged(false);
+        }
+        
+        System.out.println("DEBUG: Reset to create mode");
     }
 
     /**
@@ -113,6 +149,113 @@ public class ThemCanHoButton implements Initializable {
      */
     public void setCanHoService(CanHoService canHoService) {
         this.canHoService = canHoService;
+    }
+    
+    /**
+     * Setup edit mode cho căn hộ
+     */
+    public void setupEditMode(CanHoDto canHoDto) {
+        this.isEditMode = true;
+        this.originalMaCanHo = canHoDto.getMaCanHo();
+        
+        // Lưu ID chủ hộ hiện tại nếu có
+        if (canHoDto.getChuHo() != null) {
+            try {
+                java.lang.reflect.Field idField = canHoDto.getChuHo().getClass().getDeclaredField("id");
+                idField.setAccessible(true);
+                this.originalChuHoId = (Long) idField.get(canHoDto.getChuHo());
+                System.out.println("DEBUG: Saved original ChuHo ID: " + this.originalChuHoId);
+            } catch (Exception e) {
+                System.err.println("ERROR: Cannot get ChuHo ID: " + e.getMessage());
+                this.originalChuHoId = null;
+            }
+        }
+        
+        // Populate form với dữ liệu hiện có
+        populateForm(canHoDto);
+        
+        // Thay đổi UI
+        if (labelTitle != null) {
+            labelTitle.setText("Chỉnh sửa căn hộ");
+        }
+        if (buttonTaoCanHo != null) {
+            buttonTaoCanHo.setText("Cập nhật căn hộ");
+        }
+        if (buttonXoaCanHo != null) {
+            buttonXoaCanHo.setVisible(true);
+            buttonXoaCanHo.setManaged(true);
+        }
+        
+        // Ẩn các phần không cần thiết khi edit
+        hideUnnecessarySections();
+        
+        System.out.println("DEBUG: Edit mode setup completed for apartment: " + canHoDto.getMaCanHo());
+    }
+    
+    /**
+     * Populate form với dữ liệu căn hộ
+     */
+    private void populateForm(CanHoDto canHoDto) {
+        try {
+            if (textFieldToa != null) textFieldToa.setText(canHoDto.getToaNha());
+            if (textFieldTang != null) textFieldTang.setText(canHoDto.getTang());
+            if (textFieldSoNha != null) textFieldSoNha.setText(canHoDto.getSoNha());
+            if (textFieldDienTich != null) textFieldDienTich.setText(String.valueOf(canHoDto.getDienTich()));
+            if (comboBoxTinhTrangKiThuat != null) comboBoxTinhTrangKiThuat.setValue(canHoDto.getTrangThaiKiThuat());
+            if (comboBoxTinhTrangSuDung != null) {
+                comboBoxTinhTrangSuDung.setValue(canHoDto.getTrangThaiSuDung());
+                comboBoxTinhTrangSuDung.setDisable(false); // Enable for editing
+            }
+            
+            // Luôn hiển thị section chủ hộ trong edit mode
+            if (vBoxChuSoHuu != null) {
+                vBoxChuSoHuu.setVisible(true);
+                vBoxChuSoHuu.setManaged(true);
+            }
+            
+            // Hiển thị thông tin chủ hộ hiện tại nếu có cho chế độ edit
+            if (canHoDto.getChuHo() != null) {
+                if (textFieldMaDinhDanh != null) {
+                    textFieldMaDinhDanh.setText(canHoDto.getChuHo().getMaDinhDanh());
+                    textFieldMaDinhDanh.setPromptText("ID hiện tại: " + canHoDto.getChuHo().getMaDinhDanh() + " (để trống = giữ nguyên, nhập ID mới = thay thế)");
+                }
+            } else {
+                // Không có chủ hộ hiện tại
+                if (textFieldMaDinhDanh != null) {
+                    textFieldMaDinhDanh.clear();
+                    textFieldMaDinhDanh.setPromptText("Nhập ID chủ hộ mới (tùy chọn)");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot populate form: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Ẩn các section không cần thiết khi edit
+     */
+    private void hideUnnecessarySections() {
+        // Ẩn phần tạo cư dân mới (không cần thiết trong edit mode)
+        if (vBoxThongTinCuDanMoi != null) {
+            vBoxThongTinCuDanMoi.setVisible(false);
+            vBoxThongTinCuDanMoi.setManaged(false);
+        }
+        
+        // Ẩn checkbox tạo cư dân mới (không cần thiết trong edit mode)
+        if (choiceBoxTaoCuDanMoi != null) {
+            choiceBoxTaoCuDanMoi.setVisible(false);
+            choiceBoxTaoCuDanMoi.setManaged(false);
+        }
+        
+        // Ẩn checkbox thêm chủ sở hữu (vì trong edit mode luôn hiển thị field ID)
+        if (choiceBoxThemChuSoHuu != null) {
+            choiceBoxThemChuSoHuu.setVisible(false);
+            choiceBoxThemChuSoHuu.setManaged(false);
+        }
+        
+        // KHÔNG ẩn vBoxChuSoHuu vì cần hiển thị field nhập ID chủ hộ trong edit mode
+        // vBoxChuSoHuu sẽ được hiển thị trong populateForm()
     }
 
     private void setupUI() {
@@ -219,54 +362,199 @@ public class ThemCanHoButton implements Initializable {
 
     @FXML
     private void handleTaoCanHo(ActionEvent event) {
-        try {
-            // Xóa thông báo lỗi trước đó
-            clearErrorMessage();
-            
-            // Kiểm tra service đã được inject chưa
-            if (canHoService == null) {
-                showErrorMessage("Lỗi hệ thống: Service chưa được khởi tạo");
-                return;
-            }
-            
-            // Kiểm tra quyền truy cập
-            if (!hasPermission()) {
-                showErrorMessage("Bạn không có quyền thêm căn hộ. Chỉ Tổ phó mới được phép.");
-                return;
-            }
-            
-            // Validate dữ liệu đầu vào
-            if (!validateInput()) {
-                return;
-            }
-            
-            // Tạo DTO căn hộ
-            CanHoDto canHoDto = createCanHoDto();
-            
-            // Gọi service để thêm căn hộ
-            ResponseDto response = canHoService.addCanHo(canHoDto);
-            
-            // Sử dụng reflection để truy cập các field do vấn đề Lombok
-            boolean isSuccess = getResponseSuccess(response);
-            String message = getResponseMessage(response);
-            
-            if (isSuccess) {
-                showSuccessMessage("Thêm căn hộ thành công: " + message);
-                clearForm();
-                closeWindow();
-            } else {
-                showErrorMessage("Lỗi: " + message);
-            }
-            
-        } catch (Exception e) {
-            showErrorMessage("Đã xảy ra lỗi: " + e.getMessage());
-            e.printStackTrace();
+        // Xóa thông báo lỗi trước đó
+        clearErrorMessage();
+        
+        // Kiểm tra service đã được inject chưa
+        if (canHoService == null) {
+            showErrorMessage("Lỗi hệ thống: Service chưa được khởi tạo");
+            return;
         }
+        
+        // Kiểm tra quyền truy cập
+        if (!hasPermission()) {
+            showErrorMessage("Bạn không có quyền thêm căn hộ. Chỉ Tổ phó mới được phép.");
+            return;
+        }
+        
+        // Validate dữ liệu đầu vào ngay lập tức
+        if (!validateInput()) {
+            return;
+        }
+        
+        // Hiển thị loading và disable button ngay lập tức
+        showLoadingState();
+        
+        // Tạo DTO căn hộ
+        CanHoDto canHoDto = createCanHoDto();
+        
+        // Chạy xử lý ở background thread
+        javafx.concurrent.Task<ResponseDto> task = new javafx.concurrent.Task<ResponseDto>() {
+            @Override
+            protected ResponseDto call() throws Exception {
+                // Gọi service để thêm hoặc cập nhật căn hộ
+                if (isEditMode) {
+                    return canHoService.updateCanHo(canHoDto);
+                } else {
+                    return canHoService.addCanHo(canHoDto);
+                }
+            }
+            
+            @Override
+            protected void succeeded() {
+                // Chạy trên UI thread
+                javafx.application.Platform.runLater(() -> {
+                    hideLoadingState();
+                    
+                    ResponseDto response = getValue();
+                    boolean isSuccess = getResponseSuccess(response);
+                    String message = getResponseMessage(response);
+                    
+                    if (isSuccess) {
+                        String successMsg = isEditMode ? "Cập nhật căn hộ thành công!" : "Thêm căn hộ thành công!";
+                        showSuccessMessage(successMsg);
+                        
+                        // Đóng window ngay lập tức
+                        closeWindow();
+                    } else {
+                        showErrorMessage("Lỗi: " + message);
+                    }
+                });
+            }
+            
+            @Override
+            protected void failed() {
+                // Chạy trên UI thread
+                javafx.application.Platform.runLater(() -> {
+                    hideLoadingState();
+                    Throwable exception = getException();
+                    showErrorMessage("Đã xảy ra lỗi: " + exception.getMessage());
+                    exception.printStackTrace();
+                });
+            }
+        };
+        
+        // Chạy task ở background
+        Thread taskThread = new Thread(task);
+        taskThread.setDaemon(true);
+        taskThread.start();
     }
 
     @FXML
     private void handleClose(ActionEvent event) {
         closeWindow();
+    }
+    
+    @FXML
+    private void handleXoaCanHo(ActionEvent event) {
+        try {
+            if (!isEditMode || originalMaCanHo == null) {
+                showErrorMessage("Chỉ có thể xóa căn hộ trong chế độ chỉnh sửa");
+                return;
+            }
+            
+            // Kiểm tra quyền
+            if (!hasPermission()) {
+                showErrorMessage("Bạn không có quyền xóa căn hộ. Chỉ Tổ phó mới được phép.");
+                return;
+            }
+            
+            // Hiển thị dialog xác nhận
+            boolean confirmed = showDeleteConfirmation();
+            if (!confirmed) {
+                return;
+            }
+            
+            // Hiển thị loading
+            showLoadingState();
+            
+            // Xóa căn hộ ở background thread
+            javafx.concurrent.Task<ResponseDto> deleteTask = new javafx.concurrent.Task<ResponseDto>() {
+                @Override
+                protected ResponseDto call() throws Exception {
+                    // Tạo CanHoDto chỉ với mã căn hộ để xóa
+                    CanHoDto canHoToDelete = new CanHoDto();
+                    try {
+                        java.lang.reflect.Field maCanHoField = CanHoDto.class.getDeclaredField("maCanHo");
+                        maCanHoField.setAccessible(true);
+                        maCanHoField.set(canHoToDelete, originalMaCanHo);
+                    } catch (Exception e) {
+                        System.err.println("ERROR: Cannot set apartment code for delete: " + e.getMessage());
+                        throw new RuntimeException("Cannot prepare apartment data for deletion");
+                    }
+                    return canHoService.deleteCanHo(canHoToDelete);
+                }
+                
+                @Override
+                protected void succeeded() {
+                    javafx.application.Platform.runLater(() -> {
+                        hideLoadingState();
+                        
+                        ResponseDto response = getValue();
+                        boolean isSuccess = getResponseSuccess(response);
+                        String message = getResponseMessage(response);
+                        
+                        if (isSuccess) {
+                            showSuccessMessage("Xóa căn hộ thành công!");
+                            closeWindow();
+                        } else {
+                            showErrorMessage("Lỗi xóa căn hộ: " + message);
+                        }
+                    });
+                }
+                
+                @Override
+                protected void failed() {
+                    javafx.application.Platform.runLater(() -> {
+                        hideLoadingState();
+                        Throwable exception = getException();
+                        showErrorMessage("Đã xảy ra lỗi khi xóa: " + exception.getMessage());
+                        exception.printStackTrace();
+                    });
+                }
+            };
+            
+            Thread deleteThread = new Thread(deleteTask);
+            deleteThread.setDaemon(true);
+            deleteThread.start();
+            
+        } catch (Exception e) {
+            showErrorMessage("Lỗi: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Hiển thị dialog xác nhận xóa căn hộ
+     */
+    private boolean showDeleteConfirmation() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/view/xac_nhan.fxml")
+            );
+            javafx.scene.Parent root = loader.load();
+            
+            XacNhanController controller = loader.getController();
+            controller.setTitle("Xác nhận xóa căn hộ");
+            controller.setContent("Bạn có chắc chắn muốn xóa căn hộ '" + originalMaCanHo + "' không?\n\n" +
+                                "Hành động này không thể hoàn tác!");
+            
+            javafx.stage.Stage confirmStage = new javafx.stage.Stage();
+            confirmStage.setTitle("Xác nhận xóa");
+            confirmStage.setScene(new javafx.scene.Scene(root));
+            confirmStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            confirmStage.initOwner(buttonXoaCanHo.getScene().getWindow());
+            confirmStage.setResizable(false);
+            
+            confirmStage.showAndWait();
+            
+            return controller.isConfirmed();
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot show delete confirmation: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @FXML
@@ -467,18 +755,95 @@ public class ThemCanHoButton implements Initializable {
                         field.set(canHoDto, comboBoxTinhTrangKiThuat.getValue());
                         break;
                     case "trangThaiSuDung":
-                        field.set(canHoDto, comboBoxTinhTrangSuDung.getValue());
+                        // Set trangThaiSuDung based on logic
+                        String trangThaiSuDung = comboBoxTinhTrangSuDung.getValue();
+                        if (trangThaiSuDung == null || trangThaiSuDung.isEmpty()) {
+                            // Nếu không có chủ hộ thì mặc định là "Trống"
+                            trangThaiSuDung = "Trống";
+                        }
+                        field.set(canHoDto, trangThaiSuDung);
                         break;
                     case "daBanChua":
-                        field.set(canHoDto, false);
+                        field.set(canHoDto, choiceBoxThemChuSoHuu.isSelected());
                         break;
                 }
             }
         } catch (Exception e) {
             System.err.println("Lỗi khi set field cho CanHoDto: " + e.getMessage());
+            e.printStackTrace();
         }
         
-        // Tạo ChuHoDto nếu có chủ hộ
+        // Debug logging
+        System.out.println("DEBUG: Created CanHoDto:");
+        System.out.println("  - Mã căn hộ: " + maCanHo);
+        System.out.println("  - Tòa nhà: " + textFieldToa.getText().trim());
+        System.out.println("  - Tầng: " + textFieldTang.getText().trim());
+        System.out.println("  - Số nhà: " + textFieldSoNha.getText().trim());
+        System.out.println("  - Diện tích: " + textFieldDienTich.getText().trim());
+        System.out.println("  - Tình trạng kỹ thuật: " + comboBoxTinhTrangKiThuat.getValue());
+        System.out.println("  - Tình trạng sử dụng: " + comboBoxTinhTrangSuDung.getValue());
+        System.out.println("  - Đã bán: " + choiceBoxThemChuSoHuu.isSelected());
+        System.out.println("  - IsEditMode: " + isEditMode);
+        
+        // Xử lý chủ hộ dựa trên mode
+        if (isEditMode) {
+            // Chế độ edit: xử lý chủ hộ thông minh
+            handleOwnerInEditMode(canHoDto);
+        } else {
+            // Chế độ create: logic cũ
+            handleOwnerInCreateMode(canHoDto);
+        }
+        
+        return canHoDto;
+    }
+    
+    /**
+     * Xử lý chủ hộ trong chế độ edit
+     */
+    private void handleOwnerInEditMode(CanHoDto canHoDto) {
+        String currentMaDinhDanh = textFieldMaDinhDanh.getText().trim();
+        
+        if (currentMaDinhDanh.isEmpty()) {
+            // Giữ nguyên chủ hộ hiện tại (nếu có)
+            if (originalChuHoId != null) {
+                ChuHoDto chuHoDto = new ChuHoDto();
+                try {
+                    // Set ID của chủ hộ hiện tại để giữ nguyên
+                    java.lang.reflect.Field idField = ChuHoDto.class.getDeclaredField("id");
+                    idField.setAccessible(true);
+                    idField.set(chuHoDto, originalChuHoId);
+                    
+                    java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
+                    chuHoField.setAccessible(true);
+                    chuHoField.set(canHoDto, chuHoDto);
+                    
+                    System.out.println("DEBUG: Giữ nguyên chủ hộ hiện tại với ID: " + originalChuHoId);
+                } catch (Exception e) {
+                    System.err.println("ERROR: Cannot preserve current owner: " + e.getMessage());
+                }
+            } else {
+                System.out.println("DEBUG: Không có chủ hộ để giữ nguyên");
+            }
+        } else {
+            // Thay thế bằng chủ hộ mới
+            ChuHoDto chuHoDto = createChuHoDtoFromExisting();
+            if (chuHoDto != null) {
+                try {
+                    java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
+                    chuHoField.setAccessible(true);
+                    chuHoField.set(canHoDto, chuHoDto);
+                    System.out.println("DEBUG: Thay thế chủ hộ mới với ID: " + currentMaDinhDanh);
+                } catch (Exception e) {
+                    System.err.println("ERROR: Cannot set new owner: " + e.getMessage());
+                }
+            }
+        }
+    }
+    
+    /**
+     * Xử lý chủ hộ trong chế độ create
+     */
+    private void handleOwnerInCreateMode(CanHoDto canHoDto) {
         if (choiceBoxThemChuSoHuu.isSelected()) {
             System.out.println("Thêm mã định danh chủ hộ có sẵn...");
             ChuHoDto chuHoDto = createChuHoDtoFromExisting();
@@ -510,8 +875,6 @@ public class ThemCanHoButton implements Initializable {
         } else {
             System.out.println("Không thêm chủ hộ cho căn hộ này");
         }
-        
-        return canHoDto;
     }
 
     /**
@@ -600,7 +963,12 @@ public class ThemCanHoButton implements Initializable {
     }
 
     private String generateMaCanHo() {
-        // Tạo mã căn hộ theo format: TOA-TANG-SONHA
+        // Nếu đang ở edit mode, sử dụng mã căn hộ gốc
+        if (isEditMode && originalMaCanHo != null) {
+            return originalMaCanHo;
+        }
+        
+        // Tạo mã căn hộ theo format: TOA-TANG-SONHA cho create mode
         String toa = textFieldToa.getText().trim().toUpperCase();
         String tang = textFieldTang.getText().trim();
         String soNha = textFieldSoNha.getText().trim();
@@ -630,6 +998,17 @@ public class ThemCanHoButton implements Initializable {
         choiceBoxThemChuSoHuu.setSelected(false);
         choiceBoxTaoCuDanMoi.setSelected(false);
         
+        // Show checkboxes (in case they were hidden in edit mode)
+        if (choiceBoxThemChuSoHuu != null) {
+            choiceBoxThemChuSoHuu.setVisible(true);
+            choiceBoxThemChuSoHuu.setManaged(true);
+        }
+        
+        if (choiceBoxTaoCuDanMoi != null) {
+            choiceBoxTaoCuDanMoi.setVisible(true);
+            choiceBoxTaoCuDanMoi.setManaged(true);
+        }
+        
         // Hide sections
         vBoxChuSoHuu.setVisible(false);
         vBoxChuSoHuu.setManaged(false);
@@ -657,14 +1036,42 @@ public class ThemCanHoButton implements Initializable {
     }
 
     private void showErrorMessage(String message) {
-        textError.setText(message);
-        textError.setVisible(true);
-        textError.getStyleClass().add("error-text");
+        ThongBaoController.showError("Lỗi", message);
     }
 
     private void showSuccessMessage(String message) {
-        // In thực tế, có thể hiển thị thông báo thành công
-        System.out.println("Success: " + message);
+        ThongBaoController.showSuccess("Thành công", message);
+    }
+    
+    /**
+     * Hiển thị trạng thái loading
+     */
+    private void showLoadingState() {
+        if (buttonTaoCanHo != null) {
+            buttonTaoCanHo.setDisable(true);
+            buttonTaoCanHo.setText(isEditMode ? "Đang cập nhật..." : "Đang tạo...");
+        }
+        
+        if (textError != null) {
+            textError.setText(isEditMode ? "Đang cập nhật căn hộ..." : "Đang tạo căn hộ...");
+            textError.setStyle("-fx-fill: blue; -fx-font-style: italic;");
+            textError.setVisible(true);
+        }
+    }
+    
+    /**
+     * Ẩn trạng thái loading
+     */
+    private void hideLoadingState() {
+        if (buttonTaoCanHo != null) {
+            buttonTaoCanHo.setDisable(false);
+            buttonTaoCanHo.setText(isEditMode ? "Cập nhật căn hộ" : "Tạo căn hộ");
+        }
+        
+        if (textError != null) {
+            textError.setText("");
+            textError.setVisible(false);
+        }
     }
 
     private void closeWindow() {

@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.Optional;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.springframework.stereotype.Service;
@@ -18,17 +17,18 @@ import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.entity.CanHo;
 import io.github.ktpm.bluemoonmanagement.model.entity.CuDan;
+import io.github.ktpm.bluemoonmanagement.model.entity.HoaDon;
 import io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien;
 import io.github.ktpm.bluemoonmanagement.model.mapper.CanHoMapper;
 import io.github.ktpm.bluemoonmanagement.model.mapper.PhuongTienMapper;
 import io.github.ktpm.bluemoonmanagement.repository.CanHoRepository;
 import io.github.ktpm.bluemoonmanagement.repository.CuDanRepository;
+import io.github.ktpm.bluemoonmanagement.repository.HoaDonRepository;
 import io.github.ktpm.bluemoonmanagement.repository.PhuongTienRepository;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil;
 import io.github.ktpm.bluemoonmanagement.util.XlxsFileUtil;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -40,16 +40,18 @@ public class CanHoServiceImpl implements CanHoService {
     private final CanHoMapper canHoMapper;
     private final PhuongTienRepository phuongTienRepository;
     private final PhuongTienMapper phuongTienMapper;
+    private final HoaDonRepository hoaDonRepository;
     
     @PersistenceContext
     private EntityManager entityManager;
 
-    public CanHoServiceImpl(CanHoRepository canHoRepository, CuDanRepository cuDanRepository, CanHoMapper canHoMapper, PhuongTienRepository phuongTienRepository, PhuongTienMapper phuongTienMapper) {
+    public CanHoServiceImpl(CanHoRepository canHoRepository, CuDanRepository cuDanRepository, CanHoMapper canHoMapper, PhuongTienRepository phuongTienRepository, PhuongTienMapper phuongTienMapper, HoaDonRepository hoaDonRepository) {
         this.canHoRepository = canHoRepository;
         this.cuDanRepository = cuDanRepository;
         this.canHoMapper = canHoMapper;
         this.phuongTienRepository = phuongTienRepository;
         this.phuongTienMapper = phuongTienMapper;
+        this.hoaDonRepository = hoaDonRepository;
     }
 
     @Override
@@ -147,9 +149,29 @@ public class CanHoServiceImpl implements CanHoService {
                             canHoDto.getChuHo().getNgayChuyenDen() : LocalDate.now());
                     }
                     
-                    // Lưu cư dân trước
+                    // QUAN TRỌNG: Gán căn hộ cho cư dân mới tạo
+                    // Tạo temporary CanHo entity để gán cho cư dân
+                    CanHo tempCanHo = new CanHo();
+                    tempCanHo.setMaCanHo(canHoDto.getMaCanHo());
+                    tempCanHo.setToaNha(canHoDto.getToaNha());
+                    tempCanHo.setTang(canHoDto.getTang());
+                    tempCanHo.setSoNha(canHoDto.getSoNha());
+                    tempCanHo.setDienTich(canHoDto.getDienTich());
+                    tempCanHo.setDaBanChua(canHoDto.isDaBanChua());
+                    tempCanHo.setTrangThaiKiThuat(canHoDto.getTrangThaiKiThuat());
+                    tempCanHo.setTrangThaiSuDung(canHoDto.getTrangThaiSuDung());
+                    
+                    // Lưu căn hộ trước để có thể reference
+                    canHoRepository.save(tempCanHo);
+                    
+                    // Gán căn hộ cho cư dân
+                    cuDanMoi.setCanHo(tempCanHo);
+                    
+                    // Lưu cư dân với thông tin căn hộ
                     cuDanRepository.save(cuDanMoi);
-                    System.out.println("Đã tạo cư dân mới với mã định danh: " + maDinhDanh);
+                    System.out.println("=== DEBUG: Đã tạo cư dân mới và gán vào căn hộ ===");
+                    System.out.println("Cư dân: " + cuDanMoi.getHoVaTen() + " (" + maDinhDanh + ")");
+                    System.out.println("Căn hộ: " + canHoDto.getMaCanHo());
                 } else {
                     // Chỉ có mã định danh, cư dân chưa tồn tại
                     return new ResponseDto(false, "Cư dân với mã định danh '" + maDinhDanh + "' không tồn tại trong hệ thống. Vui lòng tạo cư dân trước hoặc kiểm tra lại mã định danh.");
@@ -162,33 +184,151 @@ public class CanHoServiceImpl implements CanHoService {
         // Convert DTO to entity using the mapper
         CanHo canHo = canHoMapper.fromCanHoDto(canHoDto);
         
-        // Lưu căn hộ
-        canHoRepository.save(canHo);
+        // Kiểm tra xem căn hộ đã được tạo chưa (trong trường hợp tạo cư dân mới)
+        CanHo existingCanHo = canHoRepository.findById(canHoDto.getMaCanHo()).orElse(null);
+        if (existingCanHo == null) {
+            // Căn hộ chưa tồn tại, tạo mới
+            canHoRepository.save(canHo);
+            System.out.println("DEBUG: Tạo căn hộ mới: " + canHoDto.getMaCanHo());
+        } else {
+            // Căn hộ đã tồn tại (đã tạo khi tạo cư dân), chỉ cập nhật thông tin chủ hộ
+            if (canHoDto.getChuHo() != null) {
+                CuDan chuHo = cuDanRepository.findById(canHoDto.getChuHo().getMaDinhDanh()).orElse(null);
+                existingCanHo.setChuHo(chuHo);
+                canHoRepository.save(existingCanHo);
+                System.out.println("DEBUG: Cập nhật chủ hộ cho căn hộ: " + canHoDto.getMaCanHo());
+            }
+        }
         
         return new ResponseDto(true, "Căn hộ đã được thêm thành công" + 
             (canHoDto.getChuHo() != null ? " với chủ hộ có mã: " + canHoDto.getChuHo().getMaDinhDanh() : ""));
     }
 
     @Override
+    @Transactional
     public ResponseDto updateCanHo(CanHoDto canHoDto) {
         if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
             return new ResponseDto(false, "Bạn không có quyền cập nhật căn hộ. Chỉ Tổ phó mới được phép.");
         }
-        if (canHoRepository.existsById(canHoDto.getMaCanHo())) {
-            return new ResponseDto(false, "Căn hộ đã tồn tại");
+        
+        // Tìm căn hộ hiện có trong database
+        CanHo existingCanHo = canHoRepository.findById(canHoDto.getMaCanHo()).orElse(null);
+        if (existingCanHo == null) {
+            return new ResponseDto(false, "Không tìm thấy căn hộ để cập nhật");
         }
-        CanHo canHo = canHoMapper.fromCanHoDto(canHoDto);
-        canHoRepository.save(canHo);
+        
+        // Cập nhật thông tin căn hộ hiện có (không tạo entity mới)
+        existingCanHo.setToaNha(canHoDto.getToaNha());
+        existingCanHo.setTang(canHoDto.getTang());
+        existingCanHo.setSoNha(canHoDto.getSoNha());
+        existingCanHo.setDienTich(canHoDto.getDienTich());
+        existingCanHo.setDaBanChua(canHoDto.isDaBanChua());
+        existingCanHo.setTrangThaiKiThuat(canHoDto.getTrangThaiKiThuat());
+        existingCanHo.setTrangThaiSuDung(canHoDto.getTrangThaiSuDung());
+        
+        // Xử lý cập nhật chủ hộ nếu có thay đổi
+        if (canHoDto.getChuHo() != null && canHoDto.getChuHo().getMaDinhDanh() != null) {
+            CuDan chuHo = cuDanRepository.findById(canHoDto.getChuHo().getMaDinhDanh()).orElse(null);
+            if (chuHo != null) {
+                existingCanHo.setChuHo(chuHo);
+            }
+        } else {
+            existingCanHo.setChuHo(null);
+        }
+        
+        // Lưu changes
+        canHoRepository.save(existingCanHo);
+        entityManager.flush(); // Đảm bảo changes được commit ngay
+        
+        System.out.println("DEBUG: Updated apartment " + canHoDto.getMaCanHo() + " successfully");
+        
         return new ResponseDto(true, "Căn hộ đã được cập nhật thành công");
     }
 
     @Override
+    @Transactional
     public ResponseDto deleteCanHo(CanHoDto canHoDto) {
         if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
             return new ResponseDto(false, "Bạn không có quyền xóa căn hộ. Chỉ Tổ phó mới được phép.");
         }
-        canHoRepository.deleteById(canHoDto.getMaCanHo());
-        return new ResponseDto(true, "Căn hộ đã được xóa thành công");
+        
+        try {
+            String maCanHo = canHoDto.getMaCanHo();
+            System.out.println("=== DEBUG: Bắt đầu xóa căn hộ và dữ liệu liên quan ===");
+            System.out.println("Mã căn hộ: " + maCanHo);
+            
+            // 1. Xóa tất cả hóa đơn của căn hộ
+            List<HoaDon> hoaDonList = hoaDonRepository.findAll().stream()
+                .filter(hoaDon -> hoaDon.getCanHo() != null && maCanHo.equals(hoaDon.getCanHo().getMaCanHo()))
+                .collect(java.util.stream.Collectors.toList());
+            
+            if (!hoaDonList.isEmpty()) {
+                System.out.println("DEBUG: Tìm thấy " + hoaDonList.size() + " hóa đơn cần xóa");
+                for (HoaDon hoaDon : hoaDonList) {
+                    System.out.println("DEBUG: Xóa hóa đơn ID: " + hoaDon.getMaHoaDon());
+                    hoaDonRepository.delete(hoaDon);
+                }
+                // Flush changes để đảm bảo hóa đơn được xóa trước
+                entityManager.flush();
+                System.out.println("DEBUG: Đã xóa tất cả hóa đơn");
+            } else {
+                System.out.println("DEBUG: Không có hóa đơn nào cần xóa");
+            }
+
+            // 2. Xóa HOÀN TOÀN tất cả phương tiện của căn hộ
+            List<io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien> allPhuongTienList = 
+                phuongTienRepository.findAll().stream()
+                    .filter(pt -> pt.getCanHo() != null && maCanHo.equals(pt.getCanHo().getMaCanHo()))
+                    .collect(java.util.stream.Collectors.toList());
+            
+            if (!allPhuongTienList.isEmpty()) {
+                System.out.println("DEBUG: Tìm thấy " + allPhuongTienList.size() + " phương tiện cần xóa hoàn toàn");
+                for (io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien phuongTien : allPhuongTienList) {
+                    System.out.println("DEBUG: Xóa hoàn toàn phương tiện biển số: " + phuongTien.getBienSo());
+                    phuongTienRepository.delete(phuongTien);
+                }
+                // Flush changes để đảm bảo phương tiện được xóa trước
+                entityManager.flush();
+                System.out.println("DEBUG: Đã xóa hoàn toàn tất cả phương tiện");
+            } else {
+                System.out.println("DEBUG: Không có phương tiện nào cần xóa");
+            }
+            
+            // 3. Xóa HOÀN TOÀN tất cả cư dân trong căn hộ
+            List<io.github.ktpm.bluemoonmanagement.model.entity.CuDan> allCuDanList = 
+                cuDanRepository.findAll().stream()
+                    .filter(cuDan -> cuDan.getCanHo() != null && 
+                                   maCanHo.equals(cuDan.getCanHo().getMaCanHo()))
+                    .collect(java.util.stream.Collectors.toList());
+            
+            if (!allCuDanList.isEmpty()) {
+                System.out.println("DEBUG: Tìm thấy " + allCuDanList.size() + " cư dân cần xóa hoàn toàn");
+                for (io.github.ktpm.bluemoonmanagement.model.entity.CuDan cuDan : allCuDanList) {
+                    System.out.println("DEBUG: Xóa hoàn toàn cư dân: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
+                    cuDanRepository.delete(cuDan);
+                }
+                // Flush changes để đảm bảo cư dân được xóa trước
+                entityManager.flush();
+                System.out.println("DEBUG: Đã xóa hoàn toàn tất cả cư dân");
+            } else {
+                System.out.println("DEBUG: Không có cư dân nào cần xóa");
+            }
+            
+            // 4. Xóa căn hộ (đã xóa tất cả dữ liệu liên quan)
+            System.out.println("DEBUG: Bắt đầu xóa căn hộ...");
+            canHoRepository.deleteById(maCanHo);
+            
+            // Force flush để đảm bảo tất cả thay đổi được lưu
+            entityManager.flush();
+            
+            System.out.println("DEBUG: Đã xóa hoàn toàn căn hộ và tất cả dữ liệu liên quan thành công!");
+            return new ResponseDto(true, "Căn hộ cùng với tất cả hóa đơn, phương tiện và cư dân đã được xóa hoàn toàn thành công");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Lỗi khi xóa căn hộ: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseDto(false, "Lỗi khi xóa căn hộ: " + e.getMessage());
+        }
     }
 
     @Override

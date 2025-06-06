@@ -186,17 +186,21 @@
                               </Button>
                            </children>
                         </HBox>
-                        <TableView fx:id="tabelViewCuDan">
-                           <columns>
-                              <TableColumn fx:id="tableColumnMaDinhDanh" prefWidth="121.59999924898148" resizable="false" text="Mã định danh" />
-                              <TableColumn fx:id="tableColumnHoVaTen" prefWidth="170.40003967285156" resizable="false" text="Họ và tên" />
-                              <TableColumn fx:id="tableColumnGioiTinh" prefWidth="84.0" resizable="false" text="Giới tính" />
-                              <TableColumn fx:id="tableColumnNgaySinh" prefWidth="143.20004272460938" resizable="false" text="Ngày sinh" />
-                              <TableColumn fx:id="tableColumnNgayChuyenDen" prefWidth="153.5999755859375" resizable="false" text="Ngày chuyển đến" />
-                              <TableColumn fx:id="tableColumnTrangThaiCuDan" prefWidth="139.2000732421875" resizable="false" text="Trạng thái" />
-                              <TableColumn fx:id="tableColumnThaoTacCuDan" prefWidth="131.199951171875" resizable="false" text="Thao tác" />
-                           </columns>
-                        </TableView>
+                        <ScrollPane hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" pannable="true">
+                           <content>
+                              <TableView fx:id="tabelViewCuDan" prefHeight="400.0" prefWidth="970.0">
+                                 <columns>
+                                    <TableColumn fx:id="tableColumnMaDinhDanh" prefWidth="120.0" resizable="false" text="Mã định danh" />
+                                    <TableColumn fx:id="tableColumnHoVaTen" prefWidth="170.0" resizable="false" text="Họ và tên" />
+                                    <TableColumn fx:id="tableColumnGioiTinh" prefWidth="84.0" resizable="false" text="Giới tính" />
+                                    <TableColumn fx:id="tableColumnNgaySinh" prefWidth="143.0" resizable="false" text="Ngày sinh" />
+                                    <TableColumn fx:id="tableColumnNgayChuyenDen" prefWidth="120.0" resizable="false" text="Ngày chuyển đến" />
+                                    <TableColumn fx:id="tableColumnTrangThaiCuDan" prefWidth="133.0" resizable="false" text="Trạng thái" />
+                                    <TableColumn fx:id="tableColumnThaoTacCuDan" prefWidth="120.0" resizable="false" text="Thao tác" />
+                                 </columns>
+                              </TableView>
+                           </content>
+                        </ScrollPane>
                      </children>
                      <padding>
                         <Insets left="10.0" top="5.0" />
@@ -226,15 +230,19 @@
                               </Button>
                            </children>
                         </HBox>
-                        <TableView>
-                           <columns>
-                              <TableColumn fx:id="tableColumnMaPhuongTien" minWidth="-1.0" prefWidth="168.00000703334808" text="Mã phương tiện" />
-                              <TableColumn fx:id="tableColumnBienSoXe" minWidth="-1.0" prefWidth="171.20001220703125" text="Biển số xe" />
-                              <TableColumn fx:id="tableColumnLoaiPhuongTien" prefWidth="239.19998168945312" text="Loại phương tiện" />
-                              <TableColumn fx:id="tableColumnNgayDangKi" prefWidth="176.79998779296875" text="Ngày đăng kí" />
-                              <TableColumn fx:id="tableColumnThaoTacPhuongTien" prefWidth="189.5999755859375" text="Thao tác" />
-                           </columns>
-                        </TableView>
+                        <ScrollPane hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" pannable="true">
+                           <content>
+                              <TableView fx:id="tableViewPhuongTien" prefHeight="250.0" prefWidth="970.0">
+                                 <columns>
+                                    <TableColumn fx:id="tableColumnMaPhuongTien" minWidth="-1.0" prefWidth="170.0" text="Mã phương tiện" />
+                                    <TableColumn fx:id="tableColumnBienSoXe" minWidth="-1.0" prefWidth="170.0" text="Biển số xe" />
+                                    <TableColumn fx:id="tableColumnLoaiPhuongTien" prefWidth="240.0" text="Loại phương tiện" />
+                                    <TableColumn fx:id="tableColumnNgayDangKi" prefWidth="170.0" text="Ngày đăng kí" />
+                                    <TableColumn fx:id="tableColumnThaoTacPhuongTien" prefWidth="120.0" text="Thao tác" />
+                                 </columns>
+                              </TableView>
+                           </content>
+                        </ScrollPane>
                      </children>
                      <padding>
                         <Insets left="10.0" top="5.0" />

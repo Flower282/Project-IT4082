@@ -16,7 +16,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<VBox alignment="TOP_CENTER" prefWidth="700.0" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<VBox alignment="TOP_CENTER" prefWidth="700.0" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.ThemKhoanThuController">
    <children>
       <AnchorPane>
          <children>
@@ -71,6 +71,29 @@
                   <Insets left="30.0" right="30.0" />
                </padding>
             </HBox>
+            <HBox prefHeight="51.0" prefWidth="637.0">
+               <children>
+                  <HBox alignment="CENTER_LEFT" prefHeight="42.0" spacing="20.0">
+                     <children>
+                        <Label prefHeight="16.0" styleClass="text-bold" text="Phạm vi" HBox.hgrow="ALWAYS">
+                           <opaqueInsets>
+                              <Insets left="30.0" />
+                           </opaqueInsets>
+                        </Label>
+                        <ComboBox fx:id="comboBoxPhamVi" maxWidth="1.7976931348623157E308" prefWidth="206.0" promptText="Tất cả căn hộ" />
+                     </children>
+                     <padding>
+                        <Insets left="30.0" top="10.0" />
+                     </padding>
+                     <opaqueInsets>
+                        <Insets left="30.0" />
+                     </opaqueInsets>
+                  </HBox>
+               </children>
+               <opaqueInsets>
+                  <Insets left="30.0" />
+               </opaqueInsets>
+            </HBox>
             <HBox layoutX="11.0" layoutY="156.0" spacing="20.0">
                <children>
                   <HBox fx:id="text11" alignment="CENTER_LEFT" prefWidth="640.0" spacing="20.0" HBox.hgrow="ALWAYS">
@@ -82,7 +105,7 @@
                         <ComboBox fx:id="comboBoxBoPhanQuanLy" maxWidth="1.7976931348623157E308" promptText="Chung cư" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
-                  <HBox alignment="CENTER_LEFT" disable="true" prefHeight="42.0" prefWidth="651.0" spacing="20.0" HBox.hgrow="ALWAYS">
+                  <HBox alignment="CENTER_LEFT" prefHeight="42.0" prefWidth="651.0" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
                         <Label prefHeight="16.0" styleClass="text-bold" text="Tên cơ quan" HBox.hgrow="ALWAYS" />
                         <TextField fx:id="textFieldTenCoQuan" promptText="Nhập tên cơ quan" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
@@ -107,7 +130,7 @@
                         <Insets top="10.0" />
                      </padding>
                   </HBox>
-                  <HBox fx:id="text" alignment="CENTER_LEFT" disable="true" spacing="20.0" HBox.hgrow="ALWAYS">
+                  <HBox fx:id="text" alignment="CENTER_LEFT" spacing="20.0" HBox.hgrow="ALWAYS">
                      <padding>
                         <Insets top="10.0" />
                      </padding>
@@ -160,7 +183,7 @@
             <Insets left="30.0" right="30.0" />
          </VBox.margin>
       </TextFlow>
-      <Button fx:id="buttonThemKhoanThu" mnemonicParsing="false" text="Thêm cư dân">
+      <Button fx:id="buttonThemKhoanThu" mnemonicParsing="false" onAction="#ThemKhoanThuClicked" text="Thêm khoản thu">
          <graphic>
             <Group>
                <children>
