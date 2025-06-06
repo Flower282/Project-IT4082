@@ -977,6 +977,14 @@ public class Home_list implements Initializable {
             System.out.println("Đã inject CanHoService thủ công từ parent controller");
         }
     }
+    
+    /**
+     * Method để inject ApplicationContext
+     */
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+        System.out.println("DEBUG: Đã inject ApplicationContext vào Home_list");
+    }
 
     /**
      * Inner class để hiển thị dữ liệu trong table
@@ -1432,7 +1440,10 @@ public class Home_list implements Initializable {
                 io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController cuDanController = 
                     (io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController) controller;
                 
-                // Setup edit mode với dữ liệu cư dân hiện tại
+                // Set ApplicationContext for controller
+                cuDanController.setApplicationContext(applicationContext);
+                
+                // Setup edit mode với dữ liệu cư dân hiện tại (CuDanTableData)
                 cuDanController.setupEditMode(cuDan);
             }
 

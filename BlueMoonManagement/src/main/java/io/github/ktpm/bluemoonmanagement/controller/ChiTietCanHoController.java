@@ -16,18 +16,16 @@ import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.phuongTien.PhuongTienDto;
+import io.github.ktpm.bluemoonmanagement.service.cache.CacheDataService;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService;
-import io.github.ktpm.bluemoonmanagement.service.cache.CacheDataService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -83,11 +81,16 @@ public class ChiTietCanHoController implements Initializable {
 
     // Cư dân tab
     @FXML private TableView<CuDanTrongCanHoDto> tableViewCuDan;
+    @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnMaCanHoCuDan;
     @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnMaDinhDanhCuDan;
     @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnHoVaTenCuDan;
-    @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnQuanHeChuHo;
+    @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnGioiTinhCuDan;
     @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnNgaySinhCuDan;
+    @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnSoDienThoaiCuDan;
+    @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnEmailCuDan;
+    @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnQuanHeChuHo;
     @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnTrangThaiCuDan;
+    @FXML private TableColumn<CuDanTrongCanHoDto, Void> tableColumnThaoTacCuDan;
     @FXML private ComboBox<String> comboBoxSoKetQuaCuDan;
     @FXML private TextField textFieldTimKiemCuDan;
     @FXML private TextField textFieldMaDinhDanh;
@@ -162,12 +165,27 @@ public class ChiTietCanHoController implements Initializable {
             ensureServicesAvailable();
         }
         
-        // Debug cache status
+        // Debug cache status and table components
         System.out.println("=== DEBUG: ChiTietCanHoController initialized ===");
         System.out.println("  - cacheDataService: " + (cacheDataService != null ? "Available" : "NULL"));
         if (cacheDataService != null) {
             System.out.println("  - cache loaded: " + cacheDataService.isCacheLoaded());
         }
+        
+        // Debug table components injection
+        System.out.println("=== DEBUG: Checking table components injection ===");
+        System.out.println("tableViewCuDan: " + (tableViewCuDan != null ? "OK" : "NULL"));
+        System.out.println("tableColumnMaCanHoCuDan: " + (tableColumnMaCanHoCuDan != null ? "OK" : "NULL"));
+        System.out.println("tableColumnMaDinhDanhCuDan: " + (tableColumnMaDinhDanhCuDan != null ? "OK" : "NULL"));
+        System.out.println("tableColumnHoVaTenCuDan: " + (tableColumnHoVaTenCuDan != null ? "OK" : "NULL"));
+        System.out.println("tableColumnGioiTinhCuDan: " + (tableColumnGioiTinhCuDan != null ? "OK" : "NULL"));
+        System.out.println("tableColumnNgaySinhCuDan: " + (tableColumnNgaySinhCuDan != null ? "OK" : "NULL"));
+        System.out.println("tableColumnSoDienThoaiCuDan: " + (tableColumnSoDienThoaiCuDan != null ? "OK" : "NULL"));
+        System.out.println("tableColumnEmailCuDan: " + (tableColumnEmailCuDan != null ? "OK" : "NULL"));
+        System.out.println("tableColumnQuanHeChuHo: " + (tableColumnQuanHeChuHo != null ? "OK" : "NULL"));
+        System.out.println("tableColumnTrangThaiCuDan: " + (tableColumnTrangThaiCuDan != null ? "OK" : "NULL"));
+        System.out.println("tableColumnThaoTacCuDan: " + (tableColumnThaoTacCuDan != null ? "OK" : "NULL"));
+        System.out.println("=== END DEBUG: Components injection ===");
         
         // Setup components
         setupTabNavigation();
@@ -199,6 +217,17 @@ public class ChiTietCanHoController implements Initializable {
         System.out.println("=== DEBUG: Setting up tables ===");
         
         // Setup table cư dân
+        if (tableColumnMaCanHoCuDan != null) {
+            System.out.println("tableColumnMaCanHoCuDan found");
+            tableColumnMaCanHoCuDan.setCellValueFactory(cellData -> {
+                // Lấy mã căn hộ từ currentCanHo cho mỗi dòng
+                String maCanHo = currentCanHo != null ? currentCanHo.getMaCanHo() : "";
+                return new javafx.beans.property.SimpleStringProperty(maCanHo);
+            });
+        } else {
+            System.out.println("WARNING: tableColumnMaCanHoCuDan is NULL!");
+        }
+
         if (tableColumnMaDinhDanhCuDan != null) {
             System.out.println("tableColumnMaDinhDanhCuDan found");
             tableColumnMaDinhDanhCuDan.setCellValueFactory(cellData -> 
@@ -213,6 +242,36 @@ public class ChiTietCanHoController implements Initializable {
                 new javafx.beans.property.SimpleStringProperty(cellData.getValue().getHoVaTen()));
         } else {
             System.out.println("WARNING: tableColumnHoVaTenCuDan is NULL!");
+        }
+        
+        if (tableColumnGioiTinhCuDan != null) {
+            System.out.println("tableColumnGioiTinhCuDan found");
+            tableColumnGioiTinhCuDan.setCellValueFactory(cellData -> 
+                new javafx.beans.property.SimpleStringProperty(
+                    cellData.getValue().getGioiTinh() != null ? 
+                    cellData.getValue().getGioiTinh() : ""));
+        } else {
+            System.out.println("WARNING: tableColumnGioiTinhCuDan is NULL!");
+        }
+        
+        if (tableColumnSoDienThoaiCuDan != null) {
+            System.out.println("tableColumnSoDienThoaiCuDan found");
+            tableColumnSoDienThoaiCuDan.setCellValueFactory(cellData -> 
+                new javafx.beans.property.SimpleStringProperty(
+                    cellData.getValue().getSoDienThoai() != null ? 
+                    cellData.getValue().getSoDienThoai() : ""));
+        } else {
+            System.out.println("WARNING: tableColumnSoDienThoaiCuDan is NULL!");
+        }
+        
+        if (tableColumnEmailCuDan != null) {
+            System.out.println("tableColumnEmailCuDan found");
+            tableColumnEmailCuDan.setCellValueFactory(cellData -> 
+                new javafx.beans.property.SimpleStringProperty(
+                    cellData.getValue().getEmail() != null ? 
+                    cellData.getValue().getEmail() : ""));
+        } else {
+            System.out.println("WARNING: tableColumnEmailCuDan is NULL!");
         }
         
         if (tableColumnQuanHeChuHo != null) {
@@ -232,17 +291,34 @@ public class ChiTietCanHoController implements Initializable {
         }
         
         if (tableColumnNgaySinhCuDan != null) {
+            System.out.println("tableColumnNgaySinhCuDan found");
             tableColumnNgaySinhCuDan.setCellValueFactory(cellData -> 
                 new javafx.beans.property.SimpleStringProperty(
                     cellData.getValue().getNgaySinh() != null ? 
                     cellData.getValue().getNgaySinh().toString() : ""));
+        } else {
+            System.out.println("WARNING: tableColumnNgaySinhCuDan is NULL!");
         }
+        
         if (tableColumnTrangThaiCuDan != null) {
+            System.out.println("tableColumnTrangThaiCuDan found");
             tableColumnTrangThaiCuDan.setCellValueFactory(cellData -> 
                 new javafx.beans.property.SimpleStringProperty(
                     cellData.getValue().getTrangThaiCuTru() != null ? 
                     cellData.getValue().getTrangThaiCuTru() : ""));
+        } else {
+            System.out.println("WARNING: tableColumnTrangThaiCuDan is NULL!");
         }
+
+        // Thêm cột thao tác cho cư dân
+        if (tableColumnThaoTacCuDan != null) {
+            System.out.println("tableColumnThaoTacCuDan found");
+            setupCuDanActions();
+        } else {
+            System.out.println("WARNING: tableColumnThaoTacCuDan is NULL!");
+        }
+        
+        System.out.println("=== DEBUG: Finished setting up cư dân table columns ===");
 
         // Setup table phương tiện
         if (tableColumnMaPhuongTien != null) {
@@ -330,6 +406,126 @@ public class ChiTietCanHoController implements Initializable {
             textFieldMaDinhDanh.textProperty().addListener((observable, oldValue, newValue) -> {
                 handleTimKiemCuDan();
             });
+        }
+    }
+
+    /**
+     * Thiết lập cột thao tác cho bảng cư dân (Sửa, Xóa)
+     */
+    private void setupCuDanActions() {
+        tableColumnThaoTacCuDan.setCellFactory(param -> new javafx.scene.control.TableCell<CuDanTrongCanHoDto, Void>() {
+            private final javafx.scene.control.Button editButton = new javafx.scene.control.Button("Sửa");
+            private final javafx.scene.control.Button deleteButton = new javafx.scene.control.Button("Xóa");
+            private final javafx.scene.layout.HBox pane = new javafx.scene.layout.HBox(editButton, deleteButton);
+
+            {
+                pane.setSpacing(10);
+                editButton.getStyleClass().addAll("action-button", "button-yellow");
+                deleteButton.getStyleClass().addAll("action-button", "button-red");
+
+                editButton.setOnAction(event -> {
+                    CuDanTrongCanHoDto cuDan = getTableView().getItems().get(getIndex());
+                    handleEditCuDan(cuDan);
+                });
+
+                deleteButton.setOnAction(event -> {
+                    CuDanTrongCanHoDto cuDan = getTableView().getItems().get(getIndex());
+                    handleDeleteCuDan(cuDan);
+                });
+
+                // Disable nút cho Tổ trưởng
+                try {
+                    String userRole = getCurrentUserRole();
+                    if ("Tổ trưởng".equals(userRole)) {
+                        editButton.setDisable(true);
+                        deleteButton.setDisable(true);
+                        editButton.setOpacity(0.5);
+                        deleteButton.setOpacity(0.5);
+                    }
+                } catch (Exception e) {
+                    System.err.println("ERROR: Cannot setup cu dan action button permissions: " + e.getMessage());
+                }
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(pane);
+                    setAlignment(javafx.geometry.Pos.CENTER);
+                }
+            }
+        });
+    }
+
+    /**
+     * Xử lý sự kiện chỉnh sửa cư dân
+     */
+    private void handleEditCuDan(CuDanTrongCanHoDto cuDan) {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/view/them_cu_dan.fxml") // Tái sử dụng form thêm cư dân
+            );
+            javafx.scene.Parent root = loader.load();
+            
+            ThemCuDanController controller = loader.getController();
+            
+            // QUAN TRỌNG: Inject application context và mã căn hộ
+            if (applicationContext != null) {
+                controller.setApplicationContext(applicationContext);
+            }
+            // Tự động gán mã căn hộ hiện tại
+            controller.setupEditModeFromApartmentDetail(cuDan, currentCanHo.getMaCanHo());
+            
+            Stage stage = new Stage();
+            stage.setTitle("Chỉnh sửa cư dân - " + cuDan.getHoVaTen());
+            stage.setScene(new Scene(root));
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(button_close_up.getScene().getWindow());
+            
+            stage.showAndWait();
+            
+            // Refresh lại dữ liệu sau khi đóng form
+            refreshData();
+
+        } catch (Exception e) {
+            showError("Lỗi", "Không thể mở form chỉnh sửa cư dân: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Xử lý sự kiện xóa cư dân (xóa mềm)
+     */
+    private void handleDeleteCuDan(CuDanTrongCanHoDto cuDan) {
+        boolean confirm = ThongBaoController.showConfirmation("Xác nhận xóa", "Bạn có chắc chắn muốn xóa cư dân " + cuDan.getHoVaTen() + "?\nHành động này sẽ ghi nhận ngày chuyển đi của cư dân.");
+
+        if (confirm) {
+            try {
+                // Lấy service từ application context nếu chưa có
+                if (applicationContext != null) {
+                    io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService cuDanService = applicationContext.getBean(io.github.ktpm.bluemoonmanagement.service.cuDan.CuDanService.class);
+                    
+                    io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto cudanDto = new io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto();
+                    cudanDto.setMaDinhDanh(cuDan.getMaDinhDanh());
+
+                    ResponseDto response = cuDanService.deleteCuDan(cudanDto);
+
+                    if (response.isSuccess()) {
+                        showSuccess("Thành công", response.getMessage());
+                        refreshData();
+                    } else {
+                        showError("Lỗi", response.getMessage());
+                    }
+                } else {
+                    showError("Lỗi hệ thống", "ApplicationContext không khả dụng.");
+                }
+            } catch (Exception e) {
+                showError("Lỗi", "Không thể xóa cư dân: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
     }
 
@@ -653,14 +849,29 @@ public class ChiTietCanHoController implements Initializable {
             try {
                 // Set data for all tables
                 if (tableViewCuDan != null && cuDanList != null) {
+                    System.out.println("=== DEBUG: Setting cư dân table data ===");
+                    System.out.println("Table visible: " + tableViewCuDan.isVisible());
+                    System.out.println("Data size: " + cuDanList.size());
+                    
                     tableViewCuDan.setItems(cuDanList);
                     tableViewCuDan.refresh(); // Force refresh
+                    
+                    // Force column refresh
+                    if (!tableViewCuDan.getColumns().isEmpty()) {
+                        tableViewCuDan.getColumns().get(0).setVisible(false);
+                        tableViewCuDan.getColumns().get(0).setVisible(true);
+                    }
+                    
                     updateResultCount(); // Hiển thị số kết quả
-                    System.out.println("=== DEBUG: Set cư dân table data ===");
-                    System.out.println("Data size: " + cuDanList.size());
+                    
                     for (CuDanTrongCanHoDto cuDan : cuDanList) {
                         System.out.println("- " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
                     }
+                    System.out.println("=== END DEBUG: Set cư dân table data ===");
+                } else {
+                    System.out.println("WARNING: tableViewCuDan or cuDanList is NULL!");
+                    if (tableViewCuDan == null) System.out.println("  - tableViewCuDan is NULL");
+                    if (cuDanList == null) System.out.println("  - cuDanList is NULL");
                 }
                 
                 if (tableViewPhuongTien != null && phuongTienList != null) {

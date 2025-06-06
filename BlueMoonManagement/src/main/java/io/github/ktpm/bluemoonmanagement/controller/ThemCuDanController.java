@@ -2,10 +2,10 @@ package io.github.ktpm.bluemoonmanagement.controller;
 
 import java.net.URL;
 import java.time.LocalDate;
-import java.util.Optional;
 import java.util.ResourceBundle;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
@@ -16,7 +16,6 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -54,6 +53,8 @@ public class ThemCuDanController implements Initializable {
     // Services
     @Autowired
     private CuDanService cuDanService;
+
+    private ApplicationContext applicationContext;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -166,39 +167,45 @@ public class ThemCuDanController implements Initializable {
     }
 
     /**
-     * Setup cho EDIT mode với dữ liệu cư dân
+     * Setup cho EDIT mode từ màn hình Chi Tiết Căn Hộ
+     * @param cuDanData DTO chứa thông tin chi tiết của cư dân trong căn hộ
+     * @param maCanHo Mã căn hộ hiện tại, sẽ được tự động gán
+     */
+    public void setupEditModeFromApartmentDetail(io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto cuDanData, String maCanHo) {
+        setCommonEditModeUI("Chỉnh sửa cư dân");
+
+        // Populate form với dữ liệu
+        if (textFieldMaDinhDanh != null) {
+            textFieldMaDinhDanh.setText(cuDanData.getMaDinhDanh());
+            textFieldMaDinhDanh.setEditable(false);
+        }
+        if (textFieldHoVaTen != null) {
+            textFieldHoVaTen.setText(cuDanData.getHoVaTen());
+        }
+        if (datePickerNgaySinh != null) {
+            datePickerNgaySinh.setValue(cuDanData.getNgaySinh());
+        }
+        if (comboBoxTrangThai != null) {
+            comboBoxTrangThai.setValue(cuDanData.getTrangThaiCuTru());
+        }
+        // Gán và khóa mã căn hộ
+        if (textFieldMaCanHo != null) {
+            textFieldMaCanHo.setText(maCanHo);
+            textFieldMaCanHo.setEditable(false);
+        }
+
+        // Các trường còn lại không có trong DTO này, người dùng cần tự nhập nếu muốn cập nhật
+    }
+
+    /**
+     * Setup cho EDIT mode với dữ liệu cư dân từ Home_list
      */
     public void setupEditMode(io.github.ktpm.bluemoonmanagement.controller.Home_list.CuDanTableData cuDanData) {
         try {
             System.out.println("Setup edit mode cho cư dân: " + cuDanData.getHoVaTen());
             
             // Thay đổi UI cho edit mode
-            if (labelTieuDe != null) {
-                labelTieuDe.setText("Chỉnh sửa cư dân");
-                System.out.println("DEBUG: Title changed to 'Chỉnh sửa cư dân'");
-            }
-            if (buttonThemCuDan != null) {
-                buttonThemCuDan.setVisible(false);
-                System.out.println("DEBUG: buttonThemCuDan hidden");
-            }
-            if (buttonLuu != null) {
-                buttonLuu.setVisible(true);
-                buttonLuu.setOnAction(this::handleCapNhatCuDan);
-                System.out.println("DEBUG: buttonLuu shown and handler set");
-            } else {
-                System.out.println("ERROR: buttonLuu is null!");
-            }
-            if (buttonChinhSua != null) {
-                buttonChinhSua.setVisible(false);
-                System.out.println("DEBUG: buttonChinhSua hidden");
-            }
-            if (buttonXoa != null) {
-                buttonXoa.setVisible(true);
-                buttonXoa.setOnAction(this::handleXoaCuDan);
-                System.out.println("DEBUG: buttonXoa shown and handler set");
-            } else {
-                System.out.println("ERROR: buttonXoa is null!");
-            }
+            setCommonEditModeUI("Chỉnh sửa cư dân");
             
             // Populate form với dữ liệu hiện tại
             populateFormWithData(cuDanData);
@@ -260,7 +267,7 @@ public class ThemCuDanController implements Initializable {
                 }
             }
             
-            // Apply trạng thái change logic
+            // Xử lý logic hiển thị/ẩn các field ngày
             handleTrangThaiChange(cuDanData.getTrangThaiCuTru());
             
         } catch (Exception e) {
@@ -671,8 +678,40 @@ public class ThemCuDanController implements Initializable {
         }
     }
 
+    /**
+     * Thiết lập UI chung cho các chế độ chỉnh sửa
+     * @param title Tiêu đề của cửa sổ
+     */
+    private void setCommonEditModeUI(String title) {
+        if (labelTieuDe != null) {
+            labelTieuDe.setText(title);
+        }
+        if (buttonThemCuDan != null) {
+            buttonThemCuDan.setVisible(false);
+        }
+        if (buttonLuu != null) {
+            buttonLuu.setVisible(true);
+            buttonLuu.setOnAction(this::handleCapNhatCuDan);
+        }
+        if (buttonChinhSua != null) {
+            buttonChinhSua.setVisible(false);
+        }
+        if (buttonXoa != null) {
+            buttonXoa.setVisible(true);
+            buttonXoa.setOnAction(this::handleXoaCuDan);
+        }
+    }
+
     // Setter for dependency injection
     public void setCuDanService(CuDanService cuDanService) {
         this.cuDanService = cuDanService;
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+        // Đảm bảo service được khởi tạo nếu chưa có
+        if (this.cuDanService == null) {
+            this.cuDanService = applicationContext.getBean(CuDanService.class);
+        }
     }
 } 

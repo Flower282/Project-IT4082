@@ -67,6 +67,9 @@ public class KhungController implements Initializable{
     @Autowired
     private CanHoService canHoService;
 
+    @Autowired
+    private org.springframework.context.ApplicationContext applicationContext;
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         
@@ -86,6 +89,12 @@ public class KhungController implements Initializable{
             if (this.centerController != null) {
                 this.centerController.injectServices(canHoService);
                 this.centerController.setParentController(this);
+                // Inject ApplicationContext nếu có
+                try {
+                    this.centerController.setApplicationContext(applicationContext);
+                } catch (Exception e) {
+                    System.err.println("Could not inject ApplicationContext: " + e.getMessage());
+                }
             }
             
             updateScreenLabel("Trang chủ");
@@ -113,26 +122,30 @@ public class KhungController implements Initializable{
 
     @FXML
     void goToCanHo(ActionEvent event) {
-        centerController.show("CanHo");
-        updateScreenLabel("Danh sách căn hộ");
+        if (centerController != null) {
+            centerController.goToCanHo(event);
+        }
     }
 
     @FXML
     void goToCuDan(ActionEvent event) {
-        centerController.show("CuDan");
-        updateScreenLabel("Danh sách cư dân");
+        if (centerController != null) {
+            centerController.gotoCuDan(event);
+        }
     }
 
     @FXML
     void goToHoSo(ActionEvent event) {
-        centerController.show("HoSo");
-        updateScreenLabel("Hồ sơ");
+        if (centerController != null) {
+            centerController.goToHoSo(event);
+        }
     }
 
     @FXML
     void goToKhoanThu(ActionEvent event) {
-        centerController.show("KhoanThu");
-        updateScreenLabel("Danh sách khoản thu");
+        if (centerController != null) {
+            centerController.gotoKhoanThu(event);
+        }
     }
 
     @FXML

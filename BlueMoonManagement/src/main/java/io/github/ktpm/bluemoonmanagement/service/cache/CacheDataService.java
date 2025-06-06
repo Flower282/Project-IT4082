@@ -92,6 +92,8 @@ public class CacheDataService {
         dto.setHoVaTen(cudanDto.getHoVaTen());
         dto.setGioiTinh(cudanDto.getGioiTinh());
         dto.setNgaySinh(cudanDto.getNgaySinh());
+        dto.setSoDienThoai(cudanDto.getSoDienThoai());
+        dto.setEmail(cudanDto.getEmail());
         dto.setTrangThaiCuTru(cudanDto.getTrangThaiCuTru());
         dto.setNgayChuyenDi(cudanDto.getNgayChuyenDi());
         return dto;
