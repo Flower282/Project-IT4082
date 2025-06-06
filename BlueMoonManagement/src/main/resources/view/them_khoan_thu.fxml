@@ -48,10 +48,10 @@
             </HBox>
             <HBox spacing="20.0">
                <children>
-                  <HBox alignment="CENTER_LEFT" prefHeight="42.0" spacing="20.0" HBox.hgrow="ALWAYS">
+                  <HBox alignment="CENTER_LEFT" prefHeight="42.0" prefWidth="183.0" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
                         <Label prefHeight="16.0" styleClass="text-bold" text="Hạn nộp" HBox.hgrow="ALWAYS" />
-                        <DatePicker fx:id="datePickerHanNop" promptText="Nhập hạn nộp" HBox.hgrow="ALWAYS" />
+                        <DatePicker fx:id="datePickerHanNop" prefWidth="186.0" promptText="Nhập hạn nộp" HBox.hgrow="ALWAYS" />
                      </children>
                      <padding>
                         <Insets top="10.0" />
@@ -59,8 +59,8 @@
                   </HBox>
                   <HBox alignment="CENTER_LEFT" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Loại khoản thu" HBox.hgrow="ALWAYS" />
-                        <ComboBox fx:id="comboBoxLoaiKhoanThu" maxWidth="1.7976931348623157E308" promptText="Bắt buộc" HBox.hgrow="ALWAYS" />
+                        <Label prefHeight="19.0" prefWidth="104.0" styleClass="text-bold" text="Loại khoản thu" HBox.hgrow="ALWAYS" />
+                        <ComboBox fx:id="comboBoxLoaiKhoanThu" maxWidth="1.7976931348623157E308" prefWidth="45.0" HBox.hgrow="ALWAYS" />
                      </children>
                      <padding>
                         <Insets top="10.0" />
@@ -73,14 +73,14 @@
             </HBox>
             <HBox prefHeight="51.0" prefWidth="637.0">
                <children>
-                  <HBox alignment="CENTER_LEFT" prefHeight="42.0" spacing="20.0">
+                  <HBox alignment="CENTER_LEFT" prefHeight="52.0" prefWidth="287.0" spacing="20.0">
                      <children>
                         <Label prefHeight="16.0" styleClass="text-bold" text="Phạm vi" HBox.hgrow="ALWAYS">
                            <opaqueInsets>
                               <Insets left="30.0" />
                            </opaqueInsets>
                         </Label>
-                        <ComboBox fx:id="comboBoxPhamVi" maxWidth="1.7976931348623157E308" prefWidth="206.0" promptText="Tất cả căn hộ" />
+                        <ComboBox fx:id="comboBoxPhamVi" editable="true" maxWidth="1.7976931348623157E308" prefWidth="175.0" />
                      </children>
                      <padding>
                         <Insets left="30.0" top="10.0" />
@@ -89,48 +89,43 @@
                         <Insets left="30.0" />
                      </opaqueInsets>
                   </HBox>
+                  <HBox fx:id="text11" alignment="CENTER_LEFT" minHeight="-Infinity" minWidth="-Infinity" prefHeight="51.0" prefWidth="350.0" spacing="20.0" HBox.hgrow="ALWAYS">
+                     <padding>
+                        <Insets top="10.0" />
+                     </padding>
+                     <children>
+                        <Label prefHeight="16.0" prefWidth="110.0" styleClass="text-bold" text="Bộ phận quản lý" HBox.hgrow="ALWAYS">
+                           <HBox.margin>
+                              <Insets left="10.0" />
+                           </HBox.margin></Label>
+                        <ComboBox fx:id="comboBoxBoPhanQuanLy" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="36.0" prefWidth="116.0" HBox.hgrow="ALWAYS">
+                           <HBox.margin>
+                              <Insets right="30.0" />
+                           </HBox.margin></ComboBox>
+                     </children>
+                  </HBox>
                </children>
                <opaqueInsets>
                   <Insets left="30.0" />
                </opaqueInsets>
             </HBox>
             <HBox layoutX="11.0" layoutY="156.0" spacing="20.0">
-               <children>
-                  <HBox fx:id="text11" alignment="CENTER_LEFT" prefWidth="640.0" spacing="20.0" HBox.hgrow="ALWAYS">
-                     <padding>
-                        <Insets top="10.0" />
-                     </padding>
-                     <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Bộ phận quản lý" HBox.hgrow="ALWAYS" />
-                        <ComboBox fx:id="comboBoxBoPhanQuanLy" maxWidth="1.7976931348623157E308" promptText="Chung cư" HBox.hgrow="ALWAYS" />
-                     </children>
-                  </HBox>
-                  <HBox alignment="CENTER_LEFT" prefHeight="42.0" prefWidth="651.0" spacing="20.0" HBox.hgrow="ALWAYS">
-                     <children>
-                        <Label prefHeight="16.0" styleClass="text-bold" text="Tên cơ quan" HBox.hgrow="ALWAYS" />
-                        <TextField fx:id="textFieldTenCoQuan" promptText="Nhập tên cơ quan" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
-                     </children>
-                     <padding>
-                        <Insets top="10.0" />
-                     </padding>
-                  </HBox>
-               </children>
                <padding>
                   <Insets left="30.0" right="30.0" />
                </padding>
             </HBox>
             <HBox spacing="20.0">
                <children>
-                  <HBox alignment="CENTER_LEFT" prefHeight="42.0" spacing="20.0" HBox.hgrow="ALWAYS">
+                  <HBox alignment="CENTER_LEFT" prefHeight="42.0" prefWidth="323.0" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
                         <Label prefHeight="16.0" styleClass="text-bold" text="Đơn vị tính" HBox.hgrow="ALWAYS" />
-                        <ComboBox fx:id="comboBoxDonViTinh" maxWidth="1.7976931348623157E308" promptText="Không có" HBox.hgrow="ALWAYS" />
+                        <ComboBox fx:id="comboBoxDonViTinh" maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS" />
                      </children>
                      <padding>
                         <Insets top="10.0" />
                      </padding>
                   </HBox>
-                  <HBox fx:id="text" alignment="CENTER_LEFT" spacing="20.0" HBox.hgrow="ALWAYS">
+                  <HBox fx:id="text" alignment="CENTER_LEFT" prefHeight="42.0" prefWidth="309.0" spacing="20.0" HBox.hgrow="ALWAYS">
                      <padding>
                         <Insets top="10.0" />
                      </padding>
@@ -144,7 +139,7 @@
                   <Insets left="30.0" right="30.0" />
                </padding>
             </HBox>
-            <HBox alignment="CENTER_LEFT" layoutX="11.0" layoutY="155.0" spacing="20.0" visible="false">
+            <HBox fx:id="phuongTienHbox" alignment="CENTER_LEFT" layoutX="11.0" layoutY="155.0" spacing="20.0" visible="false">
                <children>
                   <Label prefHeight="16.0" styleClass="text-bold" text="Đơn giá" HBox.hgrow="ALWAYS" />
                   <HBox prefHeight="32.0" prefWidth="455.0" spacing="10.0" HBox.hgrow="ALWAYS">
