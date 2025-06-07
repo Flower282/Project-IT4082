@@ -68,49 +68,58 @@ public class CanHoServiceImpl implements CanHoService {
         // Clear entity manager cache to ensure fresh data
         entityManager.clear();
         
-        // Debug: Check residents directly from database
-        String jpql = "SELECT c FROM CuDan c WHERE c.canHo.maCanHo = :maCanHo";
-        List<CuDan> residentsFromDb = entityManager.createQuery(jpql, CuDan.class)
+        // Sử dụng fetch join để load căn hộ cùng với tất cả cư dân
+        String jpql = "SELECT DISTINCT c FROM CanHo c LEFT JOIN FETCH c.cuDanList cd WHERE c.maCanHo = :maCanHo";
+        List<CanHo> canHoResults = entityManager.createQuery(jpql, CanHo.class)
             .setParameter("maCanHo", canHoDto.getMaCanHo())
             .getResultList();
         
-        System.out.println("=== DEBUG: Direct DB query for residents ===");
+        System.out.println("=== DEBUG: Fetch join query results ===");
         System.out.println("Apartment: " + canHoDto.getMaCanHo());
-        System.out.println("Residents found in DB: " + residentsFromDb.size());
-        for (CuDan resident : residentsFromDb) {
-            System.out.println("- DB Resident: " + resident.getHoVaTen() + " (" + resident.getMaDinhDanh() + ") - Status: " + resident.getTrangThaiCuTru());
-        }
-        System.out.println("=== END DEBUG DB ===");
+        System.out.println("Query results count: " + canHoResults.size());
         
-        CanHo canHo = canHoRepository.findById(canHoDto.getMaCanHo()).orElse(null);
+        CanHo canHo = canHoResults.isEmpty() ? null : canHoResults.get(0);
+        
         if (canHo != null) {
-            // Force initialization of lazy collections
-            canHo.getCuDanList().size(); // This will trigger lazy loading within transaction
-            
-            // THAY ĐỔI: Thay vì dùng canHo.getPhuongTienList(), lấy trực tiếp từ repository chỉ active vehicles
-            List<PhuongTien> activePhuongTiens = phuongTienRepository.findActiveByCanHo_MaCanHo(canHoDto.getMaCanHo());
-            
-            // Debug logging
-            System.out.println("=== DEBUG: Loading apartment details ===");
-            System.out.println("Apartment code: " + canHo.getMaCanHo());
-            System.out.println("Number of residents found: " + canHo.getCuDanList().size());
-            for (CuDan cuDan : canHo.getCuDanList()) {
-                System.out.println("- Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ") - Status: " + cuDan.getTrangThaiCuTru());
+            // Debug: Check all residents loaded by fetch join
+            System.out.println("=== DEBUG: All residents loaded by fetch join ===");
+            System.out.println("Number of residents found: " + (canHo.getCuDanList() != null ? canHo.getCuDanList().size() : 0));
+            if (canHo.getCuDanList() != null) {
+                for (CuDan cuDan : canHo.getCuDanList()) {
+                    System.out.println("- Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ") - Status: " + cuDan.getTrangThaiCuTru() + " - NgayChuyenDi: " + cuDan.getNgayChuyenDi());
+                }
             }
-            System.out.println("Number of active vehicles: " + activePhuongTiens.size());
-            System.out.println("=== END DEBUG ===");
+            System.out.println("=== END DEBUG fetch join ===");
             
-            // Sử dụng mapper nhưng override danh sách phương tiện với active vehicles
+            // Lấy danh sách phương tiện active
+            List<PhuongTien> activePhuongTiens = phuongTienRepository.findActiveByCanHo_MaCanHo(canHoDto.getMaCanHo());
+            System.out.println("Number of active vehicles: " + activePhuongTiens.size());
+            
+            // Sử dụng mapper để chuyển đổi
             CanHoChiTietDto dto = canHoMapper.toCanHoChiTietDto(canHo);
-            // Convert entities to DTOs và set lại list phương tiện chỉ với active vehicles
+            
+            // Override danh sách phương tiện với active vehicles
             List<io.github.ktpm.bluemoonmanagement.model.dto.phuongTien.PhuongTienDto> activePhuongTienDtos = 
                 activePhuongTiens.stream()
                     .map(phuongTienMapper::toPhuongTienDto)
                     .collect(java.util.stream.Collectors.toList());
             dto.setPhuongTienList(activePhuongTienDtos);
+            
+            // Debug: Check mapper results
+            System.out.println("=== DEBUG: Mapper results ===");
+            System.out.println("DTO cuDanList size: " + (dto.getCuDanList() != null ? dto.getCuDanList().size() : "NULL"));
+            if (dto.getCuDanList() != null) {
+                for (io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto cuDan : dto.getCuDanList()) {
+                    System.out.println("- DTO Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ") - Status: " + cuDan.getTrangThaiCuTru() + " - NgayChuyenDi: " + cuDan.getNgayChuyenDi());
+                }
+            }
+            System.out.println("=== END DEBUG mapper ===");
+            
             return dto;
         }
-        return canHoMapper.toCanHoChiTietDto(canHo);
+        
+        System.out.println("=== DEBUG: Apartment not found: " + canHoDto.getMaCanHo() + " ===");
+        return null;
     }
 
     @Override

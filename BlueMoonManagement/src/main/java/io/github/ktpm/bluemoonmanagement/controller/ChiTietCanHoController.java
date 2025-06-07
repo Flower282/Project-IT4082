@@ -741,7 +741,20 @@ public class ChiTietCanHoController implements Initializable {
                 
                 // Load danh sách từ data và lọc chỉ hiển thị cư dân chưa bị xóa (chưa có ngày chuyển đi)
                 cuDanList.clear();
+                System.out.println("=== DEBUG: Processing residents data ===");
+                System.out.println("CanHoChiTietDto.getCuDanList() == null: " + (chiTiet.getCuDanList() == null));
+                
                 if (chiTiet.getCuDanList() != null) {
+                    System.out.println("CanHoChiTietDto.getCuDanList().size(): " + chiTiet.getCuDanList().size());
+                    
+                    // Debug: Print all residents before filtering
+                    System.out.println("=== DEBUG: All residents from DTO ===");
+                    for (CuDanTrongCanHoDto cuDan : chiTiet.getCuDanList()) {
+                        System.out.println("- DTO Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ") - " 
+                                         + cuDan.getTrangThaiCuTru() + " - NgayChuyenDi: " + cuDan.getNgayChuyenDi());
+                    }
+                    System.out.println("=== END DTO residents ===");
+                    
                     // Lọc chỉ hiển thị cư dân chưa có ngày chuyển đi
                     chiTiet.getCuDanList().stream()
                         .filter(cuDan -> cuDan.getNgayChuyenDi() == null)
@@ -753,7 +766,7 @@ public class ChiTietCanHoController implements Initializable {
                         System.out.println("- UI Active Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
                     }
                 } else {
-                    System.out.println("=== DEBUG: No residents in DTO ===");
+                    System.out.println("=== DEBUG: No residents in DTO - chiTiet.getCuDanList() is NULL ===");
                 }
                 
                 phuongTienList.clear();
@@ -954,10 +967,41 @@ public class ChiTietCanHoController implements Initializable {
         }
         updateTabStyles("cudan");
         
-        // Debug table visibility
+        // Refresh dữ liệu cư dân mỗi khi mở tab
+        if (currentCanHo != null && currentCanHo.getMaCanHo() != null) {
+            System.out.println("=== DEBUG: Refreshing Cu Dan data for apartment: " + currentCanHo.getMaCanHo() + " ===");
+            
+            // Load lại dữ liệu từ service để đảm bảo có dữ liệu mới nhất
+            loadData(currentCanHo.getMaCanHo(), true);
+            
+            // Clear search fields để hiển thị tất cả dữ liệu
+            if (textFieldTimKiemCuDan != null) {
+                textFieldTimKiemCuDan.clear();
+            }
+            if (textFieldMaDinhDanh != null) {
+                textFieldMaDinhDanh.clear();
+            }
+            
+            // Update result count
+            updateResultCount();
+        }
+        
+        // Debug table visibility and data
         if (tableViewCuDan != null) {
             System.out.println("tableViewCuDan visible: " + tableViewCuDan.isVisible());
             System.out.println("tableViewCuDan items: " + tableViewCuDan.getItems().size());
+            System.out.println("cuDanList size: " + (cuDanList != null ? cuDanList.size() : "NULL"));
+            System.out.println("currentCanHo: " + (currentCanHo != null ? currentCanHo.getMaCanHo() : "NULL"));
+            
+            if (cuDanList != null && !cuDanList.isEmpty()) {
+                System.out.println("=== DEBUG: Current cuDanList contents after refresh ===");
+                for (CuDanTrongCanHoDto cuDan : cuDanList) {
+                    System.out.println("- " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ") - " + cuDan.getTrangThaiCuTru());
+                }
+                System.out.println("=== END cuDanList contents ===");
+            } else {
+                System.out.println("cuDanList is EMPTY or NULL after refresh!");
+            }
         }
         System.out.println("=== END DEBUG: Cu Dan tab ===");
     }
