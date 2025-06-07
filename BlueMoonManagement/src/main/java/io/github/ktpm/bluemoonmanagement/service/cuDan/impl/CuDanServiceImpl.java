@@ -117,11 +117,14 @@ public class CuDanServiceImpl implements CuDanService {
         
         // Kiểm tra logic tự động chuyển trạng thái
         boolean shouldAutoChangeStatus = false;
-        if (existingCuDan != null && "Chuyển đi".equals(existingCuDan.getTrangThaiCuTru()) 
+        if (existingCuDan != null && 
+            ("Chuyển đi".equals(existingCuDan.getTrangThaiCuTru()) || 
+             "Đã chuyển đi".equals(existingCuDan.getTrangThaiCuTru())) 
             && cudanDto.getMaCanHo() != null && !cudanDto.getMaCanHo().trim().isEmpty()) {
             
-            System.out.println("=== DEBUG: Cư dân đang ở trạng thái 'Chuyển đi' và được cập nhật mã căn hộ mới ===");
+            System.out.println("=== DEBUG: Cư dân đang ở trạng thái 'Chuyển đi/Đã chuyển đi' và được cập nhật mã căn hộ mới ===");
             System.out.println("Cư dân: " + cudanDto.getHoVaTen() + " (" + cudanDto.getMaDinhDanh() + ")");
+            System.out.println("Trạng thái hiện tại: " + existingCuDan.getTrangThaiCuTru());
             System.out.println("Mã căn hộ mới: " + cudanDto.getMaCanHo());
             
             // Tự động chuyển sang trạng thái "Cư trú"
@@ -172,6 +175,10 @@ public class CuDanServiceImpl implements CuDanService {
         CuDan cuDan = cuDanRepository.findById(cudanDto.getMaDinhDanh()).orElse(null);
         cuDan.setNgayChuyenDi(LocalDate.now());
         cuDan.setTrangThaiCuTru("Đã chuyển đi");
+        
+        // Set canHo = null để mã căn hộ hiển thị null khi cư dân đã chuyển đi
+        cuDan.setCanHo(null);
+        
         cuDanRepository.save(cuDan);
         return new ResponseDto(true, "Xóa cư dân thành công");
     }
@@ -285,14 +292,31 @@ public class CuDanServiceImpl implements CuDanService {
             
             System.out.println("DEBUG: Tìm thấy cư dân: " + cuDan.getHoVaTen());
             System.out.println("DEBUG: Trạng thái hiện tại: " + cuDan.getTrangThaiCuTru());
+            System.out.println("DEBUG: Căn hộ hiện tại: " + (cuDan.getCanHo() != null ? cuDan.getCanHo().getMaCanHo() : "NULL"));
             
-            // Soft delete: set ngayChuyenDi và cập nhật trạng thái
+            // Soft delete: cập nhật ngày chuyển đi, trạng thái và XÓA mối quan hệ với căn hộ
             cuDan.setNgayChuyenDi(LocalDate.now());
             cuDan.setTrangThaiCuTru("Đã chuyển đi");
+            
+            // Set canHo = null để mã căn hộ hiển thị null khi cư dân đã chuyển đi
+            cuDan.setCanHo(null);
+            
             cuDanRepository.save(cuDan);
             entityManager.flush();
             
-            System.out.println("DEBUG: Xóa mềm thành công!");
+            // Verify lại sau khi save
+            CuDan verifyAfterSave = cuDanRepository.findById(maDinhDanh).orElse(null);
+            if (verifyAfterSave != null) {
+                System.out.println("DEBUG: Sau khi save - Trạng thái: " + verifyAfterSave.getTrangThaiCuTru());
+                System.out.println("DEBUG: Sau khi save - Ngày chuyển đi: " + verifyAfterSave.getNgayChuyenDi());
+                System.out.println("DEBUG: Sau khi save - Căn hộ: " + (verifyAfterSave.getCanHo() != null ? verifyAfterSave.getCanHo().getMaCanHo() : "NULL"));
+                
+                // Test mapping để đảm bảo mapper hoạt động đúng
+                io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto testDto = cuDanMapper.toCudanDto(verifyAfterSave);
+                System.out.println("DEBUG: Mapping test - DTO mã căn hộ: '" + testDto.getMaCanHo() + "'");
+            }
+            
+            System.out.println("DEBUG: Xóa mềm thành công - Mã căn hộ hiển thị null!");
             return true;
         } catch (Exception e) {
             System.err.println("Lỗi khi xóa mềm cư dân: " + e.getMessage());

@@ -116,6 +116,14 @@ public class ThemCuDanController implements Initializable {
                 handleTrangThaiChange(trangThai);
             });
         }
+        
+        // Ngày chuyển đi change handler để tự động thay đổi trạng thái
+        // Chỉ thêm listener nếu component tồn tại trong FXML
+        if (datePickerNgayChuyenDi != null) {
+            datePickerNgayChuyenDi.valueProperty().addListener((observable, oldValue, newValue) -> {
+                handleNgayChuyenDiChange(newValue);
+            });
+        }
     }
 
     /**
@@ -125,6 +133,7 @@ public class ThemCuDanController implements Initializable {
         if (trangThai == null) return;
         
         boolean isCuTru = "Cư trú".equals(trangThai);
+        boolean isChuyenDi = "Chuyển đi".equals(trangThai);
         
         // Hiển thị HBox ngày chuyển đến chỉ khi trạng thái là "Cư trú"
         if (hBoxNgayChuyenDen != null) {
@@ -143,10 +152,42 @@ public class ThemCuDanController implements Initializable {
             }
         }
         
-        // Luôn ẩn HBox ngày chuyển đi vì không sử dụng
+        // Hiển thị HBox ngày chuyển đi khi trạng thái là "Chuyển đi"
         if (hBoxNgayChuyenDi != null) {
-            hBoxNgayChuyenDi.setVisible(false);
-            hBoxNgayChuyenDi.setDisable(true);
+            hBoxNgayChuyenDi.setVisible(isChuyenDi);
+            hBoxNgayChuyenDi.setDisable(!isChuyenDi);
+        }
+        
+        // Set giá trị cho datePickerNgayChuyenDi
+        if (datePickerNgayChuyenDi != null) {
+            if (isChuyenDi) {
+                // Set ngày hiện tại làm mặc định
+                datePickerNgayChuyenDi.setValue(LocalDate.now());
+            } else {
+                // Xóa giá trị khi ẩn
+                datePickerNgayChuyenDi.setValue(null);
+            }
+        }
+    }
+    
+    /**
+     * Xử lý thay đổi ngày chuyển đi - tự động thay đổi trạng thái
+     */
+    private void handleNgayChuyenDiChange(LocalDate ngayChuyenDi) {
+        if (ngayChuyenDi == null) {
+            // Nếu ngày chuyển đi bị xóa, tự động chuyển trạng thái sang "Cư trú"
+            if (comboBoxTrangThai != null) {
+                comboBoxTrangThai.setValue("Cư trú");
+                // Trigger để hiện lại field ngày chuyển đến
+                handleTrangThaiChange("Cư trú");
+            }
+        } else {
+            // Nếu có ngày chuyển đi, tự động chuyển trạng thái sang "Chuyển đi"
+            if (comboBoxTrangThai != null) {
+                comboBoxTrangThai.setValue("Chuyển đi");
+                // Trigger để hiện field ngày chuyển đi
+                handleTrangThaiChange("Chuyển đi");
+            }
         }
     }
 
@@ -264,6 +305,12 @@ public class ThemCuDanController implements Initializable {
                 } catch (Exception e) {
                     System.err.println("Lỗi parse ngày chuyển đến: " + e.getMessage());
                 }
+            }
+            
+            // Ngày chuyển đi không có trong CuDanTableData từ bảng chính
+            // Chỉ reset về null để tránh giá trị cũ
+            if (datePickerNgayChuyenDi != null) {
+                datePickerNgayChuyenDi.setValue(null);
             }
             
             // Xử lý logic hiển thị/ẩn các field ngày
@@ -546,7 +593,8 @@ public class ThemCuDanController implements Initializable {
         cuDanDto.setMaCanHo(isBlank(maCanHo) ? null : maCanHo.trim());
         
         cuDanDto.setTrangThaiCuTru(comboBoxTrangThai.getValue());
-        cuDanDto.setNgayChuyenDen(datePickerNgayChuyenDen.getValue());
+        cuDanDto.setNgayChuyenDen(datePickerNgayChuyenDen != null ? datePickerNgayChuyenDen.getValue() : null);
+        cuDanDto.setNgayChuyenDi(datePickerNgayChuyenDi != null ? datePickerNgayChuyenDi.getValue() : null);
 
         return cuDanDto;
     }
@@ -597,6 +645,8 @@ public class ThemCuDanController implements Initializable {
         if (textFieldEmail != null) textFieldEmail.clear();
         if (textFieldMaCanHo != null) textFieldMaCanHo.clear();
         if (comboBoxTrangThai != null) comboBoxTrangThai.setValue("Cư trú");
+        if (datePickerNgayChuyenDen != null) datePickerNgayChuyenDen.setValue(null);
+        if (datePickerNgayChuyenDi != null) datePickerNgayChuyenDi.setValue(null);
         
         // Áp dụng logic hiển thị field ngày sau khi reset về "Cư trú"
         handleTrangThaiChange("Cư trú");
