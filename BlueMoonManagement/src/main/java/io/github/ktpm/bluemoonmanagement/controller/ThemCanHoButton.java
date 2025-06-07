@@ -214,10 +214,17 @@ public class ThemCanHoButton implements Initializable {
             if (textFieldTang != null) textFieldTang.setText(canHoDto.getTang());
             if (textFieldSoNha != null) textFieldSoNha.setText(canHoDto.getSoNha());
             if (textFieldDienTich != null) textFieldDienTich.setText(String.valueOf(canHoDto.getDienTich()));
-            if (comboBoxTinhTrangKiThuat != null) comboBoxTinhTrangKiThuat.setValue(canHoDto.getTrangThaiKiThuat());
+            
+            // Enable và set giá trị cho ComboBox trạng thái kỹ thuật
+            if (comboBoxTinhTrangKiThuat != null) {
+                comboBoxTinhTrangKiThuat.setValue(canHoDto.getTrangThaiKiThuat());
+                comboBoxTinhTrangKiThuat.setDisable(false); // Đảm bảo có thể chỉnh sửa
+            }
+            
+            // Enable và set giá trị cho ComboBox tình trạng sử dụng
             if (comboBoxTinhTrangSuDung != null) {
                 comboBoxTinhTrangSuDung.setValue(canHoDto.getTrangThaiSuDung());
-                comboBoxTinhTrangSuDung.setDisable(false); // Enable for editing
+                comboBoxTinhTrangSuDung.setDisable(false); // Đảm bảo có thể chỉnh sửa
             }
             
             // Luôn hiển thị section chủ hộ trong edit mode
@@ -401,6 +408,11 @@ public class ThemCanHoButton implements Initializable {
                         
                         // Refresh main apartments table and switch to apartments tab
                         refreshMainApartmentsTable();
+                        
+                        // Refresh apartment detail windows if in edit mode
+                        if (isEditMode && originalMaCanHo != null) {
+                            refreshApartmentDetailWindows(originalMaCanHo);
+                        }
                         
                         showSuccessMessage(successMsg );
                         
@@ -621,6 +633,11 @@ public class ThemCanHoButton implements Initializable {
                             // Refresh main apartments table
                             refreshMainApartmentsTable();
                             
+                            // Close any open detail windows for this apartment 
+                            if (originalMaCanHo != null) {
+                                io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController.refreshAllWindowsForApartment(originalMaCanHo);
+                            }
+                            
                             showSuccessMessage("Xóa căn hộ thành công! Bảng căn hộ đã được cập nhật.");
                             closeWindow();
                         } else {
@@ -810,14 +827,28 @@ public class ThemCanHoButton implements Initializable {
         canHoDto.setTang(textFieldTang.getText().trim());
         canHoDto.setToaNha(textFieldToa.getText().trim());
         canHoDto.setDienTich(Double.parseDouble(textFieldDienTich.getText().trim()));
-        canHoDto.setTrangThaiKiThuat(comboBoxTinhTrangKiThuat.getValue());
+        
+        // Thiết lập trạng thái kỹ thuật - luôn lấy từ ComboBox
+        String trangThaiKiThuat = comboBoxTinhTrangKiThuat.getValue();
+        canHoDto.setTrangThaiKiThuat(trangThaiKiThuat);
         
         // Thiết lập tình trạng sử dụng
-        if (choiceBoxThemChuSoHuu.isSelected() && comboBoxTinhTrangSuDung.getValue() != null) {
-            canHoDto.setTrangThaiSuDung(comboBoxTinhTrangSuDung.getValue());
+        String trangThaiSuDung;
+        if (isEditMode) {
+            // Trong edit mode, luôn lấy giá trị từ ComboBox
+            trangThaiSuDung = comboBoxTinhTrangSuDung.getValue();
+            if (trangThaiSuDung == null || trangThaiSuDung.trim().isEmpty()) {
+                trangThaiSuDung = "Trống";
+            }
         } else {
-            canHoDto.setTrangThaiSuDung("Trống");
+            // Trong create mode, kiểm tra checkbox
+            if (choiceBoxThemChuSoHuu.isSelected() && comboBoxTinhTrangSuDung.getValue() != null) {
+                trangThaiSuDung = comboBoxTinhTrangSuDung.getValue();
+            } else {
+                trangThaiSuDung = "Trống";
+            }
         }
+        canHoDto.setTrangThaiSuDung(trangThaiSuDung);
         
         // Xử lý thông tin chủ hộ
         if (isEditMode) {
@@ -826,8 +857,11 @@ public class ThemCanHoButton implements Initializable {
             handleOwnerInCreateMode(canHoDto);
         }
         
-        System.out.println("DEBUG: Created CanHoDto: " + canHoDto.getMaCanHo() + 
-                         ", chuHo: " + (canHoDto.getChuHo() != null ? canHoDto.getChuHo().getHoVaTen() : "null"));
+        System.out.println("DEBUG: " + (isEditMode ? "Updated" : "Created") + " CanHoDto:");
+        System.out.println("  - MaCanHo: " + canHoDto.getMaCanHo());
+        System.out.println("  - TrangThaiKiThuat: " + canHoDto.getTrangThaiKiThuat());
+        System.out.println("  - TrangThaiSuDung: " + canHoDto.getTrangThaiSuDung());
+        System.out.println("  - ChuHo: " + (canHoDto.getChuHo() != null ? canHoDto.getChuHo().getMaDinhDanh() : "null"));
         
         return canHoDto;
     }
@@ -839,39 +873,12 @@ public class ThemCanHoButton implements Initializable {
         String currentMaDinhDanh = textFieldMaDinhDanh.getText().trim();
         
         if (currentMaDinhDanh.isEmpty()) {
-            // Giữ nguyên chủ hộ hiện tại (nếu có)
-            if (originalChuHoId != null) {
-                ChuHoDto chuHoDto = new ChuHoDto();
-                try {
-                    // Set ID của chủ hộ hiện tại để giữ nguyên
-                    java.lang.reflect.Field idField = ChuHoDto.class.getDeclaredField("id");
-                    idField.setAccessible(true);
-                    idField.set(chuHoDto, originalChuHoId);
-                    
-                    java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
-                    chuHoField.setAccessible(true);
-                    chuHoField.set(canHoDto, chuHoDto);
-                    
-                    System.out.println("DEBUG: Giữ nguyên chủ hộ hiện tại với ID: " + originalChuHoId);
-                } catch (Exception e) {
-                    System.err.println("ERROR: Cannot preserve current owner: " + e.getMessage());
-                }
-            } else {
-                System.out.println("DEBUG: Không có chủ hộ để giữ nguyên");
-            }
+            // Xóa chủ hộ (set null)
+            canHoDto.setChuHo(null);
         } else {
-            // Thay thế bằng chủ hộ mới
+            // Set chủ hộ mới hoặc cập nhật chủ hộ hiện tại
             ChuHoDto chuHoDto = createChuHoDtoFromExisting();
-            if (chuHoDto != null) {
-                try {
-                    java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
-                    chuHoField.setAccessible(true);
-                    chuHoField.set(canHoDto, chuHoDto);
-                    System.out.println("DEBUG: Thay thế chủ hộ mới với ID: " + currentMaDinhDanh);
-                } catch (Exception e) {
-                    System.err.println("ERROR: Cannot set new owner: " + e.getMessage());
-                }
-            }
+            canHoDto.setChuHo(chuHoDto);
         }
     }
     
@@ -1080,6 +1087,24 @@ public class ThemCanHoButton implements Initializable {
 
     }
     
+    /**
+     * Refresh apartment detail windows for specific apartment
+     */
+    private void refreshApartmentDetailWindows(String maCanHo) {
+        try {
+            System.out.println("=== DEBUG: Refreshing apartment detail windows for: " + maCanHo + " ===");
+            
+            // Use static method from ChiTietCanHoController to refresh all open detail windows
+            io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController.refreshAllWindowsForApartment(maCanHo);
+            
+            System.out.println("=== DEBUG: Apartment detail windows refresh completed ===");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to refresh apartment detail windows: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Refresh main apartments table in Home_list controller and switch to apartments tab with loading indicator
      */

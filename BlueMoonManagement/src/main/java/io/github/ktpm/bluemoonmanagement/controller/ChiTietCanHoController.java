@@ -737,6 +737,13 @@ public class ChiTietCanHoController implements Initializable {
             }
             
             if (chiTiet != null) {
+                System.out.println("=== DEBUG: Data loaded from service ===");
+                System.out.println("Apartment: " + chiTiet.getMaCanHo());
+                System.out.println("Technical status: " + chiTiet.getTrangThaiKiThuat());
+                System.out.println("Usage status: " + chiTiet.getTrangThaiSuDung());
+                System.out.println("Owner: " + (chiTiet.getChuHo() != null ? 
+                    chiTiet.getChuHo().getHoVaTen() + " (" + chiTiet.getChuHo().getMaDinhDanh() + ")" : "NULL"));
+                
                 currentCanHo = chiTiet;
                 
                 // Load danh sách từ data và lọc chỉ hiển thị cư dân chưa bị xóa (chưa có ngày chuyển đi)
@@ -916,18 +923,36 @@ public class ChiTietCanHoController implements Initializable {
             return;
         }
 
+        System.out.println("=== DEBUG: updateThongTinCanHo called ===");
+        System.out.println("Apartment: " + currentCanHo.getMaCanHo());
+        System.out.println("Owner: " + (currentCanHo.getChuHo() != null ? 
+            currentCanHo.getChuHo().getHoVaTen() + " (" + currentCanHo.getChuHo().getMaDinhDanh() + ")" : "NULL"));
+
         if (labelMaCanHo != null) labelMaCanHo.setText(currentCanHo.getMaCanHo());
         if (labelSoNha != null) labelSoNha.setText(currentCanHo.getSoNha());
         if (labelTang != null) labelTang.setText(currentCanHo.getTang());
         if (labelToa != null) labelToa.setText(currentCanHo.getToaNha());
         if (labelDienTich != null) labelDienTich.setText(String.valueOf(currentCanHo.getDienTich()) + " m²");
-        if (labelTinhTrangKiThuat != null) labelTinhTrangKiThuat.setText(currentCanHo.getTrangThaiKiThuat());
-        if (labelTinhTrangSuDung != null) labelTinhTrangSuDung.setText(currentCanHo.getTrangThaiSuDung());
+        if (labelTinhTrangKiThuat != null) {
+            labelTinhTrangKiThuat.setText(currentCanHo.getTrangThaiKiThuat());
+            System.out.println("DEBUG: Set tình trạng kỹ thuật: " + currentCanHo.getTrangThaiKiThuat());
+        }
+        if (labelTinhTrangSuDung != null) {
+            labelTinhTrangSuDung.setText(currentCanHo.getTrangThaiSuDung());
+            System.out.println("DEBUG: Set tình trạng sử dụng: " + currentCanHo.getTrangThaiSuDung());
+        }
         
         // Cập nhật thông tin chủ sở hữu nếu có
         if (currentCanHo.getChuHo() != null) {
-            if (labelMaDinhDanh != null) labelMaDinhDanh.setText(currentCanHo.getChuHo().getMaDinhDanh());
-            if (labelHoVaTen != null) labelHoVaTen.setText(currentCanHo.getChuHo().getHoVaTen());
+            System.out.println("=== DEBUG: Updating owner information ===");
+            if (labelMaDinhDanh != null) {
+                labelMaDinhDanh.setText(currentCanHo.getChuHo().getMaDinhDanh());
+                System.out.println("DEBUG: Set owner ID: " + currentCanHo.getChuHo().getMaDinhDanh());
+            }
+            if (labelHoVaTen != null) {
+                labelHoVaTen.setText(currentCanHo.getChuHo().getHoVaTen());
+                System.out.println("DEBUG: Set owner name: " + currentCanHo.getChuHo().getHoVaTen());
+            }
             
             // Hide fields that are not available in ChuHoDto
             if (labelNgaySinh != null) labelNgaySinh.setVisible(false);
@@ -939,20 +964,31 @@ public class ChiTietCanHoController implements Initializable {
             
             // Hiển thị VBox chủ sở hữu
             if (vBoxChuSoHuu != null) vBoxChuSoHuu.setVisible(true);
+            System.out.println("DEBUG: Owner VBox set to visible");
         } else {
+            System.out.println("=== DEBUG: No owner - hiding owner VBox ===");
             // Ẩn VBox chủ sở hữu nếu chưa có chủ
             if (vBoxChuSoHuu != null) vBoxChuSoHuu.setVisible(false);
         }
+        System.out.println("=== END DEBUG: updateThongTinCanHo ===");
     }
 
     // Tab navigation methods
     @FXML
     private void showThongTinTab() {
+        System.out.println("=== DEBUG: Showing Thong Tin tab ===");
         hideAllTabs();
         if (anchorPaneThongTin != null) {
             anchorPaneThongTin.setVisible(true);
         }
         updateTabStyles("thongtin");
+        
+        // Refresh dữ liệu thông tin căn hộ mỗi khi mở tab để đảm bảo hiển thị dữ liệu mới nhất
+        if (currentCanHo != null && currentCanHo.getMaCanHo() != null) {
+            System.out.println("=== DEBUG: Refreshing Thong Tin data for apartment: " + currentCanHo.getMaCanHo() + " ===");
+            loadData(currentCanHo.getMaCanHo(), true);
+        }
+        System.out.println("=== END DEBUG: Thong Tin tab ===");
     }
 
     @FXML
@@ -1415,22 +1451,37 @@ public class ChiTietCanHoController implements Initializable {
     @FXML
     private void handleChinhSuaCanHo() {
         try {
+            System.out.println("=== DEBUG: EDIT BUTTON CLICKED ===");
+            
             // Kiểm tra quyền
             String userRole = getCurrentUserRole();
+            System.out.println("DEBUG: User role: " + userRole);
             if ("Tổ trưởng".equals(userRole)) {
+                System.out.println("DEBUG: Access denied for role: " + userRole);
                 showError("Không có quyền", "Bạn không có quyền chỉnh sửa căn hộ. Chỉ có Tổ phó mới có thể chỉnh sửa.");
                 return;
             }
             
             if (currentCanHo == null) {
+                System.out.println("ERROR: currentCanHo is null");
                 showError("Lỗi", "Không có thông tin căn hộ để chỉnh sửa");
                 return;
             }
             
-            System.out.println("DEBUG: Opening edit apartment form for: " + currentCanHo.getMaCanHo());
+            System.out.println("DEBUG: Current apartment data:");
+            System.out.println("  - MaCanHo: " + currentCanHo.getMaCanHo());
+            System.out.println("  - ToaNha: " + currentCanHo.getToaNha());
+            System.out.println("  - Tang: " + currentCanHo.getTang());
+            System.out.println("  - SoNha: " + currentCanHo.getSoNha());
+            System.out.println("  - Owner: " + (currentCanHo.getChuHo() != null ? 
+                currentCanHo.getChuHo().getHoVaTen() : "NULL"));
+            
+            System.out.println("DEBUG: About to open edit form...");
             
             // Sử dụng form thêm căn hộ cho chỉnh sửa
             openEditFormUsingAddForm();
+            
+            System.out.println("DEBUG: Edit form opening completed successfully");
             
         } catch (Exception e) {
             System.err.println("ERROR: Exception in handleChinhSuaCanHo: " + e.getMessage());
@@ -1444,13 +1495,19 @@ public class ChiTietCanHoController implements Initializable {
      */
     private void openEditFormUsingAddForm() {
         try {
+            System.out.println("=== DEBUG: Starting openEditFormUsingAddForm ===");
+            
+            System.out.println("DEBUG: Loading FXML...");
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
                 getClass().getResource("/view/them_can_ho.fxml")
             );
             javafx.scene.Parent root = loader.load();
+            System.out.println("DEBUG: FXML loaded successfully");
             
             // Get controller
+            System.out.println("DEBUG: Getting controller from loader...");
             io.github.ktpm.bluemoonmanagement.controller.ThemCanHoButton controller = loader.getController();
+            System.out.println("DEBUG: Controller: " + (controller != null ? "Found" : "NULL"));
             if (controller != null) {
                 // Inject services
                 if (canHoService != null) {
@@ -1458,22 +1515,49 @@ public class ChiTietCanHoController implements Initializable {
                     System.out.println("DEBUG: Injected CanHoService to edit form controller");
                 }
                 
+                // Inject ApplicationContext
+                if (applicationContext != null) {
+                    controller.setApplicationContext(applicationContext);
+                    System.out.println("DEBUG: Injected ApplicationContext to edit form controller");
+                }
+                
                 // Convert current data to CanHoDto for edit mode
+                System.out.println("DEBUG: Converting to CanHoDto...");
                 CanHoDto canHoDto = convertToCanHoDto();
                 
                 // Setup edit mode
+                System.out.println("DEBUG: Setting up edit mode...");
                 controller.setupEditMode(canHoDto);
                 
                 // Setup form untuk chỉnh sửa
+                System.out.println("DEBUG: Setting up edit form...");
                 setupEditForm(controller);
             }
             
             // Create and show stage
+            System.out.println("DEBUG: Creating stage...");
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.setTitle("Chỉnh sửa căn hộ - " + currentCanHo.getMaCanHo());
             stage.setScene(new javafx.scene.Scene(root, 900, 650));
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(button_close_up.getScene().getWindow());
+            
+            // Add event handler để refresh data khi form đóng
+            stage.setOnHiding(event -> {
+                System.out.println("=== DEBUG: Edit form closing, refreshing current detail window ===");
+                // Refresh lại dữ liệu sau khi form đóng
+                javafx.application.Platform.runLater(() -> {
+                    try {
+                        Thread.sleep(500); // Delay nhỏ để đảm bảo database được cập nhật
+                        refreshData();
+                        System.out.println("=== DEBUG: Refresh completed after edit form closed ===");
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            });
+            
+            System.out.println("DEBUG: Showing stage...");
             stage.show();
             
             System.out.println("DEBUG: Edit apartment window opened successfully");
@@ -1748,10 +1832,22 @@ public class ChiTietCanHoController implements Initializable {
      */
     public void refreshData() {
         if (currentCanHo != null && currentCanHo.getMaCanHo() != null) {
-            System.out.println("=== DEBUG: Refreshing data for apartment: " + currentCanHo.getMaCanHo() + " ===");
+            String maCanHo = currentCanHo.getMaCanHo();
+            System.out.println("=== DEBUG: Refreshing data for apartment: " + maCanHo + " ===");
+            System.out.println("Before refresh - Owner: " + (currentCanHo.getChuHo() != null ? 
+                currentCanHo.getChuHo().getHoVaTen() + " (" + currentCanHo.getChuHo().getMaDinhDanh() + ")" : "NULL"));
+            
+            // Clear cache for this apartment to ensure fresh data
+            if (cacheDataService != null) {
+                System.out.println("=== DEBUG: Clearing cache for apartment: " + maCanHo + " ===");
+                cacheDataService.refreshCacheData();
+            }
             
             // Load fresh data from service (force refresh)
-            loadData(currentCanHo.getMaCanHo(), true);
+            loadData(maCanHo, true);
+            
+            System.out.println("After refresh - Owner: " + (currentCanHo.getChuHo() != null ? 
+                currentCanHo.getChuHo().getHoVaTen() + " (" + currentCanHo.getChuHo().getMaDinhDanh() + ")" : "NULL"));
             
             // Force table refresh on JavaFX Application Thread
             javafx.application.Platform.runLater(() -> {

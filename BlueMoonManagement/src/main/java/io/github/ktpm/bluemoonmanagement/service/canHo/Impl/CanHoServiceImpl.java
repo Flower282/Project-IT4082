@@ -67,6 +67,7 @@ public class CanHoServiceImpl implements CanHoService {
     public CanHoChiTietDto getCanHoChiTiet(CanHoDto canHoDto) {
         // Clear entity manager cache to ensure fresh data
         entityManager.clear();
+        System.out.println("=== DEBUG: getCanHoChiTiet called for apartment: " + canHoDto.getMaCanHo() + " ===");
         
         // Sử dụng fetch join để load căn hộ cùng với tất cả cư dân
         String jpql = "SELECT DISTINCT c FROM CanHo c LEFT JOIN FETCH c.cuDanList cd WHERE c.maCanHo = :maCanHo";
@@ -240,9 +241,19 @@ public class CanHoServiceImpl implements CanHoService {
         existingCanHo.setTrangThaiSuDung(canHoDto.getTrangThaiSuDung());
         
         // Xử lý cập nhật chủ hộ nếu có thay đổi
+        System.out.println("=== DEBUG: Bắt đầu cập nhật chủ hộ ===");
+        CuDan oldChuHo = existingCanHo.getChuHo();
+        String oldChuHoId = oldChuHo != null ? oldChuHo.getMaDinhDanh() : "null";
+        String newChuHoId = (canHoDto.getChuHo() != null && canHoDto.getChuHo().getMaDinhDanh() != null) 
+            ? canHoDto.getChuHo().getMaDinhDanh() : "null";
+        
+        System.out.println("Chủ hộ cũ: " + oldChuHoId + " -> Chủ hộ mới: " + newChuHoId);
+        
         if (canHoDto.getChuHo() != null && canHoDto.getChuHo().getMaDinhDanh() != null) {
             CuDan chuHo = cuDanRepository.findById(canHoDto.getChuHo().getMaDinhDanh()).orElse(null);
             if (chuHo != null) {
+                System.out.println("=== DEBUG: Tìm thấy cư dân chủ hộ mới: " + chuHo.getHoVaTen() + " (" + chuHo.getMaDinhDanh() + ") ===");
+                
                 // Nếu cư dân đang ở trạng thái "Chuyển đi", chuyển thành "Cư trú"
                 if ("Chuyển đi".equals(chuHo.getTrangThaiCuTru())) {
                     System.out.println("=== DEBUG: Cư dân chủ hộ đang ở trạng thái 'Chuyển đi', tự động chuyển thành 'Cư trú' ===");
@@ -253,15 +264,37 @@ public class CanHoServiceImpl implements CanHoService {
                     entityManager.flush();
                     System.out.println("=== DEBUG: Đã cập nhật trạng thái cư dân chủ hộ thành 'Cư trú' ===");
                 }
+                
+                // Set căn hộ cho cư dân
+                chuHo.setCanHo(existingCanHo);
+                cuDanRepository.save(chuHo);
+                
+                // Set chủ hộ cho căn hộ
                 existingCanHo.setChuHo(chuHo);
+                System.out.println("=== DEBUG: Đã set chủ hộ mới cho căn hộ ===");
+            } else {
+                System.out.println("=== WARNING: Không tìm thấy cư dân với mã: " + canHoDto.getChuHo().getMaDinhDanh() + " ===");
             }
         } else {
+            System.out.println("=== DEBUG: Xóa chủ hộ khỏi căn hộ ===");
             existingCanHo.setChuHo(null);
         }
         
         // Lưu changes
         canHoRepository.save(existingCanHo);
         entityManager.flush(); // Đảm bảo changes được commit ngay
+        
+        // Clear cache để đảm bảo dữ liệu mới được load
+        entityManager.clear();
+        
+        // Verify update thành công
+        CanHo verifyCanHo = canHoRepository.findById(canHoDto.getMaCanHo()).orElse(null);
+        if (verifyCanHo != null && verifyCanHo.getChuHo() != null) {
+            System.out.println("=== DEBUG: Verification - Chủ hộ sau khi cập nhật: " + 
+                verifyCanHo.getChuHo().getHoVaTen() + " (" + verifyCanHo.getChuHo().getMaDinhDanh() + ") ===");
+        } else {
+            System.out.println("=== DEBUG: Verification - Không có chủ hộ sau khi cập nhật ===");
+        }
         
         System.out.println("DEBUG: Updated apartment " + canHoDto.getMaCanHo() + " successfully");
         
