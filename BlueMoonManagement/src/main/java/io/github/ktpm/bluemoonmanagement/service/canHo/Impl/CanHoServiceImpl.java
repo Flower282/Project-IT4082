@@ -114,6 +114,7 @@ public class CanHoServiceImpl implements CanHoService {
     }
 
     @Override
+    @Transactional
     public ResponseDto addCanHo(CanHoDto canHoDto) {
         // Kiểm tra quyền: chỉ 'Tổ phó' mới được thêm căn hộ
         if (Session.getCurrentUser() == null || (!"Tổ phó".equals(Session.getCurrentUser().getVaiTro()))) {
@@ -125,7 +126,9 @@ public class CanHoServiceImpl implements CanHoService {
             return new ResponseDto(false, "Căn hộ đã tồn tại");
         }
         
-        // Nếu có chủ hộ, xử lý theo logic phù hợp
+        CuDan chuHoCuDan = null;
+        
+        // Nếu có chủ hộ, xử lý tạo/cập nhật cư dân TRƯỚC
         if (canHoDto.getChuHo() != null) {
             String maDinhDanh = canHoDto.getChuHo().getMaDinhDanh();
             
@@ -135,10 +138,12 @@ public class CanHoServiceImpl implements CanHoService {
                 if (canHoDto.getChuHo().getHoVaTen() != null && 
                     !canHoDto.getChuHo().getHoVaTen().trim().isEmpty()) {
                     
-                    // Tạo cư dân mới
+                    // Tạo cư dân mới TRƯỚC (không gán căn hộ ngay)
                     CuDan cuDanMoi = new CuDan();
                     cuDanMoi.setMaDinhDanh(maDinhDanh);
                     cuDanMoi.setHoVaTen(canHoDto.getChuHo().getHoVaTen());
+                    cuDanMoi.setGioiTinh(canHoDto.getChuHo().getGioiTinh());
+                    cuDanMoi.setNgaySinh(canHoDto.getChuHo().getNgaySinh());
                     cuDanMoi.setSoDienThoai(canHoDto.getChuHo().getSoDienThoai());
                     cuDanMoi.setEmail(canHoDto.getChuHo().getEmail());
                     cuDanMoi.setTrangThaiCuTru(canHoDto.getChuHo().getTrangThaiCuTru());
@@ -149,55 +154,54 @@ public class CanHoServiceImpl implements CanHoService {
                             canHoDto.getChuHo().getNgayChuyenDen() : LocalDate.now());
                     }
                     
-                    // QUAN TRỌNG: Gán căn hộ cho cư dân mới tạo
-                    // Tạo temporary CanHo entity để gán cho cư dân
-                    CanHo tempCanHo = new CanHo();
-                    tempCanHo.setMaCanHo(canHoDto.getMaCanHo());
-                    tempCanHo.setToaNha(canHoDto.getToaNha());
-                    tempCanHo.setTang(canHoDto.getTang());
-                    tempCanHo.setSoNha(canHoDto.getSoNha());
-                    tempCanHo.setDienTich(canHoDto.getDienTich());
-                    tempCanHo.setDaBanChua(canHoDto.isDaBanChua());
-                    tempCanHo.setTrangThaiKiThuat(canHoDto.getTrangThaiKiThuat());
-                    tempCanHo.setTrangThaiSuDung(canHoDto.getTrangThaiSuDung());
-                    
-                    // Lưu căn hộ trước để có thể reference
-                    canHoRepository.save(tempCanHo);
-                    
-                    // Gán căn hộ cho cư dân
-                    cuDanMoi.setCanHo(tempCanHo);
-                    
-                    // Lưu cư dân với thông tin căn hộ
+                    // Lưu cư dân KHÔNG có căn hộ trước
                     cuDanRepository.save(cuDanMoi);
-                    System.out.println("=== DEBUG: Đã tạo cư dân mới và gán vào căn hộ ===");
-                    System.out.println("Cư dân: " + cuDanMoi.getHoVaTen() + " (" + maDinhDanh + ")");
-                    System.out.println("Căn hộ: " + canHoDto.getMaCanHo());
+                    entityManager.flush(); // Đảm bảo cư dân được lưu vào DB
+                    
+                    chuHoCuDan = cuDanMoi;
+                    System.out.println("=== DEBUG: Đã tạo cư dân mới: " + cuDanMoi.getHoVaTen() + " (" + maDinhDanh + ") ===");
                 } else {
                     // Chỉ có mã định danh, cư dân chưa tồn tại
                     return new ResponseDto(false, "Cư dân với mã định danh '" + maDinhDanh + "' không tồn tại trong hệ thống. Vui lòng tạo cư dân trước hoặc kiểm tra lại mã định danh.");
                 }
             } else {
                 System.out.println("Đã tìm thấy cư dân với mã định danh: " + maDinhDanh);
+                chuHoCuDan = cuDanRepository.findById(maDinhDanh).orElse(null);
+                
+                // Nếu cư dân đang ở trạng thái "Chuyển đi", chuyển thành "Cư trú"
+                if (chuHoCuDan != null && "Chuyển đi".equals(chuHoCuDan.getTrangThaiCuTru())) {
+                    System.out.println("=== DEBUG: Cư dân đang ở trạng thái 'Chuyển đi', tự động chuyển thành 'Cư trú' ===");
+                    chuHoCuDan.setTrangThaiCuTru("Cư trú");
+                    chuHoCuDan.setNgayChuyenDen(LocalDate.now()); // Set ngày chuyển đến mới
+                    chuHoCuDan.setNgayChuyenDi(null); // Clear ngày chuyển đi
+                    cuDanRepository.save(chuHoCuDan);
+                    entityManager.flush();
+                    System.out.println("=== DEBUG: Đã cập nhật trạng thái cư dân thành 'Cư trú' ===");
+                }
             }
         }
         
-        // Convert DTO to entity using the mapper
+        // Tạo căn hộ KHÔNG có chủ hộ reference trước
         CanHo canHo = canHoMapper.fromCanHoDto(canHoDto);
+        canHo.setChuHo(null); // Tạm thời không set chủ hộ
+        canHoRepository.save(canHo);
+        entityManager.flush(); // Đảm bảo căn hộ được lưu vào DB
+        System.out.println("=== DEBUG: Đã tạo căn hộ: " + canHoDto.getMaCanHo() + " ===");
         
-        // Kiểm tra xem căn hộ đã được tạo chưa (trong trường hợp tạo cư dân mới)
-        CanHo existingCanHo = canHoRepository.findById(canHoDto.getMaCanHo()).orElse(null);
-        if (existingCanHo == null) {
-            // Căn hộ chưa tồn tại, tạo mới
+        // Nếu có chủ hộ, cập nhật liên kết
+        if (chuHoCuDan != null) {
+            // Cập nhật foreign key ma_can_ho cho cư dân
+            chuHoCuDan.setCanHo(canHo);
+            cuDanRepository.save(chuHoCuDan);
+            
+            // Cập nhật chủ hộ cho căn hộ
+            canHo.setChuHo(chuHoCuDan);
             canHoRepository.save(canHo);
-            System.out.println("DEBUG: Tạo căn hộ mới: " + canHoDto.getMaCanHo());
-        } else {
-            // Căn hộ đã tồn tại (đã tạo khi tạo cư dân), chỉ cập nhật thông tin chủ hộ
-            if (canHoDto.getChuHo() != null) {
-                CuDan chuHo = cuDanRepository.findById(canHoDto.getChuHo().getMaDinhDanh()).orElse(null);
-                existingCanHo.setChuHo(chuHo);
-                canHoRepository.save(existingCanHo);
-                System.out.println("DEBUG: Cập nhật chủ hộ cho căn hộ: " + canHoDto.getMaCanHo());
-            }
+            
+            System.out.println("=== DEBUG: Đã join cư dân với căn hộ ===");
+            System.out.println("Cư dân: " + chuHoCuDan.getHoVaTen() + " (" + chuHoCuDan.getMaDinhDanh() + ")");
+            System.out.println("Căn hộ: " + canHoDto.getMaCanHo());
+            System.out.println("Foreign key ma_can_ho trong bảng cư dân: " + (chuHoCuDan.getCanHo() != null ? chuHoCuDan.getCanHo().getMaCanHo() : "NULL"));
         }
         
         return new ResponseDto(true, "Căn hộ đã được thêm thành công" + 
@@ -230,6 +234,16 @@ public class CanHoServiceImpl implements CanHoService {
         if (canHoDto.getChuHo() != null && canHoDto.getChuHo().getMaDinhDanh() != null) {
             CuDan chuHo = cuDanRepository.findById(canHoDto.getChuHo().getMaDinhDanh()).orElse(null);
             if (chuHo != null) {
+                // Nếu cư dân đang ở trạng thái "Chuyển đi", chuyển thành "Cư trú"
+                if ("Chuyển đi".equals(chuHo.getTrangThaiCuTru())) {
+                    System.out.println("=== DEBUG: Cư dân chủ hộ đang ở trạng thái 'Chuyển đi', tự động chuyển thành 'Cư trú' ===");
+                    chuHo.setTrangThaiCuTru("Cư trú");
+                    chuHo.setNgayChuyenDen(LocalDate.now()); // Set ngày chuyển đến mới
+                    chuHo.setNgayChuyenDi(null); // Clear ngày chuyển đi
+                    cuDanRepository.save(chuHo);
+                    entityManager.flush();
+                    System.out.println("=== DEBUG: Đã cập nhật trạng thái cư dân chủ hộ thành 'Cư trú' ===");
+                }
                 existingCanHo.setChuHo(chuHo);
             }
         } else {

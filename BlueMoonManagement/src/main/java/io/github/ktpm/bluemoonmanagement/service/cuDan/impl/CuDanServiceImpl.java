@@ -42,9 +42,12 @@ public class CuDanServiceImpl implements CuDanService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CudanDto> getAllCuDan() {
-        return cuDanRepository.findAll()
-                .stream()
+        // Sử dụng custom method để fetch join với căn hộ
+        List<CuDan> cuDanList = cuDanRepository.findAllWithCanHo();
+        
+        return cuDanList.stream()
                 // Tạm thời bỏ filter để kiểm tra hiển thị
                 // .filter(cuDan -> cuDan.getNgayChuyenDi() == null) // Filter out soft-deleted residents
                 .map(cuDanMapper::toCudanDto)

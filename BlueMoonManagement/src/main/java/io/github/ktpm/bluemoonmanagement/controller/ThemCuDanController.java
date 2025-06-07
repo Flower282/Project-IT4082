@@ -55,6 +55,9 @@ public class ThemCuDanController implements Initializable {
     private CuDanService cuDanService;
 
     private ApplicationContext applicationContext;
+    
+    // Field để lưu mã định danh của cư dân vừa tạo thành công
+    private String lastCreatedCuDanMaDinhDanh;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -84,12 +87,11 @@ public class ThemCuDanController implements Initializable {
             ));
         }
 
-        // Setup trạng thái cư trú
+        // Setup trạng thái cư trú - chỉ có "Cư trú"
         if (comboBoxTrangThai != null) {
-            comboBoxTrangThai.setItems(FXCollections.observableArrayList(
-                "Cư trú", "Không cư trú"
-            ));
+            comboBoxTrangThai.setItems(FXCollections.observableArrayList("Cư trú"));
             comboBoxTrangThai.setValue("Cư trú"); // Default value
+            comboBoxTrangThai.setDisable(true); // Không cho phép thay đổi
         }
     }
 
@@ -141,15 +143,10 @@ public class ThemCuDanController implements Initializable {
             }
         }
         
-        // Luôn ẩn HBox ngày chuyển đi
+        // Luôn ẩn HBox ngày chuyển đi vì không sử dụng
         if (hBoxNgayChuyenDi != null) {
             hBoxNgayChuyenDi.setVisible(false);
             hBoxNgayChuyenDi.setDisable(true);
-        }
-        
-        // Clear giá trị ngày chuyển đi
-        if (datePickerNgayChuyenDi != null) {
-            datePickerNgayChuyenDi.setValue(null);
         }
     }
 
@@ -161,6 +158,8 @@ public class ThemCuDanController implements Initializable {
         if (buttonThemCuDan != null) buttonThemCuDan.setVisible(true);
         if (buttonLuu != null) buttonLuu.setVisible(false);
         if (buttonChinhSua != null) buttonChinhSua.setVisible(false);
+        
+
         
         // Áp dụng logic hiển thị field ngày dựa trên trạng thái mặc định
         handleTrangThaiChange("Cư trú"); // Default value
@@ -304,7 +303,12 @@ public class ThemCuDanController implements Initializable {
                 boolean deleted = cuDanService.xoaMem(maDinhDanh);
 
                 if (deleted) {
-                    showSuccessMessage("Xóa cư dân thành công!");
+                    System.out.println("=== DEBUG: Resident deleted successfully, starting refresh process ===");
+                    
+                    // Refresh main residents table and switch to residents tab
+                    refreshMainResidentsTable();
+                    
+                    showSuccessMessage("Xóa cư dân thành công! Bảng cư dân đã được cập nhật.");
                     
                     // Close window after successful deletion
                     javafx.application.Platform.runLater(() -> {
@@ -354,7 +358,13 @@ public class ThemCuDanController implements Initializable {
             ResponseDto response = cuDanService.updateCuDan(cuDanDto);
 
             if (response.isSuccess()) {
-                // Close window immediately after successful update
+                System.out.println("=== DEBUG: Resident updated successfully, starting refresh process ===");
+                
+                // Refresh main residents table and switch to residents tab
+                refreshMainResidentsTable();
+                
+                // Show success message and close window
+                showSuccessMessage("Cập nhật cư dân thành công! Bảng cư dân đã được cập nhật.");
                 closeWindow();
             } else {
                 showErrorMessage("Lỗi: " + response.getMessage());
@@ -393,7 +403,14 @@ public class ThemCuDanController implements Initializable {
             ResponseDto response = cuDanService.addCuDan(cuDanDto);
 
             if (response.isSuccess()) {
-                showSuccessMessage("Thêm cư dân thành công!");
+                System.out.println("=== DEBUG: Resident added successfully, starting refresh process ===");
+                
+                // Lưu mã định danh của cư dân vừa tạo thành công
+                lastCreatedCuDanMaDinhDanh = cuDanDto.getMaDinhDanh();
+                System.out.println("=== DEBUG: Saved created resident ID: " + lastCreatedCuDanMaDinhDanh + " ===");
+                
+                // First refresh main residents table and switch to residents tab
+                refreshMainResidentsTable();
                 
                 // Refresh apartment detail windows if apartment code was provided
                 if (cuDanDto.getMaCanHo() != null && !cuDanDto.getMaCanHo().trim().isEmpty()) {
@@ -402,15 +419,18 @@ public class ThemCuDanController implements Initializable {
                     // Use Platform.runLater to refresh on JavaFX thread with slight delay
                     javafx.application.Platform.runLater(() -> {
                         try {
+                            Thread.sleep(100); // Small delay to ensure main table refresh completes first
                             System.out.println("DEBUG: Refreshing apartment detail windows...");
                             ChiTietCanHoController.refreshAllWindowsForApartment(cuDanDto.getMaCanHo());
                         } catch (Exception e) {
-                            System.err.println("ERROR: Exception during refresh: " + e.getMessage());
+                            System.err.println("ERROR: Exception during apartment refresh: " + e.getMessage());
                             e.printStackTrace();
                         }
                     });
                 }
                 
+                // Show success message and close window
+                showSuccessMessage("Thêm chủ hộ thành công");
                 clearForm();
                 closeWindow();
             } else {
@@ -436,86 +456,74 @@ public class ThemCuDanController implements Initializable {
      */
     private boolean validateInput() {
         // Validate họ và tên
-        if (isBlank(textFieldHoVaTen.getText())) {
+        if (textFieldHoVaTen == null || isBlank(textFieldHoVaTen.getText())) {
             showErrorMessage("Vui lòng nhập họ và tên");
-            textFieldHoVaTen.requestFocus();
+            if (textFieldHoVaTen != null) textFieldHoVaTen.requestFocus();
             return false;
         }
 
         // Validate mã định danh
-        if (isBlank(textFieldMaDinhDanh.getText())) {
+        if (textFieldMaDinhDanh == null || isBlank(textFieldMaDinhDanh.getText())) {
             showErrorMessage("Vui lòng nhập mã định danh");
-            textFieldMaDinhDanh.requestFocus();
+            if (textFieldMaDinhDanh != null) textFieldMaDinhDanh.requestFocus();
             return false;
         }
 
         // Validate giới tính
-        if (comboBoxGioiTinh.getValue() == null) {
+        if (comboBoxGioiTinh == null || comboBoxGioiTinh.getValue() == null) {
             showErrorMessage("Vui lòng chọn giới tính");
             return false;
         }
 
         // Validate ngày sinh
-        if (datePickerNgaySinh.getValue() == null) {
+        if (datePickerNgaySinh == null || datePickerNgaySinh.getValue() == null) {
             showErrorMessage("Vui lòng chọn ngày sinh");
             return false;
         }
 
         // Validate ngày sinh không được trong tương lai
-        if (datePickerNgaySinh.getValue().isAfter(LocalDate.now())) {
+        if (datePickerNgaySinh != null && datePickerNgaySinh.getValue() != null && 
+            datePickerNgaySinh.getValue().isAfter(LocalDate.now())) {
             showErrorMessage("Ngày sinh không được trong tương lai");
             return false;
         }
 
         // Validate tuổi hợp lý (không quá 150 tuổi)
-        if (datePickerNgaySinh.getValue().isBefore(LocalDate.now().minusYears(150))) {
+        if (datePickerNgaySinh != null && datePickerNgaySinh.getValue() != null && 
+            datePickerNgaySinh.getValue().isBefore(LocalDate.now().minusYears(150))) {
             showErrorMessage("Ngày sinh không hợp lý");
             return false;
         }
 
         // Validate số điện thoại
-        if (isBlank(textFieldSoDienThoai.getText())) {
+        if (textFieldSoDienThoai == null || isBlank(textFieldSoDienThoai.getText())) {
             showErrorMessage("Vui lòng nhập số điện thoại");
-            textFieldSoDienThoai.requestFocus();
+            if (textFieldSoDienThoai != null) textFieldSoDienThoai.requestFocus();
             return false;
         }
 
         // Validate phone number format (Vietnam)
-        if (!isValidPhoneNumber(textFieldSoDienThoai.getText().trim())) {
+        if (textFieldSoDienThoai != null && !isValidPhoneNumber(textFieldSoDienThoai.getText().trim())) {
             showErrorMessage("Số điện thoại không hợp lệ");
             textFieldSoDienThoai.requestFocus();
             return false;
         }
 
         // Validate email
-        if (isBlank(textFieldEmail.getText())) {
+        if (textFieldEmail == null || isBlank(textFieldEmail.getText())) {
             showErrorMessage("Vui lòng nhập email");
-            textFieldEmail.requestFocus();
+            if (textFieldEmail != null) textFieldEmail.requestFocus();
             return false;
         }
 
-        if (!isValidEmail(textFieldEmail.getText().trim())) {
+        if (textFieldEmail != null && !isValidEmail(textFieldEmail.getText().trim())) {
             showErrorMessage("Email không hợp lệ");
             textFieldEmail.requestFocus();
             return false;
         }
 
         // Mã căn hộ không bắt buộc - có thể để trống
-        // Removed validation for mã căn hộ to make it optional
-
-        // Validate trạng thái
-        if (comboBoxTrangThai.getValue() == null) {
-            showErrorMessage("Vui lòng chọn trạng thái cư trú");
-            return false;
-        }
-
-        // Validate ngày chuyển đến - chỉ yêu cầu khi trạng thái là "Cư trú"
-        if ("Cư trú".equals(comboBoxTrangThai.getValue())) {
-            if (datePickerNgayChuyenDen.getValue() == null) {
-                showErrorMessage("Vui lòng chọn ngày chuyển đến khi trạng thái là 'Cư trú'");
-                return false;
-            }
-        }
+        // Trạng thái cư trú cũng không bắt buộc validation
 
         return true;
     }
@@ -700,6 +708,13 @@ public class ThemCuDanController implements Initializable {
             buttonXoa.setVisible(true);
             buttonXoa.setOnAction(this::handleXoaCuDan);
         }
+        
+        // Trong edit mode, cũng chỉ có "Cư trú" và disable ComboBox
+        if (comboBoxTrangThai != null) {
+            comboBoxTrangThai.setItems(FXCollections.observableArrayList("Cư trú"));
+            comboBoxTrangThai.setValue("Cư trú");
+            comboBoxTrangThai.setDisable(true); // Không cho phép thay đổi
+        }
     }
 
     // Setter for dependency injection
@@ -713,5 +728,238 @@ public class ThemCuDanController implements Initializable {
         if (this.cuDanService == null) {
             this.cuDanService = applicationContext.getBean(CuDanService.class);
         }
+    }
+    
+    /**
+     * Lấy mã định danh của cư dân vừa tạo thành công
+     */
+    public String getLastCreatedCuDanMaDinhDanh() {
+        return lastCreatedCuDanMaDinhDanh;
+    }
+    
+    /**
+     * Refresh main residents table in Home_list controller and switch to residents tab with loading indicator
+     */
+    private void refreshMainResidentsTable() {
+        try {
+            System.out.println("=== DEBUG: Starting refresh main residents table ===");
+            
+            // Use Platform.runLater to ensure this runs on JavaFX thread
+            javafx.application.Platform.runLater(() -> {
+                try {
+                    // Show loading state first
+                    showLoadingState(true);
+                    System.out.println("=== DEBUG: Loading state shown for residents ===");
+                    
+                    // Switch to residents tab and refresh data
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(800); // Longer delay to see loading effect
+                            
+                            javafx.application.Platform.runLater(() -> {
+                                try {
+                                    // Try to find Home_list controller from scene graph and refresh
+                                    refreshResidentsTableDirectly();
+                                    System.out.println("=== DEBUG: Residents data refreshed ===");
+                                    
+                                    // Wait a bit more then hide loading
+                                    Thread.sleep(200);
+                                    javafx.application.Platform.runLater(() -> {
+                                        showLoadingState(false);
+                                        System.out.println("=== DEBUG: Loading state hidden for residents ===");
+                                    });
+                                    
+                                } catch (Exception e) {
+                                    javafx.application.Platform.runLater(() -> showLoadingState(false));
+                                    System.err.println("ERROR: Failed to refresh residents data: " + e.getMessage());
+                                    e.printStackTrace();
+                                }
+                            });
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            javafx.application.Platform.runLater(() -> showLoadingState(false));
+                        }
+                    }).start();
+                    
+                } catch (Exception e) {
+                    System.err.println("ERROR: Failed to refresh main residents table: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception in refreshMainResidentsTable: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Directly refresh residents table by finding it from scene graph
+     */
+    private void refreshResidentsTableDirectly() {
+        try {
+            // Add delay for loading effect
+            new Thread(() -> {
+                try {
+                    Thread.sleep(300); // 300ms delay for loading effect
+                    
+                    javafx.application.Platform.runLater(() -> {
+                        try {
+                            // Find all windows and look for Home_list controller
+                            for (javafx.stage.Window window : javafx.stage.Window.getWindows()) {
+                                if (window instanceof javafx.stage.Stage) {
+                                    javafx.stage.Stage stage = (javafx.stage.Stage) window;
+                                    javafx.scene.Scene scene = stage.getScene();
+                                    if (scene != null && scene.getRoot() != null) {
+                                        // Try to find the Home_list controller through scene graph
+                                        findAndRefreshHomeListControllerForResidents(scene.getRoot());
+                                    }
+                                }
+                            }
+                            System.out.println("=== DEBUG: Residents table refresh attempted ===");
+                        } catch (Exception e) {
+                            System.err.println("ERROR: Failed to refresh residents data: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }).start();
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception in refreshResidentsTableDirectly: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Find and refresh Home_list controller for residents
+     */
+    private void findAndRefreshHomeListControllerForResidents(javafx.scene.Node node) {
+        try {
+            // Check if the node has a controller property
+            Object controller = node.getProperties().get("controller");
+            if (controller instanceof Home_list) {
+                Home_list homeListController = (Home_list) controller;
+                
+                // Switch to residents tab
+                java.lang.reflect.Method gotoCuDanMethod = homeListController.getClass().getDeclaredMethod("gotoCuDan", javafx.event.ActionEvent.class);
+                gotoCuDanMethod.setAccessible(true);
+                gotoCuDanMethod.invoke(homeListController, (javafx.event.ActionEvent) null);
+                
+                // Refresh residents data
+                java.lang.reflect.Method loadCuDanDataMethod = homeListController.getClass().getDeclaredMethod("loadCuDanData");
+                loadCuDanDataMethod.setAccessible(true);
+                loadCuDanDataMethod.invoke(homeListController);
+                
+                System.out.println("=== DEBUG: Successfully refreshed residents table ===");
+                return;
+            }
+            
+            // Recursively search in children if it's a Parent node
+            if (node instanceof javafx.scene.Parent) {
+                javafx.scene.Parent parent = (javafx.scene.Parent) node;
+                for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
+                    findAndRefreshHomeListControllerForResidents(child);
+                }
+            }
+        } catch (Exception e) {
+            // Silently continue searching - this is expected for most nodes
+        }
+    }
+    
+    /**
+     * Show/hide loading state on residents table
+     */
+    private void showLoadingState(boolean isLoading) {
+        try {
+            System.out.println("=== DEBUG: Setting residents loading state: " + isLoading + " ===");
+            
+            // Find the main stage and Home_list controller
+            javafx.stage.Stage mainStage = (javafx.stage.Stage) javafx.stage.Stage.getWindows().stream()
+                .filter(window -> window instanceof javafx.stage.Stage)
+                .filter(stage -> "Quản Lý Chung Cư Blue Moon".equals(((javafx.stage.Stage)stage).getTitle()))
+                .findFirst().orElse(null);
+                
+            if (mainStage != null && mainStage.getScene() != null && mainStage.getScene().getRoot() != null) {
+                // Look for elements in the scene graph
+                javafx.scene.control.TableView<?> residentsTable = (javafx.scene.control.TableView<?>) 
+                    findNodeByFxId(mainStage.getScene().getRoot(), "tabelViewCuDan");
+                javafx.scene.control.Label resultLabel = (javafx.scene.control.Label) 
+                    findNodeByFxId(mainStage.getScene().getRoot(), "labelKetQuaHienThiCuDan");
+                javafx.scene.control.Label displayLabel = (javafx.scene.control.Label) 
+                    findNodeByFxId(mainStage.getScene().getRoot(), "labelHienThiKetQuaCuDan");
+                
+                if (isLoading) {
+                    System.out.println("=== DEBUG: Showing loading state for residents ===");
+                    if (residentsTable != null) {
+                        residentsTable.setDisable(true);
+                        residentsTable.setStyle("-fx-opacity: 0.5; -fx-background-color: #f0f0f0;");
+                        System.out.println("=== DEBUG: Residents table disabled and styled ===");
+                    }
+                    if (resultLabel != null) {
+                        resultLabel.setText("🔄 Đang tải dữ liệu cư dân...");
+                        resultLabel.setStyle("-fx-text-fill: #2196F3; -fx-font-weight: bold; -fx-font-size: 14px;");
+                        System.out.println("=== DEBUG: Residents result label updated ===");
+                    }
+                    if (displayLabel != null) {
+                        displayLabel.setText("⏳ Đang xử lý...");
+                        displayLabel.setStyle("-fx-text-fill: #FF9800; -fx-font-weight: bold; -fx-font-size: 14px;");
+                        System.out.println("=== DEBUG: Residents display label updated ===");
+                    }
+                } else {
+                    System.out.println("=== DEBUG: Hiding loading state for residents ===");
+                    if (residentsTable != null) {
+                        residentsTable.setDisable(false);
+                        residentsTable.setStyle("-fx-opacity: 1.0; -fx-background-color: white;");
+                        System.out.println("=== DEBUG: Residents table enabled and restored ===");
+                    }
+                    if (resultLabel != null) {
+                        resultLabel.setStyle("-fx-text-fill: black; -fx-font-weight: normal; -fx-font-size: 14px;");
+                        System.out.println("=== DEBUG: Residents result label style restored ===");
+                    }
+                    if (displayLabel != null) {
+                        displayLabel.setStyle("-fx-text-fill: black; -fx-font-weight: normal; -fx-font-size: 14px;");
+                        System.out.println("=== DEBUG: Residents display label style restored ===");
+                    }
+                    
+                    // Force update the result count using ApplicationContext if available
+                    if (applicationContext != null) {
+                        try {
+                            Home_list homeListController = applicationContext.getBean(Home_list.class);
+                            if (homeListController != null) {
+                                java.lang.reflect.Method updateMethod = homeListController.getClass().getDeclaredMethod("updateCuDanKetQuaLabel");
+                                updateMethod.setAccessible(true);
+                                updateMethod.invoke(homeListController);
+                                System.out.println("=== DEBUG: Residents result count updated ===");
+                            }
+                        } catch (Exception e) {
+                            System.err.println("ERROR: Failed to update residents result count: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to show/hide residents loading state: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Helper method to find a node by fx:id
+     */
+    private javafx.scene.Node findNodeByFxId(javafx.scene.Node parent, String fxId) {
+        if (fxId.equals(parent.getId())) {
+            return parent;
+        }
+        if (parent instanceof javafx.scene.Parent) {
+            for (javafx.scene.Node child : ((javafx.scene.Parent) parent).getChildrenUnmodifiable()) {
+                javafx.scene.Node result = findNodeByFxId(child, fxId);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
     }
 } 
