@@ -29,7 +29,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.PieChart;
-
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -537,6 +536,10 @@ public class Home_list implements Initializable {
         if (parentController != null) {
             parentController.updateScreenLabel("Danh sách cư dân");
         }
+        
+        // Setup table và load dữ liệu cư dân (tương tự như goToCanHo)
+        setupCuDanTable();
+        loadCuDanData();
     }
 
     @FXML
@@ -560,9 +563,15 @@ public class Home_list implements Initializable {
             // Get controller từ FXML
             ThemCanHoButton controller = loader.getController();
             
-            // Inject service sau khi load
-            if (canHoService != null && controller != null) {
-                controller.setCanHoService(canHoService);
+            // Inject service và ApplicationContext sau khi load
+            if (controller != null) {
+                if (canHoService != null) {
+                    controller.setCanHoService(canHoService);
+                }
+                if (applicationContext != null) {
+                    controller.setApplicationContext(applicationContext);
+                    System.out.println("DEBUG: ApplicationContext injected to ThemCanHoButton");
+                }
             }
             
             // Tạo modal dialog
@@ -1541,8 +1550,13 @@ public class Home_list implements Initializable {
                 List<io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto> cuDanDtoList = cuDanService.getAllCuDan();
                 cuDanList.clear();
                 
+                System.out.println("=== DEBUG: Kiểm tra dữ liệu mã căn hộ từ database ===");
+                System.out.println("Tổng số cư dân từ service: " + (cuDanDtoList != null ? cuDanDtoList.size() : 0));
+                
                 if (cuDanDtoList != null) {
                     for (io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto dto : cuDanDtoList) {
+                        System.out.println("Cư dân: " + dto.getHoVaTen() + " (" + dto.getMaDinhDanh() + ") - Mã căn hộ: '" + dto.getMaCanHo() + "'");
+                        
                         CuDanTableData tableData = new CuDanTableData(
                             dto.getMaDinhDanh(),
                             dto.getHoVaTen(),

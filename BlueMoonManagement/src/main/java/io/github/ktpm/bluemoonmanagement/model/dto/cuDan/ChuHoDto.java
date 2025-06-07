@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 public class ChuHoDto {
     private String maDinhDanh;
     private String hoVaTen;
+    private String gioiTinh;
+    private LocalDate ngaySinh;
     private String soDienThoai;
     private String email;
     private String trangThaiCuTru;

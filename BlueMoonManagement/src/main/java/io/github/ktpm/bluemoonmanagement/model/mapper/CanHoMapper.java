@@ -19,9 +19,6 @@ public interface CanHoMapper {
     @Mapping(target = "hoaDonList", ignore = true)
     @Mapping(target = "phuongTienList", ignore = true)
     @Mapping(target = "cuDanList", ignore = true)
-    @Mapping(target = "chuHo.ngaySinh", ignore = true)
-    @Mapping(target = "chuHo.gioiTinh", ignore = true)
-    @Mapping(target = "chuHo.ngayChuyenDen", ignore = true)
     @Mapping(target = "chuHo.ngayChuyenDi", ignore = true)
     @Mapping(target = "chuHo.canHo", ignore = true)
     CanHo fromCanHoDto(CanHoDto canHoDto);
