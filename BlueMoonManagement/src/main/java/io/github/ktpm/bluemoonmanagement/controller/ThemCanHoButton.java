@@ -32,6 +32,9 @@ public class ThemCanHoButton implements Initializable {
     private FontAwesomeIcon buttonClose;
 
     @FXML
+    private Button buttonTaoChuHo;
+
+    @FXML
     private Button buttonTaoCanHo;
 
     @FXML
@@ -49,8 +52,7 @@ public class ThemCanHoButton implements Initializable {
     @FXML
     private CheckBox choiceBoxThemChuSoHuu;
 
-    @FXML
-    private CheckBox choiceBoxTaoCuDanMoi;
+
 
     @FXML
     private ComboBox<String> comboBoxGioiTinh;
@@ -109,6 +111,9 @@ public class ThemCanHoButton implements Initializable {
     // Service instance - sẽ được inject từ bên ngoài
     private CanHoService canHoService;
     
+    // ApplicationContext để lấy các service khác
+    private org.springframework.context.ApplicationContext applicationContext;
+    
     // Edit mode tracking
     private boolean isEditMode = false;
     private String originalMaCanHo;
@@ -149,6 +154,14 @@ public class ThemCanHoButton implements Initializable {
      */
     public void setCanHoService(CanHoService canHoService) {
         this.canHoService = canHoService;
+    }
+    
+    /**
+     * Setter để inject ApplicationContext từ bên ngoài
+     */
+    public void setApplicationContext(org.springframework.context.ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+        System.out.println("DEBUG: ApplicationContext injected into ThemCanHoButton");
     }
     
     /**
@@ -201,10 +214,17 @@ public class ThemCanHoButton implements Initializable {
             if (textFieldTang != null) textFieldTang.setText(canHoDto.getTang());
             if (textFieldSoNha != null) textFieldSoNha.setText(canHoDto.getSoNha());
             if (textFieldDienTich != null) textFieldDienTich.setText(String.valueOf(canHoDto.getDienTich()));
-            if (comboBoxTinhTrangKiThuat != null) comboBoxTinhTrangKiThuat.setValue(canHoDto.getTrangThaiKiThuat());
+            
+            // Enable và set giá trị cho ComboBox trạng thái kỹ thuật
+            if (comboBoxTinhTrangKiThuat != null) {
+                comboBoxTinhTrangKiThuat.setValue(canHoDto.getTrangThaiKiThuat());
+                comboBoxTinhTrangKiThuat.setDisable(false); // Đảm bảo có thể chỉnh sửa
+            }
+            
+            // Enable và set giá trị cho ComboBox tình trạng sử dụng
             if (comboBoxTinhTrangSuDung != null) {
                 comboBoxTinhTrangSuDung.setValue(canHoDto.getTrangThaiSuDung());
-                comboBoxTinhTrangSuDung.setDisable(false); // Enable for editing
+                comboBoxTinhTrangSuDung.setDisable(false); // Đảm bảo có thể chỉnh sửa
             }
             
             // Luôn hiển thị section chủ hộ trong edit mode
@@ -242,11 +262,7 @@ public class ThemCanHoButton implements Initializable {
             vBoxThongTinCuDanMoi.setManaged(false);
         }
         
-        // Ẩn checkbox tạo cư dân mới (không cần thiết trong edit mode)
-        if (choiceBoxTaoCuDanMoi != null) {
-            choiceBoxTaoCuDanMoi.setVisible(false);
-            choiceBoxTaoCuDanMoi.setManaged(false);
-        }
+
         
         // Ẩn checkbox thêm chủ sở hữu (vì trong edit mode luôn hiển thị field ID)
         if (choiceBoxThemChuSoHuu != null) {
@@ -295,9 +311,6 @@ public class ThemCanHoButton implements Initializable {
         // Xử lý sự kiện cho checkbox thêm chủ sở hữu
         choiceBoxThemChuSoHuu.setOnAction(this::handleThemChuSoHuuChange);
         
-        // Xử lý sự kiện cho checkbox tạo cư dân mới
-        choiceBoxTaoCuDanMoi.setOnAction(this::handleTaoCuDanMoiChange);
-        
         // Xử lý nút tạo căn hộ
         buttonTaoCanHo.setOnAction(this::handleTaoCanHo);
         
@@ -327,11 +340,8 @@ public class ThemCanHoButton implements Initializable {
             comboBoxTinhTrangSuDung.setValue(null); // Clear selection when disabled
         }
         
-        // Nếu chọn thêm chủ sở hữu, thì bỏ chọn tạo cư dân mới
+        // Tập trung vào textFieldMaDinhDanh khi được chọn
         if (isSelected) {
-            choiceBoxTaoCuDanMoi.setSelected(false);
-            vBoxThongTinCuDanMoi.setVisible(false);
-            vBoxThongTinCuDanMoi.setManaged(false);
             textFieldMaDinhDanh.requestFocus();
         } else {
             textFieldMaDinhDanh.clear();
@@ -341,24 +351,7 @@ public class ThemCanHoButton implements Initializable {
         System.out.println("Tình trạng sử dụng enabled: " + !comboBoxTinhTrangSuDung.isDisabled());
     }
 
-    @FXML
-    private void handleTaoCuDanMoiChange(ActionEvent event) {
-        boolean isSelected = choiceBoxTaoCuDanMoi.isSelected();
-        vBoxThongTinCuDanMoi.setVisible(isSelected);
-        vBoxThongTinCuDanMoi.setManaged(isSelected);
-        
-        // Nếu chọn tạo cư dân mới, thì bỏ chọn thêm chủ sở hữu
-        if (isSelected) {
-            choiceBoxThemChuSoHuu.setSelected(false);
-            vBoxChuSoHuu.setVisible(false);
-            vBoxChuSoHuu.setManaged(false);
-            textFieldMaDinhDanhMoi.requestFocus();
-        } else {
-            clearCuDanMoiFields();
-        }
-        
-        System.out.println("Tạo cư dân mới: " + isSelected);
-    }
+
 
     @FXML
     private void handleTaoCanHo(ActionEvent event) {
@@ -412,7 +405,16 @@ public class ThemCanHoButton implements Initializable {
                     
                     if (isSuccess) {
                         String successMsg = isEditMode ? "Cập nhật căn hộ thành công!" : "Thêm căn hộ thành công!";
-                        showSuccessMessage(successMsg);
+                        
+                        // Refresh main apartments table and switch to apartments tab
+                        refreshMainApartmentsTable();
+                        
+                        // Refresh apartment detail windows if in edit mode
+                        if (isEditMode && originalMaCanHo != null) {
+                            refreshApartmentDetailWindows(originalMaCanHo);
+                        }
+                        
+                        showSuccessMessage(successMsg );
                         
                         // Đóng window ngay lập tức
                         closeWindow();
@@ -443,6 +445,139 @@ public class ThemCanHoButton implements Initializable {
     @FXML
     private void handleClose(ActionEvent event) {
         closeWindow();
+    }
+
+    /**
+     * Xử lý sự kiện khi bấm nút "Tạo chủ hộ"
+     * Mở form tạo cư dân mới sử dụng cu_dan.fxml
+     */
+    @FXML
+    private void handleTaoChuHo(ActionEvent event) {
+        try {
+            System.out.println("=== DEBUG: Opening resident creation form ===");
+            
+            // Thử lấy FxViewLoader từ ApplicationContext
+            if (applicationContext != null) {
+                try {
+                    io.github.ktpm.bluemoonmanagement.util.FxViewLoader fxViewLoader = 
+                        applicationContext.getBean(io.github.ktpm.bluemoonmanagement.util.FxViewLoader.class);
+                    
+                    // Load view + controller using FxViewLoader
+                    io.github.ktpm.bluemoonmanagement.util.FxView<?> fxView = fxViewLoader.loadFxView("/view/cu_dan.fxml");
+                    
+                    // Get controller và inject ApplicationContext
+                    Object controller = fxView.getController();
+                    io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController cuDanController = null;
+                    if (controller instanceof io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController) {
+                        cuDanController = (io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController) controller;
+                        
+                        // Set ApplicationContext for controller
+                        cuDanController.setApplicationContext(applicationContext);
+                        System.out.println("=== DEBUG: ApplicationContext injected to ThemCuDanController ===");
+                    }
+                    
+                    // Tạo stage mới cho form
+                    Stage stage = new Stage();
+                    stage.setTitle("Tạo cư dân mới");
+                    stage.setScene(new Scene(fxView.getView()));
+                    stage.setResizable(true);
+                    stage.setMinWidth(700);
+                    stage.setMinHeight(600);
+                    stage.initOwner(buttonTaoChuHo.getScene().getWindow());
+                    stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+                    
+                    // Hiển thị form và đợi đóng
+                    stage.showAndWait();
+                    
+                    System.out.println("=== DEBUG: Resident creation form closed ===");
+                    
+                    // Sau khi form đóng, lấy mã định danh của cư dân vừa tạo và điền vào form căn hộ
+                    if (cuDanController != null) {
+                        String newCuDanMaDinhDanh = cuDanController.getLastCreatedCuDanMaDinhDanh();
+                        if (newCuDanMaDinhDanh != null && !newCuDanMaDinhDanh.trim().isEmpty()) {
+                            // Tự động điền mã định danh vào field
+                            if (textFieldMaDinhDanh != null) {
+                                textFieldMaDinhDanh.setText(newCuDanMaDinhDanh);
+                                System.out.println("=== DEBUG: Auto-filled resident ID: " + newCuDanMaDinhDanh + " ===");
+                                
+                                // Đảm bảo checkbox "Đã bán" được check
+                                if (choiceBoxThemChuSoHuu != null) {
+                                    choiceBoxThemChuSoHuu.setSelected(true);
+                                    handleThemChuSoHuuChange(null); // Trigger để hiện section chủ sở hữu
+                                }
+                                
+                            }
+                        }
+                    }
+                    
+                } catch (Exception e) {
+                    System.err.println("ERROR: Failed to use FxViewLoader, falling back to manual FXML loading: " + e.getMessage());
+                    // Fallback to manual FXML loading
+                    loadCuDanFormManually();
+                }
+            } else {
+                System.err.println("WARNING: ApplicationContext is null, using manual FXML loading");
+                loadCuDanFormManually();
+            }
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to open resident creation form: " + e.getMessage());
+            e.printStackTrace();
+            showErrorMessage("Không thể mở form tạo cư dân: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Fallback method để load form cư dân thủ công
+     */
+    private void loadCuDanFormManually() throws Exception {
+        // Load FXML form tạo cư dân
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/cu_dan.fxml"));
+        Parent root = loader.load();
+        
+        // Lấy controller của form tạo cư dân
+        Object controller = loader.getController();
+        io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController cuDanController = null;
+        if (controller instanceof io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController) {
+            cuDanController = (io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController) controller;
+            
+            // Inject ApplicationContext nếu có
+            if (applicationContext != null) {
+                cuDanController.setApplicationContext(applicationContext);
+                System.out.println("=== DEBUG: ApplicationContext injected manually ===");
+            }
+        }
+        
+        // Tạo stage mới cho form
+        Stage stage = new Stage();
+        stage.setTitle("Tạo cư dân mới");
+        stage.setScene(new Scene(root));
+        stage.setResizable(true);
+        stage.setMinWidth(700);
+        stage.setMinHeight(600);
+        stage.initOwner(buttonTaoChuHo.getScene().getWindow());
+        stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+        
+        // Hiển thị form
+        stage.showAndWait();
+        
+        // Sau khi form đóng, lấy mã định danh và điền vào form căn hộ
+        if (cuDanController != null) {
+            String newCuDanMaDinhDanh = cuDanController.getLastCreatedCuDanMaDinhDanh();
+            if (newCuDanMaDinhDanh != null && !newCuDanMaDinhDanh.trim().isEmpty()) {
+                // Tự động điền mã định danh vào field
+                if (textFieldMaDinhDanh != null) {
+                    textFieldMaDinhDanh.setText(newCuDanMaDinhDanh);
+                    System.out.println("=== DEBUG: Auto-filled resident ID (manual): " + newCuDanMaDinhDanh + " ===");
+                    
+                    // Đảm bảo checkbox "Đã bán" được check
+                    if (choiceBoxThemChuSoHuu != null) {
+                        choiceBoxThemChuSoHuu.setSelected(true);
+                        handleThemChuSoHuuChange(null); // Trigger để hiện section chủ sở hữu
+                    }
+                }
+            }
+        }
     }
     
     @FXML
@@ -495,7 +630,15 @@ public class ThemCanHoButton implements Initializable {
                         String message = getResponseMessage(response);
                         
                         if (isSuccess) {
-                            showSuccessMessage("Xóa căn hộ thành công!");
+                            // Refresh main apartments table
+                            refreshMainApartmentsTable();
+                            
+                            // Close any open detail windows for this apartment 
+                            if (originalMaCanHo != null) {
+                                io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController.refreshAllWindowsForApartment(originalMaCanHo);
+                            }
+                            
+                            showSuccessMessage("Xóa căn hộ thành công! Bảng căn hộ đã được cập nhật.");
                             closeWindow();
                         } else {
                             showErrorMessage("Lỗi xóa căn hộ: " + message);
@@ -604,31 +747,31 @@ public class ThemCanHoButton implements Initializable {
     }
 
     private boolean validateInput() {
-        // Validate thông tin căn hộ
-        if (isBlank(textFieldToa.getText())) {
-            showErrorMessage("Vui lòng nhập tòa nhà");
-            textFieldToa.requestFocus();
-            return false;
-        }
-        
-        if (isBlank(textFieldTang.getText())) {
-            showErrorMessage("Vui lòng nhập tầng");
-            textFieldTang.requestFocus();
-            return false;
-        }
-        
+        // Kiểm tra các trường bắt buộc của căn hộ
         if (isBlank(textFieldSoNha.getText())) {
             showErrorMessage("Vui lòng nhập số nhà");
             textFieldSoNha.requestFocus();
             return false;
         }
-        
+
+        if (isBlank(textFieldTang.getText())) {
+            showErrorMessage("Vui lòng nhập tầng");
+            textFieldTang.requestFocus();
+            return false;
+        }
+
+        if (isBlank(textFieldToa.getText())) {
+            showErrorMessage("Vui lòng nhập tòa");
+            textFieldToa.requestFocus();
+            return false;
+        }
+
         if (isBlank(textFieldDienTich.getText())) {
             showErrorMessage("Vui lòng nhập diện tích");
             textFieldDienTich.requestFocus();
             return false;
         }
-        
+
         // Validate diện tích là số
         try {
             double dienTich = Double.parseDouble(textFieldDienTich.getText().trim());
@@ -642,157 +785,83 @@ public class ThemCanHoButton implements Initializable {
             textFieldDienTich.requestFocus();
             return false;
         }
-        
-        // Validate ComboBox selections
+
+        // Kiểm tra các ComboBox bắt buộc
         if (comboBoxTinhTrangKiThuat.getValue() == null) {
             showErrorMessage("Vui lòng chọn tình trạng kỹ thuật");
+            comboBoxTinhTrangKiThuat.requestFocus();
             return false;
         }
-        
-        if (comboBoxTinhTrangSuDung.getValue() == null) {
-            showErrorMessage("Vui lòng chọn tình trạng sử dụng");
-            return false;
-        }
-        
-        // Validate mã định danh chủ sở hữu nếu được chọn
+
+        // Nếu checkbox "Đã bán" được chọn, kiểm tra thông tin chủ sở hữu
         if (choiceBoxThemChuSoHuu.isSelected()) {
+            // Kiểm tra mã định danh chủ hộ
             if (isBlank(textFieldMaDinhDanh.getText())) {
-                showErrorMessage("Vui lòng nhập mã định danh chủ sở hữu");
+                showErrorMessage("Vui lòng nhập mã định danh chủ hộ");
                 textFieldMaDinhDanh.requestFocus();
                 return false;
             }
-        }
-        
-        // Validate thông tin cư dân mới nếu được chọn
-        if (choiceBoxTaoCuDanMoi.isSelected()) {
-            if (isBlank(textFieldMaDinhDanhMoi.getText())) {
-                showErrorMessage("Vui lòng nhập mã định danh cho cư dân mới");
-                textFieldMaDinhDanhMoi.requestFocus();
-                return false;
-            }
             
-            if (isBlank(textFieldHoVaTen.getText())) {
-                showErrorMessage("Vui lòng nhập họ và tên");
-                textFieldHoVaTen.requestFocus();
-                return false;
-            }
-            
-            if (isBlank(textFieldSoDienThoai.getText())) {
-                showErrorMessage("Vui lòng nhập số điện thoại");
-                textFieldSoDienThoai.requestFocus();
-                return false;
-            }
-            
-            if (isBlank(textFieldEmail.getText())) {
-                showErrorMessage("Vui lòng nhập email");
-                textFieldEmail.requestFocus();
-                return false;
-            }
-            
-            if (comboBoxGioiTinh.getValue() == null) {
-                showErrorMessage("Vui lòng chọn giới tính");
-                return false;
-            }
-            
-            if (datePickerNgaySinh.getValue() == null) {
-                showErrorMessage("Vui lòng chọn ngày sinh");
-                return false;
-            }
-            
-            if (comboBoxTrangThai.getValue() == null) {
-                showErrorMessage("Vui lòng chọn trạng thái cư trú");
-                return false;
-            }
-            
-            // Validate email format
-            if (!isValidEmail(textFieldEmail.getText().trim())) {
-                showErrorMessage("Email không hợp lệ");
-                textFieldEmail.requestFocus();
-                return false;
-            }
-            
-            // Validate phone number format
-            if (!isValidPhoneNumber(textFieldSoDienThoai.getText().trim())) {
-                showErrorMessage("Số điện thoại không hợp lệ (10-11 chữ số)");
-                textFieldSoDienThoai.requestFocus();
+            // Kiểm tra comboBoxTinhTrangSuDung khi "Đã bán"
+            if (comboBoxTinhTrangSuDung.getValue() == null) {
+                showErrorMessage("Vui lòng chọn tình trạng sử dụng khi đã bán");
+                comboBoxTinhTrangSuDung.requestFocus();
                 return false;
             }
         }
-        
+
         return true;
     }
 
     private CanHoDto createCanHoDto() {
-        // Tạo mã căn hộ từ thông tin tòa, tầng, số nhà
-        String maCanHo = generateMaCanHo();
-        
-        // Tạo DTO căn hộ bằng constructor no-args và setter
         CanHoDto canHoDto = new CanHoDto();
         
-        // Thiết lập thông tin căn hộ bằng cách trực tiếp gán vào các field
-        try {
-            // Sử dụng reflection để set các field nếu Lombok setter không hoạt động
-            java.lang.reflect.Field[] fields = CanHoDto.class.getDeclaredFields();
-            for (java.lang.reflect.Field field : fields) {
-                field.setAccessible(true);
-                switch (field.getName()) {
-                    case "maCanHo":
-                        field.set(canHoDto, maCanHo);
-                        break;
-                    case "toaNha":
-                        field.set(canHoDto, textFieldToa.getText().trim());
-                        break;
-                    case "tang":
-                        field.set(canHoDto, textFieldTang.getText().trim());
-                        break;
-                    case "soNha":
-                        field.set(canHoDto, textFieldSoNha.getText().trim());
-                        break;
-                    case "dienTich":
-                        field.set(canHoDto, Double.parseDouble(textFieldDienTich.getText().trim()));
-                        break;
-                    case "trangThaiKiThuat":
-                        field.set(canHoDto, comboBoxTinhTrangKiThuat.getValue());
-                        break;
-                    case "trangThaiSuDung":
-                        // Set trangThaiSuDung based on logic
-                        String trangThaiSuDung = comboBoxTinhTrangSuDung.getValue();
-                        if (trangThaiSuDung == null || trangThaiSuDung.isEmpty()) {
-                            // Nếu không có chủ hộ thì mặc định là "Trống"
-                            trangThaiSuDung = "Trống";
-                        }
-                        field.set(canHoDto, trangThaiSuDung);
-                        break;
-                    case "daBanChua":
-                        field.set(canHoDto, choiceBoxThemChuSoHuu.isSelected());
-                        break;
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Lỗi khi set field cho CanHoDto: " + e.getMessage());
-            e.printStackTrace();
+        // Thiết lập thông tin căn hộ
+        if (isEditMode) {
+            canHoDto.setMaCanHo(originalMaCanHo);
+        } else {
+            canHoDto.setMaCanHo(generateMaCanHo());
         }
         
-        // Debug logging
-        System.out.println("DEBUG: Created CanHoDto:");
-        System.out.println("  - Mã căn hộ: " + maCanHo);
-        System.out.println("  - Tòa nhà: " + textFieldToa.getText().trim());
-        System.out.println("  - Tầng: " + textFieldTang.getText().trim());
-        System.out.println("  - Số nhà: " + textFieldSoNha.getText().trim());
-        System.out.println("  - Diện tích: " + textFieldDienTich.getText().trim());
-        System.out.println("  - Tình trạng kỹ thuật: " + comboBoxTinhTrangKiThuat.getValue());
-        System.out.println("  - Tình trạng sử dụng: " + comboBoxTinhTrangSuDung.getValue());
-        System.out.println("  - Đã bán: " + choiceBoxThemChuSoHuu.isSelected());
-        System.out.println("  - IsEditMode: " + isEditMode);
+        canHoDto.setSoNha(textFieldSoNha.getText().trim());
+        canHoDto.setTang(textFieldTang.getText().trim());
+        canHoDto.setToaNha(textFieldToa.getText().trim());
+        canHoDto.setDienTich(Double.parseDouble(textFieldDienTich.getText().trim()));
         
-        // Xử lý chủ hộ dựa trên mode
+        // Thiết lập trạng thái kỹ thuật - luôn lấy từ ComboBox
+        String trangThaiKiThuat = comboBoxTinhTrangKiThuat.getValue();
+        canHoDto.setTrangThaiKiThuat(trangThaiKiThuat);
+        
+        // Thiết lập tình trạng sử dụng
+        String trangThaiSuDung;
         if (isEditMode) {
-            // Chế độ edit: xử lý chủ hộ thông minh
+            // Trong edit mode, luôn lấy giá trị từ ComboBox
+            trangThaiSuDung = comboBoxTinhTrangSuDung.getValue();
+            if (trangThaiSuDung == null || trangThaiSuDung.trim().isEmpty()) {
+                trangThaiSuDung = "Trống";
+            }
+        } else {
+            // Trong create mode, kiểm tra checkbox
+            if (choiceBoxThemChuSoHuu.isSelected() && comboBoxTinhTrangSuDung.getValue() != null) {
+                trangThaiSuDung = comboBoxTinhTrangSuDung.getValue();
+            } else {
+                trangThaiSuDung = "Trống";
+            }
+        }
+        canHoDto.setTrangThaiSuDung(trangThaiSuDung);
+        
+        // Xử lý thông tin chủ hộ
+        if (isEditMode) {
             handleOwnerInEditMode(canHoDto);
         } else {
-            // Chế độ create: logic cũ
             handleOwnerInCreateMode(canHoDto);
         }
+        
+        System.out.println("DEBUG: " + (isEditMode ? "Updated" : "Created") + " CanHoDto:");
+        System.out.println("  - MaCanHo: " + canHoDto.getMaCanHo());
+        System.out.println("  - TrangThaiKiThuat: " + canHoDto.getTrangThaiKiThuat());
+        System.out.println("  - TrangThaiSuDung: " + canHoDto.getTrangThaiSuDung());
+        System.out.println("  - ChuHo: " + (canHoDto.getChuHo() != null ? canHoDto.getChuHo().getMaDinhDanh() : "null"));
         
         return canHoDto;
     }
@@ -804,39 +873,12 @@ public class ThemCanHoButton implements Initializable {
         String currentMaDinhDanh = textFieldMaDinhDanh.getText().trim();
         
         if (currentMaDinhDanh.isEmpty()) {
-            // Giữ nguyên chủ hộ hiện tại (nếu có)
-            if (originalChuHoId != null) {
-                ChuHoDto chuHoDto = new ChuHoDto();
-                try {
-                    // Set ID của chủ hộ hiện tại để giữ nguyên
-                    java.lang.reflect.Field idField = ChuHoDto.class.getDeclaredField("id");
-                    idField.setAccessible(true);
-                    idField.set(chuHoDto, originalChuHoId);
-                    
-                    java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
-                    chuHoField.setAccessible(true);
-                    chuHoField.set(canHoDto, chuHoDto);
-                    
-                    System.out.println("DEBUG: Giữ nguyên chủ hộ hiện tại với ID: " + originalChuHoId);
-                } catch (Exception e) {
-                    System.err.println("ERROR: Cannot preserve current owner: " + e.getMessage());
-                }
-            } else {
-                System.out.println("DEBUG: Không có chủ hộ để giữ nguyên");
-            }
+            // Xóa chủ hộ (set null)
+            canHoDto.setChuHo(null);
         } else {
-            // Thay thế bằng chủ hộ mới
+            // Set chủ hộ mới hoặc cập nhật chủ hộ hiện tại
             ChuHoDto chuHoDto = createChuHoDtoFromExisting();
-            if (chuHoDto != null) {
-                try {
-                    java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
-                    chuHoField.setAccessible(true);
-                    chuHoField.set(canHoDto, chuHoDto);
-                    System.out.println("DEBUG: Thay thế chủ hộ mới với ID: " + currentMaDinhDanh);
-                } catch (Exception e) {
-                    System.err.println("ERROR: Cannot set new owner: " + e.getMessage());
-                }
-            }
+            canHoDto.setChuHo(chuHoDto);
         }
     }
     
@@ -844,36 +886,16 @@ public class ThemCanHoButton implements Initializable {
      * Xử lý chủ hộ trong chế độ create
      */
     private void handleOwnerInCreateMode(CanHoDto canHoDto) {
+        // Trong create mode, chỉ xử lý khi checkbox "Đã bán" được chọn
         if (choiceBoxThemChuSoHuu.isSelected()) {
-            System.out.println("Thêm mã định danh chủ hộ có sẵn...");
+            // Sử dụng mã định danh có sẵn
             ChuHoDto chuHoDto = createChuHoDtoFromExisting();
-            
-            if (chuHoDto != null) {
-                try {
-                    java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
-                    chuHoField.setAccessible(true);
-                    chuHoField.set(canHoDto, chuHoDto);
-                    System.out.println("Đã thêm chủ hộ có sẵn với mã: " + textFieldMaDinhDanh.getText().trim());
-                } catch (Exception e) {
-                    System.err.println("Lỗi khi set chuHo cho CanHoDto: " + e.getMessage());
-                }
-            }
-        } else if (choiceBoxTaoCuDanMoi.isSelected()) {
-            System.out.println("Tạo cư dân mới làm chủ hộ...");
-            ChuHoDto chuHoDto = createChuHoDtoFromNew();
-            
-            if (chuHoDto != null) {
-                try {
-                    java.lang.reflect.Field chuHoField = CanHoDto.class.getDeclaredField("chuHo");
-                    chuHoField.setAccessible(true);
-                    chuHoField.set(canHoDto, chuHoDto);
-                    System.out.println("Đã tạo cư dân mới làm chủ hộ với mã: " + textFieldMaDinhDanhMoi.getText().trim());
-                } catch (Exception e) {
-                    System.err.println("Lỗi khi set chuHo cho CanHoDto: " + e.getMessage());
-                }
-            }
+            canHoDto.setChuHo(chuHoDto);
+            System.out.println("DEBUG: Set existing owner with ID: " + chuHoDto.getMaDinhDanh());
         } else {
-            System.out.println("Không thêm chủ hộ cho căn hộ này");
+            // Không có chủ hộ
+            canHoDto.setChuHo(null);
+            System.out.println("DEBUG: No owner set for apartment");
         }
     }
 
@@ -899,69 +921,6 @@ public class ThemCanHoButton implements Initializable {
         }
     }
 
-    /**
-     * Tạo ChuHoDto từ thông tin cư dân mới
-     */
-    private ChuHoDto createChuHoDtoFromNew() {
-        try {
-            ChuHoDto chuHoDto = new ChuHoDto();
-            
-            // Thiết lập thông tin cư dân mới đầy đủ
-            java.lang.reflect.Field[] fields = ChuHoDto.class.getDeclaredFields();
-            for (java.lang.reflect.Field field : fields) {
-                field.setAccessible(true);
-                switch (field.getName()) {
-                    case "maDinhDanh":
-                        field.set(chuHoDto, textFieldMaDinhDanhMoi.getText().trim());
-                        break;
-                    case "hoVaTen":
-                        field.set(chuHoDto, textFieldHoVaTen.getText().trim());
-                        break;
-                    case "soDienThoai":
-                        field.set(chuHoDto, textFieldSoDienThoai.getText().trim());
-                        break;
-                    case "email":
-                        field.set(chuHoDto, textFieldEmail.getText().trim());
-                        break;
-                    case "trangThaiCuTru":
-                        field.set(chuHoDto, comboBoxTrangThai.getValue());
-                        break;
-                    case "ngayChuyenDen":
-                        if ("Cư trú".equals(comboBoxTrangThai.getValue())) {
-                            field.set(chuHoDto, LocalDate.now());
-                        }
-                        break;
-                }
-            }
-            
-            System.out.println("Tạo ChuHoDto từ thông tin mới:");
-            System.out.println("   - Mã định danh: " + textFieldMaDinhDanhMoi.getText().trim());
-            System.out.println("   - Họ và tên: " + textFieldHoVaTen.getText().trim());
-            System.out.println("   - SĐT: " + textFieldSoDienThoai.getText().trim());
-            System.out.println("   - Email: " + textFieldEmail.getText().trim());
-            System.out.println("   - Trạng thái: " + comboBoxTrangThai.getValue());
-            
-            return chuHoDto;
-        } catch (Exception e) {
-            System.err.println("Lỗi khi tạo ChuHoDto từ thông tin mới: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
-     * Helper method để lấy field value bằng reflection
-     */
-    private <T> T getFieldValue(Object obj, String fieldName, Class<T> fieldType) {
-        try {
-            java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            return fieldType.cast(field.get(obj));
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     private String generateMaCanHo() {
         // Nếu đang ở edit mode, sử dụng mã căn hộ gốc
         if (isEditMode && originalMaCanHo != null) {
@@ -977,43 +936,48 @@ public class ThemCanHoButton implements Initializable {
     }
 
     private void clearForm() {
-        // Clear apartment fields
-        textFieldToa.clear();
-        textFieldTang.clear();
+        // Xóa thông tin căn hộ
         textFieldSoNha.clear();
+        textFieldTang.clear();
+        textFieldToa.clear();
         textFieldDienTich.clear();
         
-        // Reset combo boxes to default
+        // Reset ComboBox
         comboBoxTinhTrangKiThuat.setValue("Tốt");
         comboBoxTinhTrangSuDung.setValue("Trống");
+        comboBoxTrangThai.setValue("Cư trú");
         
-        // Disable tình trạng sử dụng when form is cleared
-        comboBoxTinhTrangSuDung.setDisable(true);
-        
-        // Clear owner fields
-        clearOwnerFields();
-        clearCuDanMoiFields();
-        
-        // Reset checkboxes
+        // Reset checkbox
         choiceBoxThemChuSoHuu.setSelected(false);
-        choiceBoxTaoCuDanMoi.setSelected(false);
         
-        // Show checkboxes (in case they were hidden in edit mode)
-        if (choiceBoxThemChuSoHuu != null) {
-            choiceBoxThemChuSoHuu.setVisible(true);
-            choiceBoxThemChuSoHuu.setManaged(true);
-        }
-        
-        if (choiceBoxTaoCuDanMoi != null) {
-            choiceBoxTaoCuDanMoi.setVisible(true);
-            choiceBoxTaoCuDanMoi.setManaged(true);
-        }
-        
-        // Hide sections
+        // Ẩn các vùng nhập liệu
         vBoxChuSoHuu.setVisible(false);
         vBoxChuSoHuu.setManaged(false);
         vBoxThongTinCuDanMoi.setVisible(false);
         vBoxThongTinCuDanMoi.setManaged(false);
+        
+        // Xóa thông tin chủ sở hữu và cư dân mới
+        clearOwnerFields();
+        clearCuDanMoiFields();
+        
+        // Xóa thông báo lỗi
+        clearErrorMessage();
+        
+        System.out.println("DEBUG: Form cleared");
+        
+        // Enable form sau khi clear
+        hideLoadingState();
+        
+        // Reset combo boxes to show enabled state
+        if (comboBoxTinhTrangSuDung != null) {
+            comboBoxTinhTrangSuDung.setDisable(true); // Disable until "Đã bán" is checked
+        }
+        
+        // Show checkboxes again in case they were hidden in edit mode
+        if (choiceBoxThemChuSoHuu != null) {
+            choiceBoxThemChuSoHuu.setVisible(true);
+            choiceBoxThemChuSoHuu.setManaged(true);
+        }
     }
 
     private void clearOwnerFields() {
@@ -1121,5 +1085,234 @@ public class ThemCanHoButton implements Initializable {
     @FXML
     void daBanClicked(ActionEvent event) {
 
+    }
+    
+    /**
+     * Refresh apartment detail windows for specific apartment
+     */
+    private void refreshApartmentDetailWindows(String maCanHo) {
+        try {
+            System.out.println("=== DEBUG: Refreshing apartment detail windows for: " + maCanHo + " ===");
+            
+            // Use static method from ChiTietCanHoController to refresh all open detail windows
+            io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController.refreshAllWindowsForApartment(maCanHo);
+            
+            System.out.println("=== DEBUG: Apartment detail windows refresh completed ===");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to refresh apartment detail windows: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Refresh main apartments table in Home_list controller and switch to apartments tab with loading indicator
+     */
+    private void refreshMainApartmentsTable() {
+        try {
+            System.out.println("=== DEBUG: Starting refresh main apartments table ===");
+            
+            // Use Platform.runLater to ensure this runs on JavaFX thread
+            javafx.application.Platform.runLater(() -> {
+                try {
+                    // Show loading state first
+                    showLoadingStateForApartments(true);
+                    System.out.println("=== DEBUG: Loading state shown for apartments ===");
+                    
+                    // Switch to apartments tab and refresh data
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(800); // Longer delay to see loading effect
+                            
+                            javafx.application.Platform.runLater(() -> {
+                                try {
+                                    // Try to find Home_list controller from scene graph
+                                    refreshApartmentsTableDirectly();
+                                    System.out.println("=== DEBUG: Apartments data refreshed ===");
+                                    
+                                    // Wait a bit more then hide loading
+                                    Thread.sleep(200);
+                                    javafx.application.Platform.runLater(() -> {
+                                        showLoadingStateForApartments(false);
+                                        System.out.println("=== DEBUG: Loading state hidden for apartments ===");
+                                    });
+                                    
+                                } catch (Exception e) {
+                                    javafx.application.Platform.runLater(() -> showLoadingStateForApartments(false));
+                                    System.err.println("ERROR: Failed to refresh apartments data: " + e.getMessage());
+                                    e.printStackTrace();
+                                }
+                            });
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            javafx.application.Platform.runLater(() -> showLoadingStateForApartments(false));
+                        }
+                    }).start();
+                    
+                } catch (Exception e) {
+                    System.err.println("ERROR: Failed to refresh main apartments table: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception in refreshMainApartmentsTable: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Show/hide loading state on apartments table
+     */
+    private void showLoadingStateForApartments(boolean isLoading) {
+        try {
+            System.out.println("=== DEBUG: Setting apartments loading state: " + isLoading + " ===");
+            
+            // Find the main stage and Home_list controller
+            javafx.stage.Stage mainStage = (javafx.stage.Stage) javafx.stage.Stage.getWindows().stream()
+                .filter(window -> window instanceof javafx.stage.Stage)
+                .filter(stage -> "Quản Lý Chung Cư Blue Moon".equals(((javafx.stage.Stage)stage).getTitle()))
+                .findFirst().orElse(null);
+                
+            if (mainStage != null && mainStage.getScene() != null && mainStage.getScene().getRoot() != null) {
+                // Look for elements in the scene graph
+                javafx.scene.control.TableView<?> apartmentTable = (javafx.scene.control.TableView<?>) 
+                    findNodeByFxId(mainStage.getScene().getRoot(), "tabelViewCanHo");
+                javafx.scene.control.Label resultLabel = (javafx.scene.control.Label) 
+                    findNodeByFxId(mainStage.getScene().getRoot(), "labelKetQuaHienThiCanHo");
+                javafx.scene.control.Label displayLabel = (javafx.scene.control.Label) 
+                    findNodeByFxId(mainStage.getScene().getRoot(), "labelHienThiKetQuaCanHo");
+                
+                if (isLoading) {
+                    System.out.println("=== DEBUG: Showing loading state for apartments ===");
+                    if (apartmentTable != null) {
+                        apartmentTable.setDisable(true);
+                        apartmentTable.setStyle("-fx-opacity: 0.5; -fx-background-color: #f0f0f0;");
+                        System.out.println("=== DEBUG: Apartment table disabled and styled ===");
+                    }
+                    if (resultLabel != null) {
+                        resultLabel.setText("🔄 Đang tải dữ liệu căn hộ...");
+                        resultLabel.setStyle("-fx-text-fill: #2196F3; -fx-font-weight: bold; -fx-font-size: 14px;");
+                        System.out.println("=== DEBUG: Apartment result label updated ===");
+                    }
+                    if (displayLabel != null) {
+                        displayLabel.setText("⏳ Đang xử lý...");
+                        displayLabel.setStyle("-fx-text-fill: #FF9800; -fx-font-weight: bold; -fx-font-size: 14px;");
+                        System.out.println("=== DEBUG: Apartment display label updated ===");
+                    }
+                } else {
+                    System.out.println("=== DEBUG: Hiding loading state for apartments ===");
+                    if (apartmentTable != null) {
+                        apartmentTable.setDisable(false);
+                        apartmentTable.setStyle("-fx-opacity: 1.0; -fx-background-color: white;");
+                        System.out.println("=== DEBUG: Apartment table enabled and restored ===");
+                    }
+                    if (resultLabel != null) {
+                        resultLabel.setStyle("-fx-text-fill: black; -fx-font-weight: normal; -fx-font-size: 14px;");
+                        System.out.println("=== DEBUG: Apartment result label style restored ===");
+                    }
+                    if (displayLabel != null) {
+                        displayLabel.setStyle("-fx-text-fill: black; -fx-font-weight: normal; -fx-font-size: 14px;");
+                        System.out.println("=== DEBUG: Apartment display label style restored ===");
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to show/hide apartments loading state: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Helper method to find a node by fx:id
+     */
+    private javafx.scene.Node findNodeByFxId(javafx.scene.Node parent, String fxId) {
+        if (fxId.equals(parent.getId())) {
+            return parent;
+        }
+        if (parent instanceof javafx.scene.Parent) {
+            for (javafx.scene.Node child : ((javafx.scene.Parent) parent).getChildrenUnmodifiable()) {
+                javafx.scene.Node result = findNodeByFxId(child, fxId);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Refresh apartments table by finding and calling the appropriate method
+     */
+    private void refreshApartmentsTableDirectly() {
+        try {
+            // Add delay for loading effect
+            new Thread(() -> {
+                try {
+                    Thread.sleep(300); // 300ms delay for loading effect
+                    
+                    javafx.application.Platform.runLater(() -> {
+                        try {
+                            // Find all windows and look for Home_list controller
+                            for (javafx.stage.Window window : javafx.stage.Window.getWindows()) {
+                                if (window instanceof javafx.stage.Stage) {
+                                    javafx.stage.Stage stage = (javafx.stage.Stage) window;
+                                    javafx.scene.Scene scene = stage.getScene();
+                                    if (scene != null && scene.getRoot() != null) {
+                                        // Try to find the Home_list controller through scene graph
+                                        findAndRefreshHomeListController(scene.getRoot());
+                                    }
+                                }
+                            }
+                            System.out.println("=== DEBUG: Apartments table refresh attempted ===");
+                        } catch (Exception e) {
+                            System.err.println("ERROR: Failed to refresh apartments data: " + e.getMessage());
+                            e.printStackTrace();
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }).start();
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception in refreshApartmentsTableDirectly: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Find and refresh Home_list controller
+     */
+    private void findAndRefreshHomeListController(javafx.scene.Node node) {
+        try {
+            // Check if the node has a controller property
+            Object controller = node.getProperties().get("controller");
+            if (controller instanceof Home_list) {
+                Home_list homeListController = (Home_list) controller;
+                
+                // Switch to apartments tab
+                java.lang.reflect.Method goToCanHoMethod = homeListController.getClass().getDeclaredMethod("goToCanHo", javafx.event.ActionEvent.class);
+                goToCanHoMethod.setAccessible(true);
+                goToCanHoMethod.invoke(homeListController, (javafx.event.ActionEvent) null);
+                
+                // Refresh apartments data
+                java.lang.reflect.Method loadDataMethod = homeListController.getClass().getDeclaredMethod("loadData");
+                loadDataMethod.setAccessible(true);
+                loadDataMethod.invoke(homeListController);
+                
+                System.out.println("=== DEBUG: Successfully refreshed apartments table ===");
+                return;
+            }
+            
+            // Recursively search in children if it's a Parent node
+            if (node instanceof javafx.scene.Parent) {
+                javafx.scene.Parent parent = (javafx.scene.Parent) node;
+                for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
+                    findAndRefreshHomeListController(child);
+                }
+            }
+        } catch (Exception e) {
+            // Silently continue searching - this is expected for most nodes
+        }
     }
 }

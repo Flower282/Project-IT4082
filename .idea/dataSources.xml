@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-
+    <data-source source="LOCAL" name="bluemoon@ep-morning-breeze-a121mip7-pooler.ap-southeast-1.aws.neon.tech" uuid="67746423-951d-4800-bf19-b16153bdbca1">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <imported>true</imported>

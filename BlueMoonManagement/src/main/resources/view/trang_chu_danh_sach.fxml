@@ -261,7 +261,7 @@
                                     <TableColumn fx:id="tableColumnChuSoHuu" prefWidth="192.0" text="Chủ sở hữu" />
                                     <TableColumn fx:id="tableColumnTrangThai" prefWidth="368.0" text="Trạng thái">
                                        <columns>
-                                          <TableColumn fx:id="tableColumnSoHuu" prefWidth="100.7999267578125" text="Sở hữu" />
+                                          <TableColumn fx:id="tableColumnSoHuu" prefWidth="100.7999267578125" text="Tình trạng" />
                                           <TableColumn fx:id="tableColumnKiThuat" prefWidth="117.5999755859375" text="Kĩ thuật" />
                                           <TableColumn fx:id="tableColumnSuDung" prefWidth="128.0" text="Sử dụng" />
                                        </columns>

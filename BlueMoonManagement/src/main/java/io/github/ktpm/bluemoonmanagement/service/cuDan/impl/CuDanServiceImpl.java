@@ -42,9 +42,12 @@ public class CuDanServiceImpl implements CuDanService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CudanDto> getAllCuDan() {
-        return cuDanRepository.findAll()
-                .stream()
+        // Sử dụng custom method để fetch join với căn hộ
+        List<CuDan> cuDanList = cuDanRepository.findAllWithCanHo();
+        
+        return cuDanList.stream()
                 // Tạm thời bỏ filter để kiểm tra hiển thị
                 // .filter(cuDan -> cuDan.getNgayChuyenDi() == null) // Filter out soft-deleted residents
                 .map(cuDanMapper::toCudanDto)
@@ -94,6 +97,7 @@ public class CuDanServiceImpl implements CuDanService {
     }
 
     @Override
+    @Transactional
     public ResponseDto updateCuDan(CudanDto cudanDto) {
         if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
             return new ResponseDto(false, "Bạn không có quyền cập nhật cư dân. Chỉ Tổ phó mới được phép.");
@@ -105,8 +109,32 @@ public class CuDanServiceImpl implements CuDanService {
             return new ResponseDto(false, "Không tìm thấy căn hộ");
         }
         
+        // Lấy thông tin cư dân hiện tại từ database
+        CuDan existingCuDan = cuDanRepository.findById(cudanDto.getMaDinhDanh()).orElse(null);
+        
         // Map DTO to Entity
         CuDan cuDan = cuDanMapper.fromCudanDto(cudanDto);
+        
+        // Kiểm tra logic tự động chuyển trạng thái
+        boolean shouldAutoChangeStatus = false;
+        if (existingCuDan != null && 
+            ("Chuyển đi".equals(existingCuDan.getTrangThaiCuTru()) || 
+             "Đã chuyển đi".equals(existingCuDan.getTrangThaiCuTru())) 
+            && cudanDto.getMaCanHo() != null && !cudanDto.getMaCanHo().trim().isEmpty()) {
+            
+            System.out.println("=== DEBUG: Cư dân đang ở trạng thái 'Chuyển đi/Đã chuyển đi' và được cập nhật mã căn hộ mới ===");
+            System.out.println("Cư dân: " + cudanDto.getHoVaTen() + " (" + cudanDto.getMaDinhDanh() + ")");
+            System.out.println("Trạng thái hiện tại: " + existingCuDan.getTrangThaiCuTru());
+            System.out.println("Mã căn hộ mới: " + cudanDto.getMaCanHo());
+            
+            // Tự động chuyển sang trạng thái "Cư trú"
+            cuDan.setTrangThaiCuTru("Cư trú");
+            cuDan.setNgayChuyenDen(LocalDate.now()); // Set ngày chuyển đến mới
+            cuDan.setNgayChuyenDi(null); // Clear ngày chuyển đi
+            shouldAutoChangeStatus = true;
+            
+            System.out.println("=== DEBUG: Tự động chuyển trạng thái thành 'Cư trú' ===");
+        }
         
         // Properly set CanHo reference if maCanHo is provided
         if (cudanDto.getMaCanHo() != null && !cudanDto.getMaCanHo().trim().isEmpty()) {
@@ -114,13 +142,25 @@ public class CuDanServiceImpl implements CuDanService {
             io.github.ktpm.bluemoonmanagement.model.entity.CanHo canHo = 
                 canHoRepository.findById(cudanDto.getMaCanHo()).orElse(null);
             cuDan.setCanHo(canHo);
+            
+            System.out.println("=== DEBUG: Cập nhật cư dân vào căn hộ ===");
+            System.out.println("Cư dân: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
+            System.out.println("Căn hộ: " + cudanDto.getMaCanHo());
+            System.out.println("Trạng thái mới: " + cuDan.getTrangThaiCuTru());
         } else {
             // Set null if no apartment code provided
             cuDan.setCanHo(null);
         }
         
         cuDanRepository.save(cuDan);
-        return new ResponseDto(true, "Cập nhật cư dân thành công");
+        entityManager.flush(); // Đảm bảo changes được commit ngay
+        
+        String successMessage = "Cập nhật cư dân thành công";
+        if (shouldAutoChangeStatus) {
+            successMessage += ". Trạng thái đã được tự động chuyển từ 'Chuyển đi' sang 'Cư trú'";
+        }
+        
+        return new ResponseDto(true, successMessage);
     }
 
     @Override
@@ -135,6 +175,10 @@ public class CuDanServiceImpl implements CuDanService {
         CuDan cuDan = cuDanRepository.findById(cudanDto.getMaDinhDanh()).orElse(null);
         cuDan.setNgayChuyenDi(LocalDate.now());
         cuDan.setTrangThaiCuTru("Đã chuyển đi");
+        
+        // Set canHo = null để mã căn hộ hiển thị null khi cư dân đã chuyển đi
+        cuDan.setCanHo(null);
+        
         cuDanRepository.save(cuDan);
         return new ResponseDto(true, "Xóa cư dân thành công");
     }
@@ -248,14 +292,31 @@ public class CuDanServiceImpl implements CuDanService {
             
             System.out.println("DEBUG: Tìm thấy cư dân: " + cuDan.getHoVaTen());
             System.out.println("DEBUG: Trạng thái hiện tại: " + cuDan.getTrangThaiCuTru());
+            System.out.println("DEBUG: Căn hộ hiện tại: " + (cuDan.getCanHo() != null ? cuDan.getCanHo().getMaCanHo() : "NULL"));
             
-            // Soft delete: set ngayChuyenDi và cập nhật trạng thái
+            // Soft delete: cập nhật ngày chuyển đi, trạng thái và XÓA mối quan hệ với căn hộ
             cuDan.setNgayChuyenDi(LocalDate.now());
             cuDan.setTrangThaiCuTru("Đã chuyển đi");
+            
+            // Set canHo = null để mã căn hộ hiển thị null khi cư dân đã chuyển đi
+            cuDan.setCanHo(null);
+            
             cuDanRepository.save(cuDan);
             entityManager.flush();
             
-            System.out.println("DEBUG: Xóa mềm thành công!");
+            // Verify lại sau khi save
+            CuDan verifyAfterSave = cuDanRepository.findById(maDinhDanh).orElse(null);
+            if (verifyAfterSave != null) {
+                System.out.println("DEBUG: Sau khi save - Trạng thái: " + verifyAfterSave.getTrangThaiCuTru());
+                System.out.println("DEBUG: Sau khi save - Ngày chuyển đi: " + verifyAfterSave.getNgayChuyenDi());
+                System.out.println("DEBUG: Sau khi save - Căn hộ: " + (verifyAfterSave.getCanHo() != null ? verifyAfterSave.getCanHo().getMaCanHo() : "NULL"));
+                
+                // Test mapping để đảm bảo mapper hoạt động đúng
+                io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto testDto = cuDanMapper.toCudanDto(verifyAfterSave);
+                System.out.println("DEBUG: Mapping test - DTO mã căn hộ: '" + testDto.getMaCanHo() + "'");
+            }
+            
+            System.out.println("DEBUG: Xóa mềm thành công - Mã căn hộ hiển thị null!");
             return true;
         } catch (Exception e) {
             System.err.println("Lỗi khi xóa mềm cư dân: " + e.getMessage());
