@@ -351,10 +351,10 @@ public class ChiTietCanHoController implements Initializable {
                     handleDeletePhuongTien(phuongTien);
                 });
                 
-                // Disable nút xóa cho Tổ trưởng
+                // Disable nút xóa cho tất cả trừ Tổ phó (chỉ Tổ phó được phép xóa phương tiện)
                 try {
                     String userRole = getCurrentUserRole();
-                    if ("Tổ trưởng".equals(userRole)) {
+                    if (!"Tổ phó".equals(userRole)) {
                         deleteButton.setDisable(true);
                         deleteButton.setOpacity(0.5);
                     }
@@ -433,10 +433,10 @@ public class ChiTietCanHoController implements Initializable {
                     handleDeleteCuDan(cuDan);
                 });
 
-                // Disable nút cho Tổ trưởng
+                // Disable nút cho tất cả trừ Tổ phó (chỉ Tổ phó được phép sửa/xóa cư dân)
                 try {
                     String userRole = getCurrentUserRole();
-                    if ("Tổ trưởng".equals(userRole)) {
+                    if (!"Tổ phó".equals(userRole)) {
                         editButton.setDisable(true);
                         deleteButton.setDisable(true);
                         editButton.setOpacity(0.5);
@@ -579,13 +579,20 @@ public class ChiTietCanHoController implements Initializable {
             System.out.println("DEBUG: getCurrentUserRole() returns: '" + userRole + "'");
             
             boolean isToTruong = "Tổ trưởng".equals(userRole);
-            System.out.println("DEBUG: isToTruong = " + isToTruong);
+            boolean isKeToan = "Kế toán".equals(userRole);
+            boolean isToPho = "Tổ phó".equals(userRole);
+            boolean shouldDisableButtons = isToTruong || isKeToan || isToPho; // Disable cho tất cả vai trò có logic riêng
             
-            if (isToTruong) {
-                // Disable/làm mờ các nút cho Tổ trưởng (trừ nút tìm kiếm)
-                disableButtonsForToTruong();
+            System.out.println("DEBUG: isToTruong = " + isToTruong);
+            System.out.println("DEBUG: isKeToan = " + isKeToan);
+            System.out.println("DEBUG: isToPho = " + isToPho);
+            System.out.println("DEBUG: shouldDisableButtons = " + shouldDisableButtons);
+            
+            if (shouldDisableButtons) {
+                // Disable/làm mờ các nút tùy theo vai trò
+                disableButtonsForRestrictedRoles(userRole);
             } else {
-                System.out.println("DEBUG: ❌ NOT disabling buttons - User role: '" + userRole + "' - buttons enabled");
+                System.out.println("DEBUG: ❌ NOT disabling buttons - User role: '" + userRole + "' - all buttons enabled");
             }
         } catch (Exception e) {
             System.err.println("ERROR: Cannot setup button permissions: " + e.getMessage());
@@ -609,50 +616,70 @@ public class ChiTietCanHoController implements Initializable {
     }
     
     /**
-     * Disable các nút cho Tổ trưởng (trừ nút tìm kiếm)
+     * Disable các nút tùy theo vai trò:
+     * - Tổ trưởng: Disable tất cả (chỉ xem)
+     * - Kế toán: Disable căn hộ/cư dân/phương tiện, được phép khoản thu
+     * - Tổ phó: Disable khoản thu, được phép căn hộ/cư dân/phương tiện
      */
-    private void disableButtonsForToTruong() {
-        System.out.println("=== DEBUG: disableButtonsForToTruong() called ===");
+    private void disableButtonsForRestrictedRoles(String userRole) {
+        System.out.println("=== DEBUG: disableButtonsForRestrictedRoles() called for role: " + userRole + " ===");
         
-        // Phần thông tin căn hộ - disable nút chỉnh sửa
+        boolean isToTruong = "Tổ trưởng".equals(userRole);
+        boolean isKeToan = "Kế toán".equals(userRole);
+        boolean isToPho = "Tổ phó".equals(userRole);
+        
+        // Phần thông tin căn hộ - chỉ Tổ phó và Kế toán bị disable chỉnh sửa
         if (buttonChinhSua != null) {
-            buttonChinhSua.setDisable(true);
-            buttonChinhSua.setOpacity(0.5);
+            boolean shouldDisableEdit = isToTruong || isKeToan;
+            buttonChinhSua.setDisable(shouldDisableEdit);
+            if (shouldDisableEdit) {
+                buttonChinhSua.setOpacity(0.5);
+                System.out.println("DEBUG: ✅ Disabled buttonChinhSua for " + userRole);
+            }
         } else {
             System.out.println("DEBUG: ❌ buttonChinhSua is NULL!");
         }
         
-        // Phần cư dân - disable tất cả nút thao tác, giữ nút tìm kiếm
-        // (Nút xóa cư dân trong table sẽ được disable trong setupTables)
+        // Phần cư dân - chỉ Tổ phó được phép (nút trong table sẽ được xử lý riêng)
         
-        // Phần phương tiện - disable nút thêm
+        // Phần phương tiện - chỉ Tổ phó được phép
         if (buttonThemPhuongTien != null) {
-            buttonThemPhuongTien.setDisable(true);
-            buttonThemPhuongTien.setOpacity(0.5);
+            boolean shouldDisableVehicle = isToTruong || isKeToan;
+            buttonThemPhuongTien.setDisable(shouldDisableVehicle);
+            if (shouldDisableVehicle) {
+                buttonThemPhuongTien.setOpacity(0.5);
+                System.out.println("DEBUG: ✅ Disabled buttonThemPhuongTien for " + userRole);
+            }
         } else {
             System.out.println("DEBUG: ❌ buttonThemPhuongTien is NULL!");
         }
         
-        // Phần khoản thu - disable nút thu toàn bộ và xem lịch sử
-        if (buttonThuToanBo != null) {
-            buttonThuToanBo.setDisable(true);
-            buttonThuToanBo.setOpacity(0.5);
-            System.out.println("DEBUG: ✅ Disabled buttonThuToanBo");
+        // Phần khoản thu - chỉ Kế toán được phép
+        if (!isKeToan) {
+            // Disable nút thu toàn bộ và xem lịch sử cho tất cả trừ Kế toán
+            if (buttonThuToanBo != null) {
+                buttonThuToanBo.setDisable(true);
+                buttonThuToanBo.setOpacity(0.5);
+                System.out.println("DEBUG: ✅ Disabled buttonThuToanBo for " + userRole);
+            } else {
+                System.out.println("DEBUG: ❌ buttonThuToanBo is NULL!");
+            }
+            
+            if (buttonXemLichSu != null) {
+                buttonXemLichSu.setDisable(true);
+                buttonXemLichSu.setOpacity(0.5);
+                System.out.println("DEBUG: ✅ Disabled buttonXemLichSu for " + userRole);
+            } else {
+                System.out.println("DEBUG: ❌ buttonXemLichSu is NULL!");
+            }
         } else {
-            System.out.println("DEBUG: ❌ buttonThuToanBo is NULL!");
-        }
-        
-        if (buttonXemLichSu != null) {
-            buttonXemLichSu.setDisable(true);
-            buttonXemLichSu.setOpacity(0.5);
-        } else {
-            System.out.println("DEBUG: ❌ buttonXemLichSu is NULL!");
+            System.out.println("DEBUG: ✅ Chỉ Kế toán được phép thao tác với khoản thu - buttons enabled");
         }
         
         // Note: Nút tìm kiếm (buttonTimKiemCuDan, buttonTimKiemPhuongTien, buttonTimKiemThuPhi) 
         // sẽ KHÔNG bị disable theo yêu cầu
         
-        System.out.println("DEBUG: ✅ COMPLETED disabling action buttons for Tổ trưởng");
+        System.out.println("DEBUG: ✅ COMPLETED disabling action buttons for " + userRole);
     }
 
     /**
@@ -1486,9 +1513,9 @@ public class ChiTietCanHoController implements Initializable {
             // Kiểm tra quyền
             String userRole = getCurrentUserRole();
             System.out.println("DEBUG: User role: " + userRole);
-            if ("Tổ trưởng".equals(userRole)) {
+            if ("Tổ trưởng".equals(userRole) || "Kế toán".equals(userRole)) {
                 System.out.println("DEBUG: Access denied for role: " + userRole);
-                showError("Không có quyền", "Bạn không có quyền chỉnh sửa căn hộ. Chỉ có Tổ phó mới có thể chỉnh sửa.");
+                showError("Không có quyền", "Bạn không có quyền chỉnh sửa căn hộ. Chỉ được xem thông tin.");
                 return;
             }
             

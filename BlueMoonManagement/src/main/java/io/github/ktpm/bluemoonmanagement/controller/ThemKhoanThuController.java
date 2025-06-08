@@ -5,6 +5,7 @@ import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.phiGuiXe.PhiGuiXeDto;
 import io.github.ktpm.bluemoonmanagement.service.khoanThu.KhoanThuService;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -133,6 +134,12 @@ public class ThemKhoanThuController {
     }
     @FXML
     void ThemKhoanThuClicked(ActionEvent event) {
+        // Kiểm tra quyền trước khi thực hiện
+        if (!hasPermission()) {
+            textError.setText("Chỉ Kế toán mới có quyền thêm khoản thu.");
+            textError.setStyle("-fx-fill: red;");
+            return;
+        }
 
         if (isAnyFieldEmpty()) {
             textError.setText("Vui lòng điền đầy đủ thông tin!");
@@ -289,8 +296,8 @@ public class ThemKhoanThuController {
         try {
             // Check if the node has a controller property
             Object controller = node.getProperties().get("controller");
-            if (controller instanceof Home_list) {
-                Home_list homeListController = (Home_list) controller;
+            if (controller instanceof io.github.ktpm.bluemoonmanagement.controller.Home_list) {
+                io.github.ktpm.bluemoonmanagement.controller.Home_list homeListController = (io.github.ktpm.bluemoonmanagement.controller.Home_list) controller;
                 
                 // Switch to fees tab
                 java.lang.reflect.Method gotoKhoanThuMethod = homeListController.getClass().getDeclaredMethod("gotoKhoanThu", javafx.event.ActionEvent.class);
@@ -313,6 +320,23 @@ public class ThemKhoanThuController {
             }
         } catch (Exception e) {
             // Silently continue searching - this is expected for most nodes
+        }
+    }
+
+    private boolean hasPermission() {
+        try {
+            if (Session.getCurrentUser() == null) return false;
+            
+            // Sử dụng reflection để lấy vaiTro do vấn đề Lombok
+            java.lang.reflect.Field vaiTroField = Session.getCurrentUser().getClass().getDeclaredField("vaiTro");
+            vaiTroField.setAccessible(true);
+            String vaiTro = (String) vaiTroField.get(Session.getCurrentUser());
+            
+            // Chỉ Kế toán mới có quyền thêm khoản thu
+            return "Kế toán".equals(vaiTro);
+        } catch (Exception e) {
+            System.err.println("Lỗi khi kiểm tra quyền: " + e.getMessage());
+            return false;
         }
     }
 }

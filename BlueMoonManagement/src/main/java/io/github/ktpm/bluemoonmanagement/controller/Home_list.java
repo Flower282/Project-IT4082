@@ -500,6 +500,9 @@ public class Home_list implements Initializable {
             vaiTroLabel.setText("Vai trò: " + Session.getCurrentUser().getVaiTro());
         }
         
+        // Setup button permissions based on user role
+        setupButtonPermissions();
+        
         // Home_list initialization completed
     }
 
@@ -1800,44 +1803,71 @@ public class Home_list implements Initializable {
 
     /**
      * Thiết lập quyền cho các nút dựa trên vai trò người dùng
-     * Chỉ "Tổ phó" mới có thể thêm cư dân và căn hộ
+     * - Tổ trưởng: Disable tất cả nút thêm
+     * - Kế toán: Chỉ disable thêm căn hộ và thêm cư dân, được phép thêm khoản thu
      */
     private void setupButtonPermissions() {
-        boolean isToPhO = false;
+        boolean isToTruong = false;
+        boolean isKeToan = false;
+        String vaiTro = "";
 
         try {
             if (Session.getCurrentUser() != null) {
-                String vaiTro = Session.getCurrentUser().getVaiTro();
-                isToPhO = "Tổ phó".equals(vaiTro);
-                System.out.println("DEBUG: User role = " + vaiTro + ", isToPhO = " + isToPhO);
+                vaiTro = Session.getCurrentUser().getVaiTro();
+                isToTruong = "Tổ trưởng".equals(vaiTro);
+                isKeToan = "Kế toán".equals(vaiTro);
+                System.out.println("DEBUG: User role = " + vaiTro + ", isToTruong = " + isToTruong + ", isKeToan = " + isKeToan);
             } else {
                 System.out.println("DEBUG: Không có user hiện tại");
             }
         } catch (Exception e) {
             System.err.println("Lỗi khi kiểm tra vai trò người dùng: " + e.getMessage());
-            isToPhO = false; // Mặc định không có quyền
+            isToTruong = false;
+            isKeToan = false;
         }
 
-        // Disable/enable các nút thêm dựa trên quyền
+        // Disable nút thêm cư dân cho Tổ trưởng và Kế toán
         if (buttonThemCuDan != null) {
-            buttonThemCuDan.setDisable(!isToPhO);
-            if (!isToPhO) {
-                // Thêm tooltip giải thích tại sao nút bị disable
-                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
-                    "Chỉ người dùng có vai trò 'Tổ phó' mới có thể thêm cư dân");
+            boolean shouldDisableCuDan = isToTruong || isKeToan;
+            buttonThemCuDan.setDisable(shouldDisableCuDan);
+            if (shouldDisableCuDan) {
+                String reason = isToTruong ? "Tổ trưởng không có quyền thêm cư dân" : 
+                                           "Kế toán không có quyền thêm cư dân";
+                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonThemCuDan, tooltip);
-                System.out.println("DEBUG: Đã disable nút thêm cư dân");
+                System.out.println("DEBUG: Đã disable nút thêm cư dân cho " + vaiTro);
             }
         }
 
+        // Disable nút thêm căn hộ cho Tổ trưởng và Kế toán  
         if (buttonThemCanHo != null) {
-            buttonThemCanHo.setDisable(!isToPhO);
-            if (!isToPhO) {
-                // Thêm tooltip giải thích tại sao nút bị disable
-                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
-                    "Chỉ người dùng có vai trò 'Tổ phó' mới có thể thêm căn hộ");
+            boolean shouldDisableCanHo = isToTruong || isKeToan;
+            buttonThemCanHo.setDisable(shouldDisableCanHo);
+            if (shouldDisableCanHo) {
+                String reason = isToTruong ? "Tổ trưởng không có quyền thêm căn hộ" : 
+                                           "Kế toán không có quyền thêm căn hộ";
+                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonThemCanHo, tooltip);
-                System.out.println("DEBUG: Đã disable nút thêm căn hộ");
+                System.out.println("DEBUG: Đã disable nút thêm căn hộ cho " + vaiTro);
+            }
+        }
+
+        // Disable nút thêm khoản thu cho tất cả trừ Kế toán (chỉ Kế toán được phép)
+        if (buttonThemKhoanThu != null) {
+            boolean shouldDisableKhoanThu = !isKeToan; // Chỉ Kế toán được phép
+            buttonThemKhoanThu.setDisable(shouldDisableKhoanThu);
+            if (shouldDisableKhoanThu) {
+                String reason;
+                if (isToTruong) {
+                    reason = "Tổ trưởng không có quyền thêm khoản thu";
+                } else {
+                    reason = "Chỉ Kế toán mới có quyền thêm khoản thu";
+                }
+                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
+                javafx.scene.control.Tooltip.install(buttonThemKhoanThu, tooltip);
+                System.out.println("DEBUG: Đã disable nút thêm khoản thu cho " + vaiTro);
+            } else {
+                System.out.println("DEBUG: Kế toán được phép thêm khoản thu - nút enable");
             }
         }
 
