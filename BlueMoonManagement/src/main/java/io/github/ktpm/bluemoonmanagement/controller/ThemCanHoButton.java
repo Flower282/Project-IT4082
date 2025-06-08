@@ -146,7 +146,7 @@ public class ThemCanHoButton implements Initializable {
             buttonXoaCanHo.setManaged(false);
         }
         
-        System.out.println("DEBUG: Reset to create mode");
+
     }
 
     /**
@@ -161,7 +161,7 @@ public class ThemCanHoButton implements Initializable {
      */
     public void setApplicationContext(org.springframework.context.ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
-        System.out.println("DEBUG: ApplicationContext injected into ThemCanHoButton");
+
     }
     
     /**
@@ -177,7 +177,7 @@ public class ThemCanHoButton implements Initializable {
                 java.lang.reflect.Field idField = canHoDto.getChuHo().getClass().getDeclaredField("id");
                 idField.setAccessible(true);
                 this.originalChuHoId = (Long) idField.get(canHoDto.getChuHo());
-                System.out.println("DEBUG: Saved original ChuHo ID: " + this.originalChuHoId);
+
             } catch (Exception e) {
                 System.err.println("ERROR: Cannot get ChuHo ID: " + e.getMessage());
                 this.originalChuHoId = null;
@@ -202,7 +202,7 @@ public class ThemCanHoButton implements Initializable {
         // Ẩn các phần không cần thiết khi edit
         hideUnnecessarySections();
         
-        System.out.println("DEBUG: Edit mode setup completed for apartment: " + canHoDto.getMaCanHo());
+
     }
     
     /**
@@ -347,8 +347,8 @@ public class ThemCanHoButton implements Initializable {
             textFieldMaDinhDanh.clear();
         }
         
-        System.out.println("Thêm chủ sở hữu: " + isSelected);
-        System.out.println("Tình trạng sử dụng enabled: " + !comboBoxTinhTrangSuDung.isDisabled());
+
+
     }
 
 
@@ -454,7 +454,7 @@ public class ThemCanHoButton implements Initializable {
     @FXML
     private void handleTaoChuHo(ActionEvent event) {
         try {
-            System.out.println("=== DEBUG: Opening resident creation form ===");
+
             
             // Thử lấy FxViewLoader từ ApplicationContext
             if (applicationContext != null) {
@@ -473,7 +473,7 @@ public class ThemCanHoButton implements Initializable {
                         
                         // Set ApplicationContext for controller
                         cuDanController.setApplicationContext(applicationContext);
-                        System.out.println("=== DEBUG: ApplicationContext injected to ThemCuDanController ===");
+
                     }
                     
                     // Tạo stage mới cho form
@@ -489,7 +489,7 @@ public class ThemCanHoButton implements Initializable {
                     // Hiển thị form và đợi đóng
                     stage.showAndWait();
                     
-                    System.out.println("=== DEBUG: Resident creation form closed ===");
+
                     
                     // Sau khi form đóng, lấy mã định danh của cư dân vừa tạo và điền vào form căn hộ
                     if (cuDanController != null) {
@@ -498,7 +498,7 @@ public class ThemCanHoButton implements Initializable {
                             // Tự động điền mã định danh vào field
                             if (textFieldMaDinhDanh != null) {
                                 textFieldMaDinhDanh.setText(newCuDanMaDinhDanh);
-                                System.out.println("=== DEBUG: Auto-filled resident ID: " + newCuDanMaDinhDanh + " ===");
+
                                 
                                 // Đảm bảo checkbox "Đã bán" được check
                                 if (choiceBoxThemChuSoHuu != null) {
@@ -544,7 +544,7 @@ public class ThemCanHoButton implements Initializable {
             // Inject ApplicationContext nếu có
             if (applicationContext != null) {
                 cuDanController.setApplicationContext(applicationContext);
-                System.out.println("=== DEBUG: ApplicationContext injected manually ===");
+
             }
         }
         
@@ -568,7 +568,7 @@ public class ThemCanHoButton implements Initializable {
                 // Tự động điền mã định danh vào field
                 if (textFieldMaDinhDanh != null) {
                     textFieldMaDinhDanh.setText(newCuDanMaDinhDanh);
-                    System.out.println("=== DEBUG: Auto-filled resident ID (manual): " + newCuDanMaDinhDanh + " ===");
+
                     
                     // Đảm bảo checkbox "Đã bán" được check
                     if (choiceBoxThemChuSoHuu != null) {
@@ -603,20 +603,18 @@ public class ThemCanHoButton implements Initializable {
             // Hiển thị loading
             showLoadingState();
             
-            // Xóa căn hộ ở background thread
+            // Xóa căn hộ khỏi database
             javafx.concurrent.Task<ResponseDto> deleteTask = new javafx.concurrent.Task<ResponseDto>() {
                 @Override
                 protected ResponseDto call() throws Exception {
                     // Tạo CanHoDto chỉ với mã căn hộ để xóa
                     CanHoDto canHoToDelete = new CanHoDto();
-                    try {
-                        java.lang.reflect.Field maCanHoField = CanHoDto.class.getDeclaredField("maCanHo");
-                        maCanHoField.setAccessible(true);
-                        maCanHoField.set(canHoToDelete, originalMaCanHo);
-                    } catch (Exception e) {
-                        System.err.println("ERROR: Cannot set apartment code for delete: " + e.getMessage());
-                        throw new RuntimeException("Cannot prepare apartment data for deletion");
-                    }
+                    canHoToDelete.setMaCanHo(originalMaCanHo);
+                    
+
+
+                    
+                    // Gọi delete để xóa thật
                     return canHoService.deleteCanHo(canHoToDelete);
                 }
                 
@@ -630,15 +628,19 @@ public class ThemCanHoButton implements Initializable {
                         String message = getResponseMessage(response);
                         
                         if (isSuccess) {
-                            // Refresh main apartments table
+                            String successMsg = "Xóa căn hộ " + originalMaCanHo + " thành công!";
+                            
+                            // Refresh main apartments table and switch to apartments tab (GIỐNG HẾT TẠO CĂN HỘ)
                             refreshMainApartmentsTable();
                             
-                            // Close any open detail windows for this apartment 
+                            // Đóng tất cả cửa sổ chi tiết của căn hộ đã bị xóa
                             if (originalMaCanHo != null) {
-                                io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController.refreshAllWindowsForApartment(originalMaCanHo);
+                                io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController.closeAllWindowsForApartment(originalMaCanHo);
                             }
                             
-                            showSuccessMessage("Xóa căn hộ thành công! Bảng căn hộ đã được cập nhật.");
+                            showSuccessMessage(successMsg);
+                            
+                            // Đóng window ngay lập tức (GIỐNG HẾT TẠO CĂN HỘ)
                             closeWindow();
                         } else {
                             showErrorMessage("Lỗi xóa căn hộ: " + message);
@@ -651,7 +653,7 @@ public class ThemCanHoButton implements Initializable {
                     javafx.application.Platform.runLater(() -> {
                         hideLoadingState();
                         Throwable exception = getException();
-                        showErrorMessage("Đã xảy ra lỗi khi xóa: " + exception.getMessage());
+                        showErrorMessage("Đã xảy ra lỗi khi xóa căn hộ: " + exception.getMessage());
                         exception.printStackTrace();
                     });
                 }
@@ -679,8 +681,8 @@ public class ThemCanHoButton implements Initializable {
             
             XacNhanController controller = loader.getController();
             controller.setTitle("Xác nhận xóa căn hộ");
-            controller.setContent("Bạn có chắc chắn muốn xóa căn hộ '" + originalMaCanHo + "' không?\n\n" +
-                                "Hành động này không thể hoàn tác!");
+            controller.setContent("Bạn có chắc chắn muốn xóa căn hộ '" + originalMaCanHo + "' không?\n\n" 
+                               );
             
             javafx.stage.Stage confirmStage = new javafx.stage.Stage();
             confirmStage.setTitle("Xác nhận xóa");
@@ -703,7 +705,7 @@ public class ThemCanHoButton implements Initializable {
     @FXML
     private void handleTaoChuSoHuuMoi(ActionEvent event) {
         try {
-            System.out.println("Mở form thêm cư dân...");
+
             
             // Sử dụng FXMLLoader để mở form thêm cư dân
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/them_cu_dan.fxml"));
@@ -828,6 +830,16 @@ public class ThemCanHoButton implements Initializable {
         canHoDto.setToaNha(textFieldToa.getText().trim());
         canHoDto.setDienTich(Double.parseDouble(textFieldDienTich.getText().trim()));
         
+        // Thiết lập trạng thái đã bán - luôn true khi thêm căn hộ mới
+        if (isEditMode) {
+            // Trong edit mode, có thể thay đổi trạng thái bán/chưa bán
+            // Tạm thời set true, có thể cần thêm ComboBox để người dùng chọn
+            canHoDto.setDaBanChua(true);
+        } else {
+            // Khi thêm căn hộ mới, luôn set đã bán = true
+            canHoDto.setDaBanChua(true);
+        }
+        
         // Thiết lập trạng thái kỹ thuật - luôn lấy từ ComboBox
         String trangThaiKiThuat = comboBoxTinhTrangKiThuat.getValue();
         canHoDto.setTrangThaiKiThuat(trangThaiKiThuat);
@@ -857,11 +869,11 @@ public class ThemCanHoButton implements Initializable {
             handleOwnerInCreateMode(canHoDto);
         }
         
-        System.out.println("DEBUG: " + (isEditMode ? "Updated" : "Created") + " CanHoDto:");
-        System.out.println("  - MaCanHo: " + canHoDto.getMaCanHo());
-        System.out.println("  - TrangThaiKiThuat: " + canHoDto.getTrangThaiKiThuat());
-        System.out.println("  - TrangThaiSuDung: " + canHoDto.getTrangThaiSuDung());
-        System.out.println("  - ChuHo: " + (canHoDto.getChuHo() != null ? canHoDto.getChuHo().getMaDinhDanh() : "null"));
+
+
+
+
+
         
         return canHoDto;
     }
@@ -891,11 +903,11 @@ public class ThemCanHoButton implements Initializable {
             // Sử dụng mã định danh có sẵn
             ChuHoDto chuHoDto = createChuHoDtoFromExisting();
             canHoDto.setChuHo(chuHoDto);
-            System.out.println("DEBUG: Set existing owner with ID: " + chuHoDto.getMaDinhDanh());
+
         } else {
             // Không có chủ hộ
             canHoDto.setChuHo(null);
-            System.out.println("DEBUG: No owner set for apartment");
+
         }
     }
 
@@ -911,7 +923,7 @@ public class ThemCanHoButton implements Initializable {
             maDinhDanhField.setAccessible(true);
             maDinhDanhField.set(chuHoDto, textFieldMaDinhDanh.getText().trim());
             
-            System.out.println("Tạo ChuHoDto với mã định danh có sẵn: " + textFieldMaDinhDanh.getText().trim());
+
             
             return chuHoDto;
         } catch (Exception e) {
@@ -963,7 +975,7 @@ public class ThemCanHoButton implements Initializable {
         // Xóa thông báo lỗi
         clearErrorMessage();
         
-        System.out.println("DEBUG: Form cleared");
+
         
         // Enable form sau khi clear
         hideLoadingState();
@@ -1092,12 +1104,12 @@ public class ThemCanHoButton implements Initializable {
      */
     private void refreshApartmentDetailWindows(String maCanHo) {
         try {
-            System.out.println("=== DEBUG: Refreshing apartment detail windows for: " + maCanHo + " ===");
+
             
             // Use static method from ChiTietCanHoController to refresh all open detail windows
             io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController.refreshAllWindowsForApartment(maCanHo);
             
-            System.out.println("=== DEBUG: Apartment detail windows refresh completed ===");
+
             
         } catch (Exception e) {
             System.err.println("ERROR: Failed to refresh apartment detail windows: " + e.getMessage());
@@ -1106,54 +1118,32 @@ public class ThemCanHoButton implements Initializable {
     }
 
     /**
-     * Refresh main apartments table in Home_list controller and switch to apartments tab with loading indicator
+     * Refresh main apartments table in Home_list controller - gọi ngay lập tức sau khi xóa
      */
     private void refreshMainApartmentsTable() {
         try {
-            System.out.println("=== DEBUG: Starting refresh main apartments table ===");
+
             
-            // Use Platform.runLater to ensure this runs on JavaFX thread
-            javafx.application.Platform.runLater(() -> {
+            // Gọi refresh ĐỒNG BỘ trên UI thread NGAY LẬP TỨC
+            if (javafx.application.Platform.isFxApplicationThread()) {
+                // Đã ở trên JavaFX thread, gọi trực tiếp
+                refreshApartmentsTableDirectly();
+
+            } else {
+                // Gọi và chờ hoàn thành
+                javafx.application.Platform.runLater(() -> {
+                    refreshApartmentsTableDirectly();
+
+                });
+                
+                // Chờ một chút để đảm bảo refresh hoàn thành
                 try {
-                    // Show loading state first
-                    showLoadingStateForApartments(true);
-                    System.out.println("=== DEBUG: Loading state shown for apartments ===");
-                    
-                    // Switch to apartments tab and refresh data
-                    new Thread(() -> {
-                        try {
-                            Thread.sleep(800); // Longer delay to see loading effect
-                            
-                            javafx.application.Platform.runLater(() -> {
-                                try {
-                                    // Try to find Home_list controller from scene graph
-                                    refreshApartmentsTableDirectly();
-                                    System.out.println("=== DEBUG: Apartments data refreshed ===");
-                                    
-                                    // Wait a bit more then hide loading
-                                    Thread.sleep(200);
-                                    javafx.application.Platform.runLater(() -> {
-                                        showLoadingStateForApartments(false);
-                                        System.out.println("=== DEBUG: Loading state hidden for apartments ===");
-                                    });
-                                    
-                                } catch (Exception e) {
-                                    javafx.application.Platform.runLater(() -> showLoadingStateForApartments(false));
-                                    System.err.println("ERROR: Failed to refresh apartments data: " + e.getMessage());
-                                    e.printStackTrace();
-                                }
-                            });
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            javafx.application.Platform.runLater(() -> showLoadingStateForApartments(false));
-                        }
-                    }).start();
-                    
-                } catch (Exception e) {
-                    System.err.println("ERROR: Failed to refresh main apartments table: " + e.getMessage());
-                    e.printStackTrace();
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
-            });
+            }
+            
         } catch (Exception e) {
             System.err.println("ERROR: Exception in refreshMainApartmentsTable: " + e.getMessage());
             e.printStackTrace();
@@ -1165,7 +1155,7 @@ public class ThemCanHoButton implements Initializable {
      */
     private void showLoadingStateForApartments(boolean isLoading) {
         try {
-            System.out.println("=== DEBUG: Setting apartments loading state: " + isLoading + " ===");
+
             
             // Find the main stage and Home_list controller
             javafx.stage.Stage mainStage = (javafx.stage.Stage) javafx.stage.Stage.getWindows().stream()
@@ -1183,36 +1173,36 @@ public class ThemCanHoButton implements Initializable {
                     findNodeByFxId(mainStage.getScene().getRoot(), "labelHienThiKetQuaCanHo");
                 
                 if (isLoading) {
-                    System.out.println("=== DEBUG: Showing loading state for apartments ===");
+
                     if (apartmentTable != null) {
                         apartmentTable.setDisable(true);
                         apartmentTable.setStyle("-fx-opacity: 0.5; -fx-background-color: #f0f0f0;");
-                        System.out.println("=== DEBUG: Apartment table disabled and styled ===");
+
                     }
                     if (resultLabel != null) {
                         resultLabel.setText("🔄 Đang tải dữ liệu căn hộ...");
                         resultLabel.setStyle("-fx-text-fill: #2196F3; -fx-font-weight: bold; -fx-font-size: 14px;");
-                        System.out.println("=== DEBUG: Apartment result label updated ===");
+
                     }
                     if (displayLabel != null) {
                         displayLabel.setText("⏳ Đang xử lý...");
                         displayLabel.setStyle("-fx-text-fill: #FF9800; -fx-font-weight: bold; -fx-font-size: 14px;");
-                        System.out.println("=== DEBUG: Apartment display label updated ===");
+
                     }
                 } else {
-                    System.out.println("=== DEBUG: Hiding loading state for apartments ===");
+
                     if (apartmentTable != null) {
                         apartmentTable.setDisable(false);
                         apartmentTable.setStyle("-fx-opacity: 1.0; -fx-background-color: white;");
-                        System.out.println("=== DEBUG: Apartment table enabled and restored ===");
+
                     }
                     if (resultLabel != null) {
                         resultLabel.setStyle("-fx-text-fill: black; -fx-font-weight: normal; -fx-font-size: 14px;");
-                        System.out.println("=== DEBUG: Apartment result label style restored ===");
+
                     }
                     if (displayLabel != null) {
                         displayLabel.setStyle("-fx-text-fill: black; -fx-font-weight: normal; -fx-font-size: 14px;");
-                        System.out.println("=== DEBUG: Apartment display label style restored ===");
+
                     }
                 }
             }
@@ -1246,42 +1236,26 @@ public class ThemCanHoButton implements Initializable {
      */
     private void refreshApartmentsTableDirectly() {
         try {
-            // Add delay for loading effect
-            new Thread(() -> {
-                try {
-                    Thread.sleep(300); // 300ms delay for loading effect
-                    
-                    javafx.application.Platform.runLater(() -> {
-                        try {
-                            // Find all windows and look for Home_list controller
-                            for (javafx.stage.Window window : javafx.stage.Window.getWindows()) {
-                                if (window instanceof javafx.stage.Stage) {
-                                    javafx.stage.Stage stage = (javafx.stage.Stage) window;
-                                    javafx.scene.Scene scene = stage.getScene();
-                                    if (scene != null && scene.getRoot() != null) {
-                                        // Try to find the Home_list controller through scene graph
-                                        findAndRefreshHomeListController(scene.getRoot());
-                                    }
-                                }
-                            }
-                            System.out.println("=== DEBUG: Apartments table refresh attempted ===");
-                        } catch (Exception e) {
-                            System.err.println("ERROR: Failed to refresh apartments data: " + e.getMessage());
-                            e.printStackTrace();
-                        }
-                    });
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+            // Find all windows and look for Home_list controller immediately
+            for (javafx.stage.Window window : javafx.stage.Window.getWindows()) {
+                if (window instanceof javafx.stage.Stage) {
+                    javafx.stage.Stage stage = (javafx.stage.Stage) window;
+                    javafx.scene.Scene scene = stage.getScene();
+                    if (scene != null && scene.getRoot() != null) {
+                        // Try to find the Home_list controller through scene graph
+                        findAndRefreshHomeListController(scene.getRoot());
+                    }
                 }
-            }).start();
+            }
+
         } catch (Exception e) {
-            System.err.println("ERROR: Exception in refreshApartmentsTableDirectly: " + e.getMessage());
+            System.err.println("ERROR: Failed to refresh apartments data: " + e.getMessage());
             e.printStackTrace();
         }
     }
     
     /**
-     * Find and refresh Home_list controller
+     * Find and refresh Home_list controller - FORCE REFRESH GIỐNG BẢNG CƯ DAN
      */
     private void findAndRefreshHomeListController(javafx.scene.Node node) {
         try {
@@ -1289,18 +1263,52 @@ public class ThemCanHoButton implements Initializable {
             Object controller = node.getProperties().get("controller");
             if (controller instanceof Home_list) {
                 Home_list homeListController = (Home_list) controller;
+
                 
-                // Switch to apartments tab
-                java.lang.reflect.Method goToCanHoMethod = homeListController.getClass().getDeclaredMethod("goToCanHo", javafx.event.ActionEvent.class);
-                goToCanHoMethod.setAccessible(true);
-                goToCanHoMethod.invoke(homeListController, (javafx.event.ActionEvent) null);
+                // 1. SWITCH TO APARTMENTS TAB FIRST
+                try {
+                    java.lang.reflect.Method goToCanHoMethod = homeListController.getClass().getDeclaredMethod("goToCanHo", javafx.event.ActionEvent.class);
+                    goToCanHoMethod.setAccessible(true);
+                    goToCanHoMethod.invoke(homeListController, (javafx.event.ActionEvent) null);
+
+                } catch (Exception e) {
+                    System.err.println("Could not switch to apartments tab: " + e.getMessage());
+                }
                 
-                // Refresh apartments data
-                java.lang.reflect.Method loadDataMethod = homeListController.getClass().getDeclaredMethod("loadData");
-                loadDataMethod.setAccessible(true);
-                loadDataMethod.invoke(homeListController);
+                // 2. CLEAR CACHE MANUALLY (giống như refresh bảng cư dân)
+                try {
+                    java.lang.reflect.Field cacheField = homeListController.getClass().getDeclaredField("apartmentCache");
+                    cacheField.setAccessible(true);
+                    Object cache = cacheField.get(homeListController);
+                    if (cache != null && cache instanceof java.util.Map) {
+                        ((java.util.Map<?, ?>) cache).clear();
+
+                    }
+                } catch (Exception e) {
+
+                }
                 
-                System.out.println("=== DEBUG: Successfully refreshed apartments table ===");
+                // 3. FORCE RELOAD DATA FROM DATABASE (now public method)
+                try {
+                    homeListController.refreshApartmentData();
+
+                    return;
+                } catch (Exception e) {
+
+                }
+                
+                // 4. FALLBACK: DIRECT loadData call
+                try {
+                    java.lang.reflect.Method loadDataMethod = homeListController.getClass().getDeclaredMethod("loadData");
+                    loadDataMethod.setAccessible(true);
+                    loadDataMethod.invoke(homeListController);
+
+                    return;
+                } catch (Exception e) {
+                    System.err.println("ERROR: Both refreshApartmentData and loadData failed: " + e.getMessage());
+                }
+                
+
                 return;
             }
             

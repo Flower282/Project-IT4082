@@ -64,7 +64,7 @@ public class LoginController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        System.out.println("Login được khởi tạo");
+
         textFieldMatKhau.setVisible(false);
         passwordFieldMatKhau.setVisible(true);
         checkBoxHienMatKhau.setSelected(false);

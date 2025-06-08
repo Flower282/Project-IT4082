@@ -150,7 +150,7 @@ public class ChiTietCanHoController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        System.out.println("ChiTietCanHoController được khởi tạo");
+        // Controller initialized
         
         // Add this instance to tracking list
         openWindows.add(this);
@@ -854,6 +854,21 @@ public class ChiTietCanHoController implements Initializable {
         if (labelTinhTrangKiThuat != null) labelTinhTrangKiThuat.setText("-");
         if (labelTinhTrangSuDung != null) labelTinhTrangSuDung.setText("-");
         
+        // Clear thông tin chủ hộ
+        if (labelMaDinhDanh != null) labelMaDinhDanh.setText("-");
+        if (labelHoVaTen != null) labelHoVaTen.setText("-");
+        if (labelNgaySinh != null) {
+            labelNgaySinh.setText("-");
+            labelNgaySinh.setVisible(false);
+        }
+        if (labelGioiTinh != null) {
+            labelGioiTinh.setText("-");
+            labelGioiTinh.setVisible(false);
+        }
+        if (labelTrangThaiChuSoHuu != null) labelTrangThaiChuSoHuu.setText("-");
+        if (labelSoDienThoai != null) labelSoDienThoai.setText("-");
+        if (labelEmail != null) labelEmail.setText("-");
+        
         // Ẩn thông tin chủ hộ
         if (vBoxChuSoHuu != null) vBoxChuSoHuu.setVisible(false);
     }
@@ -954,9 +969,27 @@ public class ChiTietCanHoController implements Initializable {
                 System.out.println("DEBUG: Set owner name: " + currentCanHo.getChuHo().getHoVaTen());
             }
             
-            // Hide fields that are not available in ChuHoDto
-            if (labelNgaySinh != null) labelNgaySinh.setVisible(false);
-            if (labelGioiTinh != null) labelGioiTinh.setVisible(false);
+            // Hiển thị ngày sinh và giới tính nếu có
+            if (labelNgaySinh != null) {
+                if (currentCanHo.getChuHo().getNgaySinh() != null) {
+                    labelNgaySinh.setText(currentCanHo.getChuHo().getNgaySinh().toString());
+                    labelNgaySinh.setVisible(true);
+                    System.out.println("DEBUG: Set owner birth date: " + currentCanHo.getChuHo().getNgaySinh());
+                } else {
+                    labelNgaySinh.setText("Chưa cập nhật");
+                    labelNgaySinh.setVisible(true);
+                }
+            }
+            if (labelGioiTinh != null) {
+                if (currentCanHo.getChuHo().getGioiTinh() != null && !currentCanHo.getChuHo().getGioiTinh().trim().isEmpty()) {
+                    labelGioiTinh.setText(currentCanHo.getChuHo().getGioiTinh());
+                    labelGioiTinh.setVisible(true);
+                    System.out.println("DEBUG: Set owner gender: " + currentCanHo.getChuHo().getGioiTinh());
+                } else {
+                    labelGioiTinh.setText("Chưa cập nhật");
+                    labelGioiTinh.setVisible(true);
+                }
+            }
             
             if (labelTrangThaiChuSoHuu != null) labelTrangThaiChuSoHuu.setText(currentCanHo.getChuHo().getTrangThaiCuTru());
             if (labelSoDienThoai != null) labelSoDienThoai.setText(currentCanHo.getChuHo().getSoDienThoai());
@@ -1826,9 +1859,15 @@ public class ChiTietCanHoController implements Initializable {
     
     /**
      * Refresh dữ liệu từ database - gọi khi cần cập nhật sau khi thêm/sửa/xóa
+     * QUAN TRỌNG: Không refresh nếu căn hộ đã bị xóa (currentCanHo = null)
      */
     public void refreshData() {
-        if (currentCanHo != null && currentCanHo.getMaCanHo() != null) {
+        if (currentCanHo == null) {
+            System.out.println("=== DEBUG: Cannot refresh - apartment has been deleted (currentCanHo is null) ===");
+            return;
+        }
+        
+        if (currentCanHo.getMaCanHo() != null) {
             String maCanHo = currentCanHo.getMaCanHo();
             System.out.println("=== DEBUG: Refreshing data for apartment: " + maCanHo + " ===");
             System.out.println("Before refresh - Owner: " + (currentCanHo.getChuHo() != null ? 
@@ -1880,6 +1919,7 @@ public class ChiTietCanHoController implements Initializable {
     
     /**
      * Static method để refresh tất cả cửa sổ chi tiết đang mở cho một căn hộ
+     * CẢNH BÁO: Không gọi method này cho căn hộ đã bị xóa!
      */
     public static void refreshAllWindowsForApartment(String maCanHo) {
         System.out.println("=== DEBUG: Refreshing all windows for apartment: " + maCanHo + " ===");
@@ -1890,8 +1930,14 @@ public class ChiTietCanHoController implements Initializable {
             if (controller.currentCanHo != null && 
                 maCanHo.equals(controller.currentCanHo.getMaCanHo())) {
                 System.out.println("Found matching window for apartment: " + maCanHo + " - Refreshing...");
-                controller.refreshData();
-                refreshedCount++;
+                try {
+                    controller.refreshData();
+                    refreshedCount++;
+                } catch (Exception e) {
+                    System.err.println("ERROR: Failed to refresh window for apartment " + maCanHo + ": " + e.getMessage());
+                    // Nếu refresh thất bại, có thể căn hộ đã bị xóa, đóng cửa sổ
+                    controller.handleClose();
+                }
             } else {
                 System.out.println("Window for different apartment: " + 
                     (controller.currentCanHo != null ? controller.currentCanHo.getMaCanHo() : "NULL"));
@@ -1899,5 +1945,48 @@ public class ChiTietCanHoController implements Initializable {
         }
         
         System.out.println("=== END DEBUG: Refreshed " + refreshedCount + " windows for apartment " + maCanHo + " ===");
+    }
+    
+    /**
+     * Static method để đóng tất cả cửa sổ chi tiết đang mở cho một căn hộ (khi căn hộ bị xóa)
+     */
+    public static void closeAllWindowsForApartment(String maCanHo) {
+        System.out.println("=== DEBUG: Closing all windows for deleted apartment: " + maCanHo + " ===");
+        System.out.println("Number of open windows: " + openWindows.size());
+        
+        // Tạo copy của list để tránh ConcurrentModificationException
+        List<ChiTietCanHoController> controllersToClose = new ArrayList<>();
+        
+        for (ChiTietCanHoController controller : openWindows) {
+            if (controller.currentCanHo != null && 
+                maCanHo.equals(controller.currentCanHo.getMaCanHo())) {
+                System.out.println("Found matching window for deleted apartment: " + maCanHo + " - Marking for deletion...");
+                // QUAN TRỌNG: Vô hiệu hóa controller trước khi đóng để tránh refresh
+                controller.currentCanHo = null; // Xóa reference để tránh refresh lỗi
+                controllersToClose.add(controller);
+            }
+        }
+        
+        // Đóng các cửa sổ NGAY LẬP TỨC trên UI thread
+        javafx.application.Platform.runLater(() -> {
+            try {
+                for (ChiTietCanHoController controller : controllersToClose) {
+                    // Remove khỏi list trước để tránh reference
+                    openWindows.remove(controller);
+                    
+                    if (controller.button_close_up != null) {
+                        javafx.stage.Stage stage = (javafx.stage.Stage) controller.button_close_up.getScene().getWindow();
+                        if (stage != null) {
+                            stage.close();
+                            System.out.println("DEBUG: Closed detail window for deleted apartment: " + maCanHo);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("ERROR: Failed to close windows for apartment: " + maCanHo + " - " + e.getMessage());
+            }
+        });
+        
+        System.out.println("=== END DEBUG: Initiated close for " + controllersToClose.size() + " windows for deleted apartment " + maCanHo + " ===");
     }
 } 

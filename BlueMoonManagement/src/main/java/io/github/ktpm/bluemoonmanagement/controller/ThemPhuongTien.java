@@ -82,7 +82,7 @@ public class ThemPhuongTien implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        System.out.println("ThemPhuongTien controller được khởi tạo");
+
         
         // Đảm bảo service được khởi tạo
         ensureServiceAvailable();
@@ -94,7 +94,7 @@ public class ThemPhuongTien implements Initializable {
      * Setter để inject ApplicationContext từ bên ngoài
      */
     public void setApplicationContext(ApplicationContext applicationContext) {
-        System.out.println("DEBUG: Setting ApplicationContext manually");
+
         this.applicationContext = applicationContext;
         
         // Sau khi có ApplicationContext, thử lấy service
@@ -106,11 +106,11 @@ public class ThemPhuongTien implements Initializable {
      */
     private void ensureServiceAvailable() {
         if (phuongTienService == null) {
-            System.out.println("DEBUG: PhuongTienService is null, trying to get from ApplicationContext");
+
             try {
                 if (applicationContext != null) {
                     phuongTienService = applicationContext.getBean(PhuongTienService.class);
-                    System.out.println("DEBUG: Successfully got PhuongTienService from ApplicationContext");
+
                 } else {
                     System.err.println("ERROR: ApplicationContext is null! Service injection will fail.");
                 }
@@ -118,7 +118,7 @@ public class ThemPhuongTien implements Initializable {
                 System.err.println("ERROR: Cannot get PhuongTienService from context: " + e.getMessage());
             }
         } else {
-            System.out.println("DEBUG: PhuongTienService is already available");
+
         }
     }
 
@@ -126,7 +126,7 @@ public class ThemPhuongTien implements Initializable {
      * Setter để inject service từ bên ngoài (với fallback)
      */
     public void setPhuongTienService(PhuongTienService phuongTienService) {
-        System.out.println("DEBUG: Setting PhuongTienService manually");
+
         this.phuongTienService = phuongTienService;
         
         // Nếu service vẫn null, thử lấy từ ApplicationContext
@@ -453,7 +453,7 @@ public class ThemPhuongTien implements Initializable {
                 }
             }
             
-            System.out.println("DEBUG: Created PhuongTienDto for apartment: " + maCanHo);
+
         } catch (Exception e) {
             System.err.println("Lỗi khi set field cho PhuongTienDto: " + e.getMessage());
         }

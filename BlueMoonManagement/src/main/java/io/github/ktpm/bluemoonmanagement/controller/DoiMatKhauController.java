@@ -79,9 +79,9 @@ public class DoiMatKhauController {
         String matKhauXacNhan = passwordFieldMatKhauXacNhan.getText();
 
 
-        System.out.println(matKhauHienTai + "****************");
-        System.out.println(matKhauMoi +"****************");
-        System.out.println(matKhauXacNhan +"****************");
+
+
+
 
 
 
