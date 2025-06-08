@@ -111,7 +111,7 @@ public class ChinhSuaCanHoController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        System.out.println("ChinhSuaCanHoController được khởi tạo");
+
         
         // Initialize lists
         cuDanList = FXCollections.observableArrayList();
@@ -390,7 +390,7 @@ public class ChinhSuaCanHoController implements Initializable {
      */
     @FXML
     private void handleThemCuDan() {
-        System.out.println("Thêm cư dân được click");
+
         // TODO: Implement thêm cư dân functionality
         showInfo("Thông báo", "Chức năng thêm cư dân đang được phát triển");
     }
@@ -399,7 +399,7 @@ public class ChinhSuaCanHoController implements Initializable {
      * Xử lý sửa cư dân
      */
     private void handleEditCuDan(CuDanTrongCanHoDto cuDan) {
-        System.out.println("Sửa cư dân: " + cuDan.getHoVaTen());
+
         // TODO: Implement sửa cư dân functionality
         showInfo("Thông báo", "Chức năng sửa cư dân đang được phát triển");
     }
@@ -426,7 +426,7 @@ public class ChinhSuaCanHoController implements Initializable {
      */
     @FXML
     private void handleThemPhuongTien() {
-        System.out.println("Thêm phương tiện được click");
+
         // TODO: Implement thêm phương tiện functionality
         showInfo("Thông báo", "Chức năng thêm phương tiện đang được phát triển");
     }
@@ -435,7 +435,7 @@ public class ChinhSuaCanHoController implements Initializable {
      * Xử lý sửa phương tiện
      */
     private void handleEditPhuongTien(PhuongTienDto phuongTien) {
-        System.out.println("Sửa phương tiện: " + phuongTien.getBienSo());
+
         // TODO: Implement sửa phương tiện functionality
         showInfo("Thông báo", "Chức năng sửa phương tiện đang được phát triển");
     }
@@ -463,33 +463,33 @@ public class ChinhSuaCanHoController implements Initializable {
     @FXML
     private void handleLuuThongTin() {
         try {
-            System.out.println("DEBUG: Starting save apartment information process");
+
             
             // Validate input
             if (!validateInput()) {
-                System.out.println("DEBUG: Input validation failed");
+
                 return;
             }
             
             // Check permission
             if (Session.getCurrentUser() == null) {
-                System.out.println("DEBUG: No current user in session");
+
                 showError("Lỗi quyền", "Vui lòng đăng nhập để thực hiện thao tác này.");
                 return;
             }
             
             String userRole = Session.getCurrentUser().getVaiTro();
-            System.out.println("DEBUG: Current user role: " + userRole);
+
             
             if (!"Tổ phó".equals(userRole)) {
-                System.out.println("DEBUG: User does not have permission to edit apartment");
+
                 showError("Lỗi quyền", "Bạn không có quyền chỉnh sửa căn hộ. Chỉ Tổ phó mới được phép.");
                 return;
             }
             
             // Build DTO from form data
             CanHoDto canHoDto = buildCanHoDto();
-            System.out.println("DEBUG: Built CanHoDto for apartment: " + canHoDto.getMaCanHo());
+
             
             // Check if service is available
             if (canHoService == null) {
@@ -499,12 +499,12 @@ public class ChinhSuaCanHoController implements Initializable {
             }
             
             // Call service to update
-            System.out.println("DEBUG: Calling updateCanHo service");
+
             ResponseDto response = canHoService.updateCanHo(canHoDto);
             
             if (response != null) {
                 if (response.isSuccess()) {
-                    System.out.println("DEBUG: Update successful: " + response.getMessage());
+
                     showSuccess("Thành công", response.getMessage());
                     
                     // Refresh apartment detail windows if they are open
@@ -514,7 +514,7 @@ public class ChinhSuaCanHoController implements Initializable {
                     Stage stage = (Stage) buttonLuu.getScene().getWindow();
                     stage.close();
                 } else {
-                    System.out.println("DEBUG: Update failed: " + response.getMessage());
+
                     showError("Lỗi", response.getMessage());
                 }
             } else {
@@ -557,7 +557,7 @@ public class ChinhSuaCanHoController implements Initializable {
         // Xử lý thông tin chủ sở hữu
         dto.setChuHo(buildChuHoDto());
         
-        System.out.println("DEBUG: Built CanHoDto - only editable fields updated");
+
         return dto;
     }
     
@@ -576,7 +576,7 @@ public class ChinhSuaCanHoController implements Initializable {
         chuHoDto.setSoDienThoai(textFieldSoDienThoai.getText().trim());
         chuHoDto.setEmail(textFieldEmail.getText().trim());
         
-        System.out.println("DEBUG: Built ChuHoDto for owner: " + chuHoDto.getHoVaTen());
+
         return chuHoDto;
     }
     
@@ -723,7 +723,7 @@ public class ChinhSuaCanHoController implements Initializable {
         comboBoxTrangThai.setValue(canHoData.isDaBanChua() ? "Đã bán" : "Chưa bán");
         comboBoxTinhTrangKiThuat.setValue(canHoData.getTrangThaiKiThuat());
         
-        System.out.println("DEBUG: Apartment info loaded - only area and status can be edited");
+
     }
 
     /**
@@ -742,7 +742,7 @@ public class ChinhSuaCanHoController implements Initializable {
             // Lưu mã định danh ban đầu
             originalOwnerMaDinhDanh = chuHo.getMaDinhDanh();
             
-            System.out.println("DEBUG: Loaded existing owner info: " + chuHo.getHoVaTen());
+
         } else {
             // Nếu chưa có chủ sở hữu, để trống form để có thể tạo mới
             textFieldMaDinhDanh.clear();
@@ -754,7 +754,7 @@ public class ChinhSuaCanHoController implements Initializable {
             
             originalOwnerMaDinhDanh = null;
             
-            System.out.println("DEBUG: No existing owner - form ready for new owner creation");
+
         }
         
         // Enable all owner fields for editing/creating
@@ -829,7 +829,7 @@ public class ChinhSuaCanHoController implements Initializable {
                                    CuDanService cuDanService, PhuongTienService phuongTienService,
                                    ApplicationContext applicationContext, javafx.stage.Window parent) {
         try {
-            System.out.println("DEBUG: Opening edit apartment form for: " + canHoData.getMaCanHo());
+
             
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
                 ChinhSuaCanHoController.class.getResource("/view/chinh_sua_can_ho.fxml")
@@ -857,7 +857,7 @@ public class ChinhSuaCanHoController implements Initializable {
             }
             stage.show();
             
-            System.out.println("DEBUG: Edit apartment window opened successfully");
+
             
         } catch (Exception e) {
             System.err.println("ERROR: Cannot open edit apartment form: " + e.getMessage());
@@ -873,7 +873,7 @@ public class ChinhSuaCanHoController implements Initializable {
     public void refreshData() {
         if (currentCanHo != null && canHoService != null) {
             try {
-                System.out.println("DEBUG: Refreshing apartment data for: " + currentCanHo.getMaCanHo());
+
                 
                 CanHoDto canHoDto = new CanHoDto();
                 canHoDto.setMaCanHo(currentCanHo.getMaCanHo());
@@ -881,7 +881,7 @@ public class ChinhSuaCanHoController implements Initializable {
                 CanHoChiTietDto refreshedData = canHoService.getCanHoChiTiet(canHoDto);
                 if (refreshedData != null) {
                     setCanHoData(refreshedData);
-                    System.out.println("DEBUG: Data refreshed successfully");
+
                 } else {
                     showError("Lỗi", "Không thể tải lại dữ liệu căn hộ");
                 }
