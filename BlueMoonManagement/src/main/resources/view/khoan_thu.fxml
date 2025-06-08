@@ -67,8 +67,8 @@
                   </HBox>
                   <HBox fx:id="text11" alignment="CENTER_LEFT" spacing="20.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label styleClass="text-bold" text="Bộ phận quản lý" HBox.hgrow="ALWAYS" />
-                        <ComboBox fx:id="comboBoxBoPhanQuanLy" maxWidth="1.7976931348623157E308" promptText="Chung cư" HBox.hgrow="ALWAYS" />
+                        <Label styleClass="text-bold" text="Phạm vi" HBox.hgrow="ALWAYS" />
+                        <ComboBox fx:id="comboBoxPhamVi" maxWidth="1.7976931348623157E308" promptText="Chọn phạm vi" HBox.hgrow="ALWAYS" />
                      </children>
                   </HBox>
                </children>

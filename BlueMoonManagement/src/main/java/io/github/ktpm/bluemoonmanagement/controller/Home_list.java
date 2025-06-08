@@ -41,6 +41,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.beans.property.SimpleStringProperty;
+import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto;
 
 @Component
 public class Home_list implements Initializable {
@@ -437,6 +439,9 @@ public class Home_list implements Initializable {
     
     @Autowired
     private io.github.ktpm.bluemoonmanagement.service.cache.CacheDataService cacheDataService;
+    
+    @Autowired
+    private io.github.ktpm.bluemoonmanagement.service.khoanThu.KhoanThuService khoanThuService;
 
     private List<Node> allPanes;
     private KhungController parentController;
@@ -449,6 +454,9 @@ public class Home_list implements Initializable {
 
     private ObservableList<TaiKhoanTableData> taiKhoanList;
     private ObservableList<TaiKhoanTableData> filteredTaiKhoanList;
+    
+    private ObservableList<KhoanThuTableData> khoanThuList;
+    private ObservableList<KhoanThuTableData> filteredKhoanThuList;
 
     // Pagination variables
     private int currentPageCuDan = 1;
@@ -550,6 +558,10 @@ public class Home_list implements Initializable {
         if (parentController != null) {
             parentController.updateScreenLabel("Danh sách khoản thu");
         }
+        
+        // Setup table và load dữ liệu khoản thu
+        setupKhoanThuTable();
+        loadKhoanThuData();
     }
     @FXML
     private void gotothemcanho(ActionEvent event) {
@@ -1159,6 +1171,54 @@ public class Home_list implements Initializable {
         public void setNgayTao(String ngayTao){this.ngayTao = ngayTao; }
         public void setNgayCapNhat(String ngayCapNhat) { this.ngayCapNhat = ngayCapNhat; }
 
+    }
+    
+    public static class KhoanThuTableData {
+        private String maKhoanThu;
+        private String tenKhoanThu;
+        private String loaiKhoanThu;
+        private String donViTinh;
+        private String soTien;
+        private String phamVi;
+        private String ngayTao;
+        private String thoiHan;
+        private String ghiChu;
+        
+        public KhoanThuTableData(String maKhoanThu, String tenKhoanThu, String loaiKhoanThu, 
+                                String donViTinh, String soTien, String phamVi, 
+                                String ngayTao, String thoiHan, String ghiChu) {
+            this.maKhoanThu = maKhoanThu;
+            this.tenKhoanThu = tenKhoanThu;
+            this.loaiKhoanThu = loaiKhoanThu;
+            this.donViTinh = donViTinh;
+            this.soTien = soTien;
+            this.phamVi = phamVi;
+            this.ngayTao = ngayTao;
+            this.thoiHan = thoiHan;
+            this.ghiChu = ghiChu;
+        }
+        
+        // Getters
+        public String getMaKhoanThu() { return maKhoanThu; }
+        public String getTenKhoanThu() { return tenKhoanThu; }
+        public String getLoaiKhoanThu() { return loaiKhoanThu; }
+        public String getDonViTinh() { return donViTinh; }
+        public String getSoTien() { return soTien; }
+        public String getPhamVi() { return phamVi; }
+        public String getNgayTao() { return ngayTao; }
+        public String getThoiHan() { return thoiHan; }
+        public String getGhiChu() { return ghiChu; }
+        
+        // Setters
+        public void setMaKhoanThu(String maKhoanThu) { this.maKhoanThu = maKhoanThu; }
+        public void setTenKhoanThu(String tenKhoanThu) { this.tenKhoanThu = tenKhoanThu; }
+        public void setLoaiKhoanThu(String loaiKhoanThu) { this.loaiKhoanThu = loaiKhoanThu; }
+        public void setDonViTinh(String donViTinh) { this.donViTinh = donViTinh; }
+        public void setSoTien(String soTien) { this.soTien = soTien; }
+        public void setPhamVi(String phamVi) { this.phamVi = phamVi; }
+        public void setNgayTao(String ngayTao) { this.ngayTao = ngayTao; }
+        public void setThoiHan(String thoiHan) { this.thoiHan = thoiHan; }
+        public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
     }
 
     public void setupTaiKhoanTable() {
@@ -1881,8 +1941,156 @@ public class Home_list implements Initializable {
      * Refresh fee data (placeholder)
      */
     private void refreshKhoanThuData() {
-        // TODO: Implement fee data refresh when available
-        System.out.println("✅ Fee data refresh requested (implementation pending)");
+        loadKhoanThuData();
+        System.out.println("✅ Fee data refreshed");
+    }
+    
+    /**
+     * Setup Khoản Thu table
+     */
+    public void setupKhoanThuTable() {
+        if (tabelViewKhoanThu != null && tableColumnMaKhoanThu != null) {
+            // Cast table view to correct type
+            TableView<KhoanThuTableData> typedTableView = (TableView<KhoanThuTableData>) tabelViewKhoanThu;
+
+            // Setup cell value factories - Map với đúng columns trong FXML
+            ((TableColumn<KhoanThuTableData, String>) tableColumnMaKhoanThu).setCellValueFactory(new PropertyValueFactory<>("maKhoanThu"));
+            ((TableColumn<KhoanThuTableData, String>) tableColumnTenKhoanThu).setCellValueFactory(new PropertyValueFactory<>("tenKhoanThu"));
+            ((TableColumn<KhoanThuTableData, String>) tableColumnLoaiKhoanThu).setCellValueFactory(new PropertyValueFactory<>("loaiKhoanThu"));
+            
+            // "Phạm vi" -> map với phamVi
+            if (tableColumnBoPhanQuanLy != null) {
+                ((TableColumn<KhoanThuTableData, String>) tableColumnBoPhanQuanLy).setCellValueFactory(new PropertyValueFactory<>("phamVi"));
+            }
+            
+            // "Ngày tạo" 
+            if (tableColumnNgayTao != null) {
+                ((TableColumn<KhoanThuTableData, String>) tableColumnNgayTao).setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
+            }
+            
+            // "Hạn nộp" (tableColumnNgayTao1) -> map với thoiHan
+            if (tableColumnNgayTao1 != null) {
+                ((TableColumn<KhoanThuTableData, String>) tableColumnNgayTao1).setCellValueFactory(new PropertyValueFactory<>("thoiHan"));
+            }
+            
+            // "Trạng thái hóa đơn" -> tạm thời hiển thị "Chưa tạo" (vì không có trong DTO)
+            if (tableColumnTrangThaiHoaDon != null) {
+                ((TableColumn<KhoanThuTableData, String>) tableColumnTrangThaiHoaDon).setCellValueFactory(cellData -> {
+                    return new javafx.beans.property.SimpleStringProperty("Chưa tạo");
+                });
+            }
+
+            // Setup row click handler
+            typedTableView.setRowFactory(tv -> {
+                javafx.scene.control.TableRow<KhoanThuTableData> row = new javafx.scene.control.TableRow<>();
+                row.setOnMouseClicked(event -> {
+                    if (!row.isEmpty() && event.getClickCount() == 1 && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                        KhoanThuTableData rowData = row.getItem();
+                        handleXemChiTietKhoanThu(rowData);
+                    }
+                });
+                return row;
+            });
+        }
+    }
+    
+    /**
+     * Handle Khoản Thu detail view
+     */
+    private void handleXemChiTietKhoanThu(KhoanThuTableData rowData) {
+        try {
+            StringBuilder details = new StringBuilder();
+            details.append(" Mã khoản thu: ").append(rowData.getMaKhoanThu()).append("\n");
+            details.append(" Tên: ").append(rowData.getTenKhoanThu()).append("\n");
+            details.append(" Loại: ").append(rowData.getLoaiKhoanThu()).append("\n");
+            details.append(" Số tiền: ").append(rowData.getSoTien()).append("\n");
+            details.append(" Đơn vị tính: ").append(rowData.getDonViTinh()).append("\n");
+            details.append(" Phạm vi: ").append(rowData.getPhamVi()).append("\n");
+            details.append(" Ngày tạo: ").append(rowData.getNgayTao()).append("\n");
+            details.append(" Thời hạn: ").append(rowData.getThoiHan()).append("\n");
+            if (rowData.getGhiChu() != null && !rowData.getGhiChu().isEmpty()) {
+                details.append("Ghi chú: ").append(rowData.getGhiChu());
+            }
+            
+            showInfo("Chi tiết khoản thu", details.toString());
+        } catch (Exception e) {
+            showError("Lỗi khi xem chi tiết", "Chi tiết: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Load Khoản Thu data
+     */
+    private void loadKhoanThuData() {
+        try {
+            if (khoanThuService != null) {
+                List<KhoanThuDto> khoanThuDtoList = khoanThuService.getAllKhoanThu();
+                khoanThuList = FXCollections.observableArrayList();
+
+                if (khoanThuDtoList != null) {
+                    for (KhoanThuDto dto : khoanThuDtoList) {
+                        String ngayTao = dto.getNgayTao() != null ? dto.getNgayTao().toString() : "";
+                        String thoiHan = dto.getThoiHan() != null ? dto.getThoiHan().toString() : "";
+                        String soTien = String.format("%,d VNĐ", dto.getSoTien());
+                        String loaiKhoanThu = dto.isBatBuoc() ? "Bắt buộc" : "Tự nguyện";
+                        
+                        KhoanThuTableData tableData = new KhoanThuTableData(
+                            dto.getMaKhoanThu(),
+                            dto.getTenKhoanThu(),
+                            loaiKhoanThu,
+                            dto.getDonViTinh() != null ? dto.getDonViTinh() : "",
+                            soTien,
+                            dto.getPhamVi() != null ? dto.getPhamVi() : "Tất cả",
+                            ngayTao,
+                            thoiHan,
+                            dto.getGhiChu() != null ? dto.getGhiChu() : ""
+                        );
+                        khoanThuList.add(tableData);
+                    }
+                }
+
+                filteredKhoanThuList = FXCollections.observableArrayList(khoanThuList);
+                ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
+                updateKhoanThuKetQuaLabel();
+            } else {
+                System.err.println("KhoanThuService is not available, cannot load data.");
+                // Load sample data if service is not available
+                loadSampleKhoanThuData();
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading KhoanThu data: " + e.getMessage());
+            e.printStackTrace();
+            // Load sample data on error
+            loadSampleKhoanThuData();
+        }
+    }
+    
+    /**
+     * Load sample khoản thu data for testing
+     */
+    private void loadSampleKhoanThuData() {
+        khoanThuList = FXCollections.observableArrayList();
+        
+        // Add sample data
+        khoanThuList.add(new KhoanThuTableData("KT001", "Phí quản lý", "Bắt buộc", "VNĐ/m²", "15,000 VNĐ", "Tất cả", "2024-01-01", "2024-01-31", "Phí quản lý chung cư"));
+        khoanThuList.add(new KhoanThuTableData("KT002", "Phí điện", "Bắt buộc", "VNĐ/kWh", "3,500 VNĐ", "Căn hộ đang sử dụng", "2024-01-01", "2024-01-31", "Phí điện hàng tháng"));
+        khoanThuList.add(new KhoanThuTableData("KT003", "Phí nước", "Bắt buộc", "VNĐ/m³", "25,000 VNĐ", "Căn hộ đang sử dụng", "2024-01-01", "2024-01-31", "Phí nước hàng tháng"));
+        khoanThuList.add(new KhoanThuTableData("KT004", "Phí gửi xe", "Tự nguyện", "VNĐ/tháng", "100,000 VNĐ", "Tất cả", "2024-01-01", "2024-01-31", "Phí gửi xe tháng"));
+        
+        filteredKhoanThuList = FXCollections.observableArrayList(khoanThuList);
+        if (tabelViewKhoanThu != null) {
+            ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
+        }
+        updateKhoanThuKetQuaLabel();
+    }
+    
+    /**
+     * Update khoản thu result label
+     */
+    private void updateKhoanThuKetQuaLabel() {
+        if (labelKetQuaHienThiKhoanThu != null && filteredKhoanThuList != null) {
+            labelKetQuaHienThiKhoanThu.setText("Hiển thị " + filteredKhoanThuList.size() + " khoản thu");
+        }
     }
     
     /**
