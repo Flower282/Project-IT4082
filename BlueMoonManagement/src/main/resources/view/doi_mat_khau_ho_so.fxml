@@ -110,7 +110,7 @@
       </VBox>
       <TextFlow prefWidth="640.0" textAlignment="CENTER">
          <children>
-            <Text fx:id="textError" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="text-error" text="Dòng này để thông báo lỗi">
+            <Text fx:id="textError" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="text-error" text="Dòng này để thông báo lỗi" visible="false">
                <font>
                   <Font size="14.0" />
                </font>
