@@ -35,7 +35,7 @@
                   <Button fx:id="buttonThongTin" mnemonicParsing="false" styleClass="popup-title-multiple" text="Thông tin" />
                   <Button fx:id="buttonCuDan" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" styleClass="popup-title-multiple" text="Cư dân" />
                   <Button fx:id="buttonPhuongTien" layoutX="394.0" layoutY="10.0" mnemonicParsing="false" styleClass="popup-title-multiple" text="Phương tiện" />
-                  <Button fx:id="buttonThuPhi" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" styleClass="popup-title-multiple" text="Thu phí" />
+                  <Button fx:id="buttonThuPhi" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" styleClass="popup-title-multiple" text="Hóa đơn" />
                </children>
             </HBox>
          </children>

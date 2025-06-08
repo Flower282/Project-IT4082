@@ -762,15 +762,15 @@ public class ChiTietCanHoController implements Initializable {
                     }
                     System.out.println("=== END DTO residents ===");
                     
-                    // Lọc chỉ hiển thị cư dân chưa có ngày chuyển đi
+                    // Chỉ hiển thị cư dân có trạng thái "Cư trú"
                     chiTiet.getCuDanList().stream()
-                        .filter(cuDan -> cuDan.getNgayChuyenDi() == null)
+                        .filter(cuDan -> "Cư trú".equals(cuDan.getTrangThaiCuTru()))
                         .forEach(cuDanList::add);
                     
                     System.out.println("=== DEBUG: UI loaded " + chiTiet.getCuDanList().size() + " total residents, " 
-                                     + cuDanList.size() + " active residents ===");
+                                     + cuDanList.size() + " displayed residents (chỉ Cư trú) ===");
                     for (CuDanTrongCanHoDto cuDan : cuDanList) {
-                        System.out.println("- UI Active Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
+                        System.out.println("- UI Displayed Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ") - " + cuDan.getTrangThaiCuTru());
                     }
                 } else {
                     System.out.println("=== DEBUG: No residents in DTO - chiTiet.getCuDanList() is NULL ===");
@@ -1224,9 +1224,8 @@ public class ChiTietCanHoController implements Initializable {
             newStage.showAndWait();
             
             // Refresh data sau khi đóng form thêm phương tiện
-            if (currentCanHo != null) {
-                loadDataFromService(currentCanHo.getMaCanHo());
-            }
+            System.out.println("DEBUG: Refreshing data after adding vehicle");
+            refreshData();
 
         } catch (IOException e) {
             showError("Lỗi", "Không thể mở cửa sổ thêm phương tiện: " + e.getMessage());
@@ -1279,10 +1278,9 @@ public class ChiTietCanHoController implements Initializable {
             // Hiển thị cửa sổ và đợi đóng
             newStage.showAndWait();
             
-            // Refresh data sau khi đóng
-            if (currentCanHo != null) {
-                loadDataFromService(currentCanHo.getMaCanHo());
-            }
+            // Refresh data sau khi đóng form chỉnh sửa phương tiện
+            System.out.println("DEBUG: Refreshing data after editing vehicle");
+            refreshData();
 
         } catch (Exception e) {
             showError("Lỗi", "Không thể mở cửa sổ chỉnh sửa phương tiện: " + e.getMessage());
@@ -1316,10 +1314,9 @@ public class ChiTietCanHoController implements Initializable {
                         if (success) {
                             showSuccess("Thành công", "Đã xóa phương tiện thành công: " + message);
 
-                            // Refresh data
-                            if (currentCanHo != null) {
-                                loadDataFromService(currentCanHo.getMaCanHo());
-                            }
+                            // Refresh data sau khi xóa phương tiện
+                            System.out.println("DEBUG: Refreshing data after deleting vehicle");
+                            refreshData();
                         } else {
                             showError("Lỗi", "Không thể xóa phương tiện: " + message);
                         }

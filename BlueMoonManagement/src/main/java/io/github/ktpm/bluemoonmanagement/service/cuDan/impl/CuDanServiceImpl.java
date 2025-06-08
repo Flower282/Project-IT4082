@@ -50,7 +50,7 @@ public class CuDanServiceImpl implements CuDanService {
         return cuDanList.stream()
                 // Tạm thời bỏ filter để kiểm tra hiển thị
                 // .filter(cuDan -> cuDan.getNgayChuyenDi() == null) // Filter out soft-deleted residents
-                .map(cuDanMapper::toCudanDto)
+                .map(cuDanMapper::toCudanDto) // Hiển thị mã căn hộ bình thường, không ẩn
                 .collect(Collectors.toList());
     }
 
@@ -115,25 +115,43 @@ public class CuDanServiceImpl implements CuDanService {
         // Map DTO to Entity
         CuDan cuDan = cuDanMapper.fromCudanDto(cudanDto);
         
-        // Kiểm tra logic tự động chuyển trạng thái
-        boolean shouldAutoChangeStatus = false;
+        // Xử lý logic khi chọn "Đã chuyển đi" từ ComboBox
+        if ("Đã chuyển đi".equals(cudanDto.getTrangThaiCuTru()) && 
+            (existingCuDan == null || !"Đã chuyển đi".equals(existingCuDan.getTrangThaiCuTru()))) {
+            // Chuyển sang trạng thái "Đã chuyển đi" từ trạng thái khác
+            cuDan.setNgayChuyenDi(LocalDate.now()); // Set ngày chuyển đi = hôm nay
+            cuDan.setNgayChuyenDen(null); // Clear ngày chuyển đến
+            System.out.println("=== DEBUG: Chuyển cư dân sang trạng thái 'Đã chuyển đi' từ ComboBox ===");
+        }
+        
+        // Kiểm tra nếu cư dân chuyển từ "Đã chuyển đi" và có mã căn hộ mới
+        boolean hasNewApartment = false;
         if (existingCuDan != null && 
-            ("Chuyển đi".equals(existingCuDan.getTrangThaiCuTru()) || 
-             "Đã chuyển đi".equals(existingCuDan.getTrangThaiCuTru())) 
+            "Đã chuyển đi".equals(existingCuDan.getTrangThaiCuTru()) 
             && cudanDto.getMaCanHo() != null && !cudanDto.getMaCanHo().trim().isEmpty()) {
             
-            System.out.println("=== DEBUG: Cư dân đang ở trạng thái 'Chuyển đi/Đã chuyển đi' và được cập nhật mã căn hộ mới ===");
+            System.out.println("=== DEBUG: Cư dân đang ở trạng thái 'Đã chuyển đi' và được cập nhật mã căn hộ mới ===");
             System.out.println("Cư dân: " + cudanDto.getHoVaTen() + " (" + cudanDto.getMaDinhDanh() + ")");
             System.out.println("Trạng thái hiện tại: " + existingCuDan.getTrangThaiCuTru());
+            System.out.println("Trạng thái mới từ form: " + cudanDto.getTrangThaiCuTru());
             System.out.println("Mã căn hộ mới: " + cudanDto.getMaCanHo());
             
-            // Tự động chuyển sang trạng thái "Cư trú"
-            cuDan.setTrangThaiCuTru("Cư trú");
-            cuDan.setNgayChuyenDen(LocalDate.now()); // Set ngày chuyển đến mới
-            cuDan.setNgayChuyenDi(null); // Clear ngày chuyển đi
-            shouldAutoChangeStatus = true;
-            
-            System.out.println("=== DEBUG: Tự động chuyển trạng thái thành 'Cư trú' ===");
+            // Xử lý logic thay đổi trạng thái từ "Đã chuyển đi"
+            if ("Đã chuyển đi".equals(cudanDto.getTrangThaiCuTru())) {
+                // Nếu vẫn giữ trạng thái "Đã chuyển đi" - không thay đổi gì
+                System.out.println("=== DEBUG: Giữ nguyên trạng thái 'Đã chuyển đi' ===");
+            } else {
+                // Chuyển từ "Đã chuyển đi" sang trạng thái khác
+                cuDan.setNgayChuyenDi(null); // Clear ngày chuyển đi
+                if ("Cư trú".equals(cudanDto.getTrangThaiCuTru())) {
+                    cuDan.setNgayChuyenDen(LocalDate.now()); // Set ngày chuyển đến mới
+                    System.out.println("=== DEBUG: Chuyển từ 'Đã chuyển đi' sang 'Cư trú' ===");
+                } else {
+                    cuDan.setNgayChuyenDen(null); // Clear ngày chuyển đến cho "Không cư trú"
+                    System.out.println("=== DEBUG: Chuyển từ 'Đã chuyển đi' sang 'Không cư trú' ===");
+                }
+            }
+            hasNewApartment = true;
         }
         
         // Properly set CanHo reference if maCanHo is provided
@@ -156,8 +174,8 @@ public class CuDanServiceImpl implements CuDanService {
         entityManager.flush(); // Đảm bảo changes được commit ngay
         
         String successMessage = "Cập nhật cư dân thành công";
-        if (shouldAutoChangeStatus) {
-            successMessage += ". Trạng thái đã được tự động chuyển từ 'Chuyển đi' sang 'Cư trú'";
+        if (hasNewApartment) {
+            successMessage += ". Cư dân đã được gán vào căn hộ mới";
         }
         
         return new ResponseDto(true, successMessage);
@@ -175,11 +193,13 @@ public class CuDanServiceImpl implements CuDanService {
         CuDan cuDan = cuDanRepository.findById(cudanDto.getMaDinhDanh()).orElse(null);
         cuDan.setNgayChuyenDi(LocalDate.now());
         cuDan.setTrangThaiCuTru("Đã chuyển đi");
+        cuDan.setNgayChuyenDen(null); // Xóa ngày chuyển đến
         
-        // Set canHo = null để mã căn hộ hiển thị null khi cư dân đã chuyển đi
-        cuDan.setCanHo(null);
+        // GIỮ NGUYÊN mã căn hộ trong database để lưu lịch sử
+        // Chỉ ẩn khi hiển thị thông qua mapper
         
         cuDanRepository.save(cuDan);
+        entityManager.flush(); // Đảm bảo thay đổi được lưu ngay
         return new ResponseDto(true, "Xóa cư dân thành công");
     }
 
@@ -297,9 +317,10 @@ public class CuDanServiceImpl implements CuDanService {
             // Soft delete: cập nhật ngày chuyển đi, trạng thái và XÓA mối quan hệ với căn hộ
             cuDan.setNgayChuyenDi(LocalDate.now());
             cuDan.setTrangThaiCuTru("Đã chuyển đi");
+            cuDan.setNgayChuyenDen(null); // Xóa ngày chuyển đến
             
-            // Set canHo = null để mã căn hộ hiển thị null khi cư dân đã chuyển đi
-            cuDan.setCanHo(null);
+            // GIỮ NGUYÊN mã căn hộ trong database để lưu lịch sử
+            // Chỉ ẩn khi hiển thị thông qua mapper
             
             cuDanRepository.save(cuDan);
             entityManager.flush();

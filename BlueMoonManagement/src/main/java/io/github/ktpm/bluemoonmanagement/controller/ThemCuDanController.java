@@ -87,11 +87,11 @@ public class ThemCuDanController implements Initializable {
             ));
         }
 
-        // Setup trạng thái cư trú - chỉ có "Cư trú"
+        // Setup trạng thái cư trú - có thể chọn "Cư trú" hoặc "Không cư trú"
         if (comboBoxTrangThai != null) {
-            comboBoxTrangThai.setItems(FXCollections.observableArrayList("Cư trú"));
+            comboBoxTrangThai.setItems(FXCollections.observableArrayList("Cư trú", "Không cư trú"));
             comboBoxTrangThai.setValue("Cư trú"); // Default value
-            comboBoxTrangThai.setDisable(true); // Không cho phép thay đổi
+            // Cho phép thay đổi trạng thái
         }
     }
 
@@ -133,9 +133,10 @@ public class ThemCuDanController implements Initializable {
         if (trangThai == null) return;
         
         boolean isCuTru = "Cư trú".equals(trangThai);
-        boolean isChuyenDi = "Chuyển đi".equals(trangThai);
+        boolean isKhongCuTru = "Không cư trú".equals(trangThai);
+        boolean isChuyenDi = "Đã chuyển đi".equals(trangThai);
         
-        // Hiển thị HBox ngày chuyển đến chỉ khi trạng thái là "Cư trú"
+        // Hiển thị HBox ngày chuyển đến khi trạng thái là "Cư trú"
         if (hBoxNgayChuyenDen != null) {
             hBoxNgayChuyenDen.setVisible(isCuTru);
             hBoxNgayChuyenDen.setDisable(!isCuTru);
@@ -144,15 +145,17 @@ public class ThemCuDanController implements Initializable {
         // Set giá trị cho datePickerNgayChuyenDen
         if (datePickerNgayChuyenDen != null) {
             if (isCuTru) {
-                // Set ngày hiện tại làm mặc định
+                // Set ngày hiện tại làm mặc định khi chọn "Cư trú"
                 datePickerNgayChuyenDen.setValue(LocalDate.now());
+                System.out.println("=== DEBUG: Chọn 'Cư trú' - set ngày chuyển đến = hôm nay ===");
             } else {
-                // Xóa giá trị khi ẩn
+                // Xóa ngày chuyển đến khi chọn "Không cư trú" hoặc "Đã chuyển đi"
                 datePickerNgayChuyenDen.setValue(null);
+                System.out.println("=== DEBUG: Chọn '" + trangThai + "' - xóa ngày chuyển đến ===");
             }
         }
         
-        // Hiển thị HBox ngày chuyển đi khi trạng thái là "Chuyển đi"
+        // Hiển thị HBox ngày chuyển đi khi trạng thái là "Đã chuyển đi" (chỉ khi xóa mềm)
         if (hBoxNgayChuyenDi != null) {
             hBoxNgayChuyenDi.setVisible(isChuyenDi);
             hBoxNgayChuyenDi.setDisable(!isChuyenDi);
@@ -161,11 +164,13 @@ public class ThemCuDanController implements Initializable {
         // Set giá trị cho datePickerNgayChuyenDi
         if (datePickerNgayChuyenDi != null) {
             if (isChuyenDi) {
-                // Set ngày hiện tại làm mặc định
+                // Set ngày hiện tại làm mặc định khi chọn "Đã chuyển đi"
                 datePickerNgayChuyenDi.setValue(LocalDate.now());
+                System.out.println("=== DEBUG: Chọn 'Đã chuyển đi' - set ngày chuyển đi = hôm nay ===");
             } else {
-                // Xóa giá trị khi ẩn
+                // Xóa giá trị khi chọn trạng thái khác
                 datePickerNgayChuyenDi.setValue(null);
+                System.out.println("=== DEBUG: Chọn trạng thái khác - xóa ngày chuyển đi ===");
             }
         }
     }
@@ -182,11 +187,11 @@ public class ThemCuDanController implements Initializable {
                 handleTrangThaiChange("Cư trú");
             }
         } else {
-            // Nếu có ngày chuyển đi, tự động chuyển trạng thái sang "Chuyển đi"
+            // Nếu có ngày chuyển đi, tự động chuyển trạng thái sang "Đã chuyển đi"
             if (comboBoxTrangThai != null) {
-                comboBoxTrangThai.setValue("Chuyển đi");
+                comboBoxTrangThai.setValue("Đã chuyển đi");
                 // Trigger để hiện field ngày chuyển đi
-                handleTrangThaiChange("Chuyển đi");
+                handleTrangThaiChange("Đã chuyển đi");
             }
         }
     }
@@ -227,6 +232,8 @@ public class ThemCuDanController implements Initializable {
         }
         if (comboBoxTrangThai != null) {
             comboBoxTrangThai.setValue(cuDanData.getTrangThaiCuTru());
+            // Setup ComboBox trạng thái cho edit mode từ apartment detail
+            setupEditModeComboBoxTrangThai();
         }
         // Gán và khóa mã căn hộ
         if (textFieldMaCanHo != null) {
@@ -297,6 +304,8 @@ public class ThemCuDanController implements Initializable {
             
             if (comboBoxTrangThai != null) {
                 comboBoxTrangThai.setValue(cuDanData.getTrangThaiCuTru());
+                // Setup lại ComboBox sau khi set giá trị
+                setupEditModeComboBoxTrangThai();
             }
             
             if (datePickerNgayChuyenDen != null && cuDanData.getNgayChuyenDen() != null && !cuDanData.getNgayChuyenDen().isEmpty()) {
@@ -346,29 +355,42 @@ public class ThemCuDanController implements Initializable {
             boolean confirmed = showCustomConfirmDialog(hoVaTen, maDinhDanh);
             
             if (confirmed) {
-                // Call service to delete
-                boolean deleted = cuDanService.xoaMem(maDinhDanh);
-
-                if (deleted) {
-                    System.out.println("=== DEBUG: Resident deleted successfully, starting refresh process ===");
+                // Xóa mềm: chuyển trạng thái thành "Chuyển đi" và set ngày chuyển đi
+                try {
+                    CudanDto cuDanDto = createCuDanDto();
+                    cuDanDto.setTrangThaiCuTru("Đã chuyển đi");
+                    cuDanDto.setNgayChuyenDi(LocalDate.now());
+                    cuDanDto.setNgayChuyenDen(null); // Xóa ngày chuyển đến
                     
-                    // Refresh main residents table and switch to residents tab
-                    refreshMainResidentsTable();
+                    // Cập nhật cư dân thay vì xóa
+                    ResponseDto response = cuDanService.updateCuDan(cuDanDto);
                     
-                    showSuccessMessage("Xóa cư dân thành công! Bảng cư dân đã được cập nhật.");
+                    if (response.isSuccess()) {
+                        System.out.println("=== DEBUG: Resident soft deleted successfully, starting refresh process ===");
+                        
+                        // Refresh main residents table and switch to residents tab
+                        refreshMainResidentsTable();
+                        
+                        showSuccessMessage("Xóa cư dân thành công! Cư dân đã được chuyển sang trạng thái 'Đã chuyển đi'.");
+                        
+                        // Close window after successful deletion
+                        javafx.application.Platform.runLater(() -> {
+                            try {
+                                Thread.sleep(1000); // Show success message for 1 second
+                                closeWindow();
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                closeWindow();
+                            }
+                        });
+                    } else {
+                        showErrorMessage("Không thể xóa cư dân: " + response.getMessage());
+                    }
                     
-                    // Close window after successful deletion
-                    javafx.application.Platform.runLater(() -> {
-                        try {
-                            Thread.sleep(1000); // Show success message for 1 second
-                            closeWindow();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            closeWindow();
-                        }
-                    });
-                } else {
-                    showErrorMessage("Không thể xóa cư dân. Vui lòng thử lại.");
+                } catch (Exception e) {
+                    showErrorMessage("Có lỗi xảy ra khi xóa cư dân: " + e.getMessage());
+                    System.err.println("Error during soft delete: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
 
@@ -755,15 +777,28 @@ public class ThemCuDanController implements Initializable {
             buttonChinhSua.setVisible(false);
         }
         if (buttonXoa != null) {
-            buttonXoa.setVisible(true);
-            buttonXoa.setOnAction(this::handleXoaCuDan);
+            buttonXoa.setVisible(false); // Ẩn nút xóa, thay bằng ComboBox trạng thái
         }
         
-        // Trong edit mode, cũng chỉ có "Cư trú" và disable ComboBox
+        // Trong edit mode, setup ComboBox trạng thái phù hợp
+        setupEditModeComboBoxTrangThai();
+    }
+    
+    /**
+     * Setup ComboBox trạng thái cho edit mode
+     */
+    private void setupEditModeComboBoxTrangThai() {
         if (comboBoxTrangThai != null) {
-            comboBoxTrangThai.setItems(FXCollections.observableArrayList("Cư trú"));
-            comboBoxTrangThai.setValue("Cư trú");
-            comboBoxTrangThai.setDisable(true); // Không cho phép thay đổi
+            String currentStatus = comboBoxTrangThai.getValue();
+            
+            // Trong edit mode, luôn cho phép chọn tất cả 3 trạng thái
+            comboBoxTrangThai.setItems(FXCollections.observableArrayList("Cư trú", "Không cư trú", "Đã chuyển đi"));
+            comboBoxTrangThai.setDisable(false); // Cho phép thay đổi
+            
+            // Giữ nguyên giá trị hiện tại
+            comboBoxTrangThai.setValue(currentStatus);
+            
+            System.out.println("=== DEBUG: Edit mode - cho phép chọn tất cả trạng thái: Cư trú, Không cư trú, Đã chuyển đi ===");
         }
     }
 
