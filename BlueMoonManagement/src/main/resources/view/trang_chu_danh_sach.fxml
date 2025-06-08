@@ -467,13 +467,12 @@
                            <children>
                               <TableView fx:id="tabelViewKhoanThu" prefWidth="970.0">
                                  <columns>
-                                    <TableColumn fx:id="tableColumnMaKhoanThu" prefWidth="107.19997483491898" text="Mã khoản thu" />
-                                    <TableColumn fx:id="tableColumnTenKhoanThu" prefWidth="156.800048828125" text="Tên khoản thu" />
-                                    <TableColumn fx:id="tableColumnLoaiKhoanThu" prefWidth="121.5999755859375" text="Loại khoản thu" />
-                                    <TableColumn fx:id="tableColumnBoPhanQuanLy" prefWidth="152.79998779296875" text="Bộ phận quản lý" />
-                                    <TableColumn fx:id="tableColumnNgayTao" prefWidth="151.20001220703125" text="Ngày tạo" />
-                                    <TableColumn fx:id="tableColumnNgayTao1" prefWidth="124.79998779296875" text="Hạn nộp" />
-                                    <TableColumn fx:id="tableColumnTrangThaiHoaDon" prefWidth="151.199951171875" text="Trạng thái hóa đơn" />
+                                    <TableColumn fx:id="tableColumnMaKhoanThu" prefWidth="153.59999924898148" text="Mã khoản thu" />
+                                    <TableColumn fx:id="tableColumnTenKhoanThu" prefWidth="267.2000427246094" text="Tên khoản thu" />
+                                    <TableColumn fx:id="tableColumnLoaiKhoanThu" minWidth="8.79998779296875" prefWidth="112.800048828125" text="Loại khoản thu" />
+                                    <TableColumn fx:id="tableColumnBoPhanQuanLy" prefWidth="128.79998779296875" text="Bộ phận quản lý" />
+                                    <TableColumn fx:id="tableColumnNgayTao1" prefWidth="162.4000244140625" text="Hạn nộp" />
+                                    <TableColumn fx:id="tableColumnTrangThaiHoaDon" prefWidth="144.79998779296875" text="Tạo hóa đơn" />
                                  </columns>
                               </TableView>
                               <AnchorPane prefWidth="970.0">
@@ -498,7 +497,7 @@
                      <children>
                         <TextField fx:id="textFieldMaKhoanThu" prefWidth="195.0" promptText="Nhập mã khoản thu" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldTenKhoanThu" prefWidth="210.0" promptText="Nhập tên khoản thu" styleClass="text-field-normal" />
-                        <TextField fx:id="textFieldBoPhanQuanLy" layoutX="421.0" layoutY="10.0" prefWidth="206.0" promptText="Nhập phạm vi" styleClass="text-field-normal" />
+                        <TextField fx:id="textFieldBoPhanQuanLy" layoutX="421.0" layoutY="10.0" prefWidth="206.0" promptText="Nhập bộ phận quản lý" styleClass="text-field-normal" />
                         <ComboBox fx:id="comboBoxLoaiKhoanThu" prefWidth="187.0" promptText="Bắt buộc" style="-fx-background-color: transparent;" />
                         <ComboBox fx:id="comboBoxTrangThaiHoaDon" layoutX="722.0" layoutY="10.0" prefWidth="187.0" promptText="Trạng thái" style="-fx-background-color: transparent;" />
                         <Button fx:id="buttonTimKiemKhoanThu" mnemonicParsing="false" prefWidth="150.0" text="Tìm kiếm">

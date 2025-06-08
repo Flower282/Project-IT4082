@@ -309,7 +309,7 @@ public class Home_list implements Initializable {
     private TableColumn<?, ?> tableColumnNgaySinh;
 
     @FXML
-    private TableColumn<?, ?> tableColumnNgayTao;
+    private TableColumn<?, ?> tableColumnNgayTaoTK;
 
     @FXML
     private TableColumn<?, ?> tableColumnNgayTao1;
@@ -529,9 +529,10 @@ public class Home_list implements Initializable {
             parentController.updateScreenLabel("Danh sách căn hộ");
         }
         
-        // Setup table nhưng KHÔNG load dữ liệu lại (sử dụng cache)
+        // Auto-refresh apartment data when entering tab
+        System.out.println("🔄 Auto-refreshing apartment data on tab switch...");
+        refreshApartmentData();
         setupCanHoTable();
-        loadDataFromCache();
     }
 
     @FXML
@@ -547,9 +548,10 @@ public class Home_list implements Initializable {
             parentController.updateScreenLabel("Danh sách cư dân");
         }
         
-        // Setup table và load dữ liệu cư dân (tương tự như goToCanHo)
+        // Auto-refresh resident data when entering tab
+        System.out.println("🔄 Auto-refreshing resident data on tab switch...");
+        refreshCuDanData();
         setupCuDanTable();
-        loadCuDanData();
     }
 
     @FXML
@@ -559,9 +561,23 @@ public class Home_list implements Initializable {
             parentController.updateScreenLabel("Danh sách khoản thu");
         }
         
-        // Setup table và load dữ liệu khoản thu
+        // Auto-refresh fee data when entering tab
+        System.out.println("🔄 Auto-refreshing fee data on tab switch...");
+        refreshKhoanThuData();
         setupKhoanThuTable();
-        loadKhoanThuData();
+    }
+
+    @FXML
+    void gotoTaiKhoan(ActionEvent event) {
+        show("TaiKhoan");
+        if (parentController != null) {
+            parentController.updateScreenLabel("Danh sách tài khoản");
+        }
+        
+        // Auto-refresh account data when entering tab
+        System.out.println("🔄 Auto-refreshing account data on tab switch...");
+        refreshTaiKhoanData();
+        setupTaiKhoanTable();
     }
     @FXML
     private void gotothemcanho(ActionEvent event) {
@@ -1230,17 +1246,19 @@ public class Home_list implements Initializable {
             ((TableColumn<TaiKhoanTableData, String>) tableColumnEmail).setCellValueFactory(new PropertyValueFactory<>("email"));
             ((TableColumn<TaiKhoanTableData, String>) tableColumnHoVaTenTaiKhoan).setCellValueFactory(new PropertyValueFactory<>("hoVaTen"));
             ((TableColumn<TaiKhoanTableData, String>) tableColumnVaiTro).setCellValueFactory(new PropertyValueFactory<>("vaiTro"));
-            ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayTao).setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayTaoTK).setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
             ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayCapNhat).setCellValueFactory(new PropertyValueFactory<>("ngayCapNhat"));
 
-            // Thêm sự kiện LEFT-click để xem chi tiết tài khoản (chỉ chuột trái)
+
+
+            // Thêm sự kiện double-click để mở form sửa/xóa tài khoản
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<TaiKhoanTableData> row = new javafx.scene.control.TableRow<>();
                 row.setOnMouseClicked(event -> {
-                    // CHỈ LEFT-CLICK để mở chi tiết (tránh conflict với right-click refresh)
-                    if (!row.isEmpty() && event.getClickCount() == 1 && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                    // DOUBLE-CLICK để mở form sửa/xóa tài khoản
+                    if (!row.isEmpty() && event.getClickCount() == 2 && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                         TaiKhoanTableData rowData = row.getItem();
-                        handleXemChiTietTaiKhoan(rowData);
+                        handleEditTaiKhoan(rowData);
                     }
                 });
                 return row;
@@ -1303,6 +1321,69 @@ public class Home_list implements Initializable {
             stage.show();
         } catch (IOException e) {
             showError("Lỗi mở chi tiết", "Không thể mở trang chi tiết tài khoản: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handle edit account action - opens edit form with edit/delete options
+     */
+    private void handleEditTaiKhoan(TaiKhoanTableData rowData) {
+        try {
+            if (taiKhoanService != null) {
+                String email = rowData.getEmail();
+                String hoVaTen = rowData.getHoVaTen();
+                String vaiTro = rowData.getVaiTro();
+
+                LocalDateTime ngayTao = LocalDateTime.parse(rowData.getNgayTao());
+                LocalDateTime ngayCapNhat = LocalDateTime.parse(rowData.getNgayCapNhat());
+
+                ThongTinTaiKhoanDto taiKhoanDto = new ThongTinTaiKhoanDto(email, hoVaTen, vaiTro, ngayTao, ngayCapNhat);
+                if (taiKhoanDto != null) {
+                    openEditTaiKhoan(taiKhoanDto);
+                } else {
+                    showError("Lỗi", "Không tìm thấy thông tin tài khoản");
+                }
+            } else {
+                showError("Lỗi", "Dịch vụ quản lý tài khoản không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi khi mở form sửa", "Chi tiết: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Open edit account form
+     */
+    private void openEditTaiKhoan(ThongTinTaiKhoanDto taiKhoanDto) {
+        try {
+            // Sử dụng form tài khoản có sẵn với mode edit
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/tai_khoan.fxml"));
+            Parent root = loader.load();
+
+            ChiTietTaiKhoanController controller = loader.getController();
+            // Inject ApplicationContext và services
+            if (applicationContext != null) {
+                controller.setApplicationContext(applicationContext);
+            }
+            if (taiKhoanService != null) {
+                controller.setTaiKhoanService(taiKhoanService);
+            }
+            // Set data cho form
+            controller.setTaiKhoanData(taiKhoanDto);
+            
+            // Tạo cửa sổ mới
+            Stage stage = new Stage();
+            stage.setTitle("Chỉnh sửa tài khoản - " + taiKhoanDto.getEmail());
+            stage.setScene(new Scene(root, 800, 600));
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(tabelViewTaiKhoan.getScene().getWindow());
+            
+            // Refresh table sau khi đóng
+            stage.setOnHidden(e -> refreshTaiKhoanData());
+            
+            stage.show();
+        } catch (IOException e) {
+            showError("Lỗi mở form sửa", "Không thể mở form chỉnh sửa tài khoản: " + e.getMessage());
         }
     }
 
@@ -1912,8 +1993,8 @@ public class Home_list implements Initializable {
      */
     private void refreshFeeDataRightClick() {
         System.out.println("🖱️ Right-click refresh: Fees");
-        // TODO: Implement fee data refresh when available
-        System.out.println("✅ Fee data refresh requested via right-click (implementation pending)");
+        refreshKhoanThuDataInternal();
+        System.out.println("✅ Fee data refreshed via right-click");
     }
     
     /**
@@ -1932,17 +2013,29 @@ public class Home_list implements Initializable {
     /**
      * Refresh accounts data
      */
-    private void refreshTaiKhoanData() {
+    public void refreshTaiKhoanData() {
         loadTaiKhoanData();
         System.out.println("✅ Accounts data refreshed");
     }
     
     /**
-     * Refresh fee data (placeholder)
+     * Public method to refresh fee data - can be called from other controllers
      */
-    private void refreshKhoanThuData() {
+    public void refreshKhoanThuData() {
+        // Clear cache and reload fee data
+        if (cacheDataService != null) {
+            cacheDataService.refreshCacheData();
+        }
         loadKhoanThuData();
         System.out.println("✅ Fee data refreshed");
+    }
+    
+    /**
+     * Private method for internal refresh fee data
+     */
+    private void refreshKhoanThuDataInternal() {
+        loadKhoanThuData();
+        System.out.println("✅ Fee data refreshed internally");
     }
     
     /**
@@ -1958,15 +2051,12 @@ public class Home_list implements Initializable {
             ((TableColumn<KhoanThuTableData, String>) tableColumnTenKhoanThu).setCellValueFactory(new PropertyValueFactory<>("tenKhoanThu"));
             ((TableColumn<KhoanThuTableData, String>) tableColumnLoaiKhoanThu).setCellValueFactory(new PropertyValueFactory<>("loaiKhoanThu"));
             
-            // "Phạm vi" -> map với phamVi
+            // "Bộ phận quản lý" -> map với ghiChu 
             if (tableColumnBoPhanQuanLy != null) {
-                ((TableColumn<KhoanThuTableData, String>) tableColumnBoPhanQuanLy).setCellValueFactory(new PropertyValueFactory<>("phamVi"));
+                ((TableColumn<KhoanThuTableData, String>) tableColumnBoPhanQuanLy).setCellValueFactory(new PropertyValueFactory<>("ghiChu"));
             }
             
-            // "Ngày tạo" 
-            if (tableColumnNgayTao != null) {
-                ((TableColumn<KhoanThuTableData, String>) tableColumnNgayTao).setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
-            }
+            // Bỏ cột "Ngày tạo" trong bảng khoản thu - không cần hiển thị nữa
             
             // "Hạn nộp" (tableColumnNgayTao1) -> map với thoiHan
             if (tableColumnNgayTao1 != null) {
@@ -2006,11 +2096,9 @@ public class Home_list implements Initializable {
             details.append(" Số tiền: ").append(rowData.getSoTien()).append("\n");
             details.append(" Đơn vị tính: ").append(rowData.getDonViTinh()).append("\n");
             details.append(" Phạm vi: ").append(rowData.getPhamVi()).append("\n");
+            details.append(" Bộ phận quản lý: ").append(rowData.getGhiChu() != null ? rowData.getGhiChu() : "Không có").append("\n");
             details.append(" Ngày tạo: ").append(rowData.getNgayTao()).append("\n");
-            details.append(" Thời hạn: ").append(rowData.getThoiHan()).append("\n");
-            if (rowData.getGhiChu() != null && !rowData.getGhiChu().isEmpty()) {
-                details.append("Ghi chú: ").append(rowData.getGhiChu());
-            }
+            details.append(" Thời hạn: ").append(rowData.getThoiHan());
             
             showInfo("Chi tiết khoản thu", details.toString());
         } catch (Exception e) {
@@ -2072,10 +2160,10 @@ public class Home_list implements Initializable {
         khoanThuList = FXCollections.observableArrayList();
         
         // Add sample data
-        khoanThuList.add(new KhoanThuTableData("KT001", "Phí quản lý", "Bắt buộc", "VNĐ/m²", "15,000 VNĐ", "Tất cả", "2024-01-01", "2024-01-31", "Phí quản lý chung cư"));
-        khoanThuList.add(new KhoanThuTableData("KT002", "Phí điện", "Bắt buộc", "VNĐ/kWh", "3,500 VNĐ", "Căn hộ đang sử dụng", "2024-01-01", "2024-01-31", "Phí điện hàng tháng"));
-        khoanThuList.add(new KhoanThuTableData("KT003", "Phí nước", "Bắt buộc", "VNĐ/m³", "25,000 VNĐ", "Căn hộ đang sử dụng", "2024-01-01", "2024-01-31", "Phí nước hàng tháng"));
-        khoanThuList.add(new KhoanThuTableData("KT004", "Phí gửi xe", "Tự nguyện", "VNĐ/tháng", "100,000 VNĐ", "Tất cả", "2024-01-01", "2024-01-31", "Phí gửi xe tháng"));
+        khoanThuList.add(new KhoanThuTableData("KT001", "Phí quản lý", "Bắt buộc", "VNĐ/m²", "15,000 VNĐ", "Tất cả", "2024-01-01", "2024-01-31", "Ban quản lý"));
+        khoanThuList.add(new KhoanThuTableData("KT002", "Phí điện", "Bắt buộc", "VNĐ/kWh", "3,500 VNĐ", "Căn hộ đang sử dụng", "2024-01-01", "2024-01-31", "Bên thứ 3"));
+        khoanThuList.add(new KhoanThuTableData("KT003", "Phí nước", "Bắt buộc", "VNĐ/m³", "25,000 VNĐ", "Căn hộ đang sử dụng", "2024-01-01", "2024-01-31", "Bên thứ 3"));
+        khoanThuList.add(new KhoanThuTableData("KT004", "Phí gửi xe", "Tự nguyện", "VNĐ/tháng", "100,000 VNĐ", "Tất cả", "2024-01-01", "2024-01-31", "Ban quản lý"));
         
         filteredKhoanThuList = FXCollections.observableArrayList(khoanThuList);
         if (tabelViewKhoanThu != null) {
@@ -2100,7 +2188,7 @@ public class Home_list implements Initializable {
         refreshApartmentData();
         refreshCuDanData();
         refreshTaiKhoanData();
-        refreshKhoanThuData();
+        refreshKhoanThuDataInternal();
         System.out.println("✅ All data refreshed");
     }
     
