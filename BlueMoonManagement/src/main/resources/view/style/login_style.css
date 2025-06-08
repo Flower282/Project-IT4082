@@ -49,7 +49,7 @@
     -fx-text-fill: #333333;
 }
 
-.button-textlike: hover {
+.button-textlike:hover {
     /* Nền trắng nhạt */
     -fx-background-color: rgba(0, 0, 0, 0.1);
 }
