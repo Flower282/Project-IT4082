@@ -94,6 +94,7 @@ public class ChiTietCanHoController implements Initializable {
     @FXML private ComboBox<String> comboBoxSoKetQuaCuDan;
     @FXML private TextField textFieldTimKiemCuDan;
     @FXML private TextField textFieldMaDinhDanh;
+    @FXML private ComboBox<String> comboBoxTrangThaiCuDan;
     @FXML private Button buttonTimKiemCuDan;
     @FXML private Label labelHienThiKetQuaCuDan;
 
@@ -407,6 +408,38 @@ public class ChiTietCanHoController implements Initializable {
                 handleTimKiemCuDan();
             });
         }
+        
+        // Setup search functionality for Phương tiện tab
+        if (textFieldMaSoXe != null) {
+            textFieldMaSoXe.textProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemPhuongTien();
+            });
+        }
+        
+        if (comboBoxLoaiPhuongTien != null) {
+            comboBoxLoaiPhuongTien.valueProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemPhuongTien();
+            });
+        }
+        
+        // Setup search functionality for Thu phí tab
+        if (textFieldTenKhoanThu != null) {
+            textFieldTenKhoanThu.textProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemThuPhi();
+            });
+        }
+        
+        if (comboBoxTrangThaiCuDan != null) {
+            comboBoxTrangThaiCuDan.valueProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemCuDan();
+            });
+        }
+        
+        if (comboBoxLoaiKhoanThu != null) {
+            comboBoxLoaiKhoanThu.valueProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemThuPhi();
+            });
+        }
     }
 
     /**
@@ -537,6 +570,12 @@ public class ChiTietCanHoController implements Initializable {
         if (comboBoxSoKetQuaCuDan != null) {
             comboBoxSoKetQuaCuDan.setItems(FXCollections.observableArrayList("10", "25", "50", "100"));
             comboBoxSoKetQuaCuDan.setValue("10");
+        }
+
+        // Setup ComboBox trạng thái cư dân
+        if (comboBoxTrangThaiCuDan != null) {
+            comboBoxTrangThaiCuDan.setItems(FXCollections.observableArrayList("Tất cả", "Đang cư trú", "Đã chuyển đi", "Tạm vắng"));
+            comboBoxTrangThaiCuDan.setValue("Tất cả");
         }
 
         // Setup ComboBox loại phương tiện - will be populated from actual data after loading
@@ -1156,9 +1195,11 @@ public class ChiTietCanHoController implements Initializable {
     private void handleTimKiemCuDan() {
         String keywordHoTen = textFieldTimKiemCuDan != null ? textFieldTimKiemCuDan.getText().trim() : "";
         String keywordMaDinhDanh = textFieldMaDinhDanh != null ? textFieldMaDinhDanh.getText().trim() : "";
+        String trangThaiCuDan = comboBoxTrangThaiCuDan != null ? comboBoxTrangThaiCuDan.getValue() : "";
         
-        // Nếu cả 2 ô tìm kiếm đều trống thì hiển thị toàn bộ danh sách
-        if (keywordHoTen.isEmpty() && keywordMaDinhDanh.isEmpty()) {
+        // Nếu tất cả ô tìm kiếm đều trống thì hiển thị toàn bộ danh sách
+        if (keywordHoTen.isEmpty() && keywordMaDinhDanh.isEmpty() && 
+            ("Tất cả".equals(trangThaiCuDan) || trangThaiCuDan == null || trangThaiCuDan.isEmpty())) {
             setTableData(); // Reset to full list
             updateResultCount();
             return;
@@ -1172,8 +1213,11 @@ public class ChiTietCanHoController implements Initializable {
                         cuDan.getHoVaTen().toLowerCase().contains(keywordHoTen.toLowerCase());
                     boolean matchesMaDinhDanh = keywordMaDinhDanh.isEmpty() ||
                         cuDan.getMaDinhDanh().toLowerCase().contains(keywordMaDinhDanh.toLowerCase());
-                    // Cả 2 điều kiện phải thỏa mãn (AND logic)
-                    return matchesHoTen && matchesMaDinhDanh;
+                    boolean matchesTrangThai = "Tất cả".equals(trangThaiCuDan) || 
+                        trangThaiCuDan == null || trangThaiCuDan.isEmpty() ||
+                        (cuDan.getTrangThaiCuTru() != null && cuDan.getTrangThaiCuTru().equals(trangThaiCuDan));
+                    // Tất cả điều kiện phải thỏa mãn (AND logic)
+                    return matchesHoTen && matchesMaDinhDanh && matchesTrangThai;
                 })
                 .collect(FXCollections::observableArrayList, 
                         ObservableList::add, 
@@ -1185,6 +1229,7 @@ public class ChiTietCanHoController implements Initializable {
                 System.out.println("=== DEBUG: Search completed ===");
                 System.out.println("Search by name: '" + keywordHoTen + "'");
                 System.out.println("Search by ID: '" + keywordMaDinhDanh + "'");
+                System.out.println("Search by status: '" + trangThaiCuDan + "'");
                 System.out.println("Results: " + filteredList.size() + "/" + cuDanList.size());
             }
         }
@@ -1195,8 +1240,10 @@ public class ChiTietCanHoController implements Initializable {
         String maSoXe = textFieldMaSoXe != null ? textFieldMaSoXe.getText().trim() : "";
         String loaiPhuongTien = comboBoxLoaiPhuongTien != null ? comboBoxLoaiPhuongTien.getValue() : "";
         
-        if (maSoXe.isEmpty() && "Tất cả".equals(loaiPhuongTien)) {
+        // Nếu tất cả điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
+        if (maSoXe.isEmpty() && ("Tất cả".equals(loaiPhuongTien) || loaiPhuongTien == null || loaiPhuongTien.isEmpty())) {
             setTableData(); // Reset to full list
+            System.out.println("🔍 Vehicle search: Reset to full list");
             return;
         }
         
@@ -1207,6 +1254,7 @@ public class ChiTietCanHoController implements Initializable {
                     boolean matchesBienSo = maSoXe.isEmpty() || 
                         pt.getBienSo().toLowerCase().contains(maSoXe.toLowerCase());
                     boolean matchesLoai = "Tất cả".equals(loaiPhuongTien) || 
+                        loaiPhuongTien == null || loaiPhuongTien.isEmpty() ||
                         pt.getLoaiPhuongTien().equals(loaiPhuongTien);
                     return matchesBienSo && matchesLoai;
                 })
@@ -1217,6 +1265,15 @@ public class ChiTietCanHoController implements Initializable {
             if (tableViewPhuongTien != null) {
                 tableViewPhuongTien.setItems(filteredList);
             }
+            
+            // Update label hiển thị kết quả
+            if (labelHienThiKetQuaPhuongTien != null) {
+                labelHienThiKetQuaPhuongTien.setText("Hiển thị " + filteredList.size() + "/" + phuongTienList.size() + " phương tiện");
+            }
+            
+            System.out.println("🔍 Vehicle search completed:");
+            System.out.println("  - Search criteria: BienSo=" + maSoXe + ", LoaiPhuongTien=" + loaiPhuongTien);
+            System.out.println("  - Results: " + filteredList.size() + "/" + phuongTienList.size());
         }
     }
 

@@ -290,8 +290,8 @@
                      <children>
                         <TextField fx:id="textFieldMaCanHo" prefWidth="215.0" promptText="Nhập mã căn hộ" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldChuSoHuu" prefWidth="240.0" promptText="Nhập chủ sở hữu" styleClass="text-field-normal" />
-                        <ComboBox fx:id="comboBoxToa" editable="true" prefWidth="90.0" promptText="Tòa" style="-fx-background-color: transparent;" />
-                        <ComboBox fx:id="comboBoxTang" editable="true" layoutX="722.0" layoutY="10.0" prefWidth="84.0" promptText="Tầng" style="-fx-background-color: transparent;" />
+                        <TextField fx:id="textFieldToa" prefWidth="90.0" promptText="Tòa" styleClass="text-field-normal" />
+                        <TextField fx:id="textFieldTang" prefWidth="84.0" promptText="Tầng" styleClass="text-field-normal" />
                         <ComboBox fx:id="comboBoxTrangThai" layoutX="722.0" layoutY="10.0" prefWidth="136.0" promptText="Trạng thái" style="-fx-background-color: transparent;" />
                         <Button fx:id="buttonTimKiemCanHo" mnemonicParsing="false" text="Tìm kiếm">
                            <styleClass>
