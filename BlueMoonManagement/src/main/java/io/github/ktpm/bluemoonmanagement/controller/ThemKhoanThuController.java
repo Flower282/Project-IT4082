@@ -5,6 +5,7 @@ import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.phiGuiXe.PhiGuiXeDto;
 import io.github.ktpm.bluemoonmanagement.service.khoanThu.KhoanThuService;
+import io.github.ktpm.bluemoonmanagement.session.Session;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -81,6 +82,9 @@ public class ThemKhoanThuController {
 
     @Autowired
     private KhoanThuService khoanThuService;
+    
+    @Autowired
+    private org.springframework.context.ApplicationContext applicationContext;
 
     public void initialize() {
         // Khởi tạo các ComboBox với dữ liệu mẫu
@@ -130,6 +134,12 @@ public class ThemKhoanThuController {
     }
     @FXML
     void ThemKhoanThuClicked(ActionEvent event) {
+        // Kiểm tra quyền trước khi thực hiện
+        if (!hasPermission()) {
+            textError.setText("Chỉ Kế toán mới có quyền thêm khoản thu.");
+            textError.setStyle("-fx-fill: red;");
+            return;
+        }
 
         if (isAnyFieldEmpty()) {
             textError.setText("Vui lòng điền đầy đủ thông tin!");
@@ -168,6 +178,20 @@ public class ThemKhoanThuController {
         if (response.isSuccess()) {
             textError.setText("Thêm khoản thu thành công!");
             textError.setStyle("-fx-fill: green;");
+
+            // Refresh khoản thu table
+            refreshKhoanThuTable();
+            
+            // Close window after successful addition
+            javafx.application.Platform.runLater(() -> {
+                try {
+                    Thread.sleep(1500); // Show success message for 1.5 seconds
+                    handleClose(null);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    handleClose(null);
+                }
+            });
 
         } else {
             textError.setText("Lỗi: " + response.getMessage());
@@ -231,6 +255,88 @@ public class ThemKhoanThuController {
             stage.close();
         } catch (Exception e) {
             System.err.println("Lỗi khi đóng cửa sổ: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Refresh khoản thu table in Home_list controller
+     */
+    private void refreshKhoanThuTable() {
+        try {
+            System.out.println("🔄 Refreshing fee table...");
+            
+            javafx.application.Platform.runLater(() -> {
+                try {
+                    // Find all windows and look for Home_list controller
+                    for (javafx.stage.Window window : javafx.stage.Window.getWindows()) {
+                        if (window instanceof javafx.stage.Stage) {
+                            javafx.stage.Stage stage = (javafx.stage.Stage) window;
+                            javafx.scene.Scene scene = stage.getScene();
+                            if (scene != null && scene.getRoot() != null) {
+                                // Try to find the Home_list controller through scene graph
+                                findAndRefreshKhoanThuController(scene.getRoot());
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("ERROR: Failed to refresh fee data: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception in refreshKhoanThuTable: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Find and refresh Home_list controller for fees
+     */
+    private void findAndRefreshKhoanThuController(javafx.scene.Node node) {
+        try {
+            // Check if the node has a controller property
+            Object controller = node.getProperties().get("controller");
+            if (controller instanceof io.github.ktpm.bluemoonmanagement.controller.Home_list) {
+                io.github.ktpm.bluemoonmanagement.controller.Home_list homeListController = (io.github.ktpm.bluemoonmanagement.controller.Home_list) controller;
+                
+                // Switch to fees tab
+                java.lang.reflect.Method gotoKhoanThuMethod = homeListController.getClass().getDeclaredMethod("gotoKhoanThu", javafx.event.ActionEvent.class);
+                gotoKhoanThuMethod.setAccessible(true);
+                gotoKhoanThuMethod.invoke(homeListController, (javafx.event.ActionEvent) null);
+                
+                // Refresh fee data (now public method)
+                homeListController.refreshKhoanThuData();
+                
+                System.out.println("✅ Fee data refreshed successfully");
+                return;
+            }
+            
+            // Recursively search in children if it's a Parent node
+            if (node instanceof javafx.scene.Parent) {
+                javafx.scene.Parent parent = (javafx.scene.Parent) node;
+                for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
+                    findAndRefreshKhoanThuController(child);
+                }
+            }
+        } catch (Exception e) {
+            // Silently continue searching - this is expected for most nodes
+        }
+    }
+
+    private boolean hasPermission() {
+        try {
+            if (Session.getCurrentUser() == null) return false;
+            
+            // Sử dụng reflection để lấy vaiTro do vấn đề Lombok
+            java.lang.reflect.Field vaiTroField = Session.getCurrentUser().getClass().getDeclaredField("vaiTro");
+            vaiTroField.setAccessible(true);
+            String vaiTro = (String) vaiTroField.get(Session.getCurrentUser());
+            
+            // Chỉ Kế toán mới có quyền thêm khoản thu
+            return "Kế toán".equals(vaiTro);
+        } catch (Exception e) {
+            System.err.println("Lỗi khi kiểm tra quyền: " + e.getMessage());
+            return false;
         }
     }
 }

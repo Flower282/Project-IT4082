@@ -119,10 +119,10 @@ public class Home_list implements Initializable {
     private ComboBox<?> comboBoxLoaiKhoanThu1;
 
     @FXML
-    private ComboBox<?> comboBoxTang;
+    private TextField textFieldTang;
 
     @FXML
-    private ComboBox<?> comboBoxToa;
+    private TextField textFieldToa;
 
     @FXML
     private ComboBox<?> comboBoxTrangThai;
@@ -309,7 +309,7 @@ public class Home_list implements Initializable {
     private TableColumn<?, ?> tableColumnNgaySinh;
 
     @FXML
-    private TableColumn<?, ?> tableColumnNgayTao;
+    private TableColumn<?, ?> tableColumnNgayTaoTK;
 
     @FXML
     private TableColumn<?, ?> tableColumnNgayTao1;
@@ -367,6 +367,9 @@ public class Home_list implements Initializable {
 
     @FXML
     private TextField textFieldChuSoHuu;
+
+    @FXML
+    private TextField textFieldSoNha;
 
     @FXML
     private TextField textFieldEmail;
@@ -478,6 +481,9 @@ public class Home_list implements Initializable {
         cuDanList = FXCollections.observableArrayList();
         filteredCuDanList = FXCollections.observableArrayList();
         
+        // Setup ComboBoxes
+        setupComboBoxes();
+        
         // Setup tables
         setupCanHoTable();
         setupCuDanTable();
@@ -500,7 +506,68 @@ public class Home_list implements Initializable {
             vaiTroLabel.setText("Vai trò: " + Session.getCurrentUser().getVaiTro());
         }
         
+        // Setup button permissions based on user role
+        setupButtonPermissions();
+        
+        // Setup search listeners
+        setupSearchListeners();
+        
         // Home_list initialization completed
+    }
+
+    /**
+     * Thiết lập các ComboBox
+     */
+    private void setupComboBoxes() {
+        // Thiết lập ComboBox trạng thái căn hộ
+        if (comboBoxTrangThai != null) {
+            @SuppressWarnings("unchecked")
+            ComboBox<String> trangThaiCombo = (ComboBox<String>) comboBoxTrangThai;
+            trangThaiCombo.setItems(javafx.collections.FXCollections.observableArrayList(
+                "Tất cả", "Sử dụng", "Trống"
+            ));
+            trangThaiCombo.setValue("Tất cả");
+        }
+        
+        // Thiết lập ComboBox trạng thái cư dân
+        if (comboBoxTrangThaiCuDan != null) {
+            @SuppressWarnings("unchecked")
+            ComboBox<String> trangThaiCuDanCombo = (ComboBox<String>) comboBoxTrangThaiCuDan;
+            trangThaiCuDanCombo.setItems(javafx.collections.FXCollections.observableArrayList(
+                "Tất cả", "Cư trú", "Không cư trú", "Đã chuyển đi"
+            ));
+            trangThaiCuDanCombo.setValue("Tất cả");
+        }
+        
+        // Thiết lập ComboBox loại khoản thu
+        if (comboBoxLoaiKhoanThu != null) {
+            @SuppressWarnings("unchecked")
+            ComboBox<String> loaiKhoanThuCombo = (ComboBox<String>) comboBoxLoaiKhoanThu;
+            loaiKhoanThuCombo.setItems(javafx.collections.FXCollections.observableArrayList(
+                "Tất cả", "Bắt buộc", "Tự nguyện"
+            ));
+            loaiKhoanThuCombo.setValue("Tất cả");
+        }
+        
+        // Thiết lập ComboBox trạng thái hóa đơn
+        if (comboBoxTrangThaiHoaDon != null) {
+            @SuppressWarnings("unchecked")
+            ComboBox<String> trangThaiHoaDonCombo = (ComboBox<String>) comboBoxTrangThaiHoaDon;
+            trangThaiHoaDonCombo.setItems(javafx.collections.FXCollections.observableArrayList(
+                "Tất cả", "Đã thanh toán", "Chưa thanh toán"
+            ));
+            trangThaiHoaDonCombo.setValue("Tất cả");
+        }
+        
+        // Thiết lập ComboBox trạng thái tài khoản
+        if (comboBoxTrangThaiTaiKhoan != null) {
+            @SuppressWarnings("unchecked")
+            ComboBox<String> trangThaiTaiKhoanCombo = (ComboBox<String>) comboBoxTrangThaiTaiKhoan;
+            trangThaiTaiKhoanCombo.setItems(javafx.collections.FXCollections.observableArrayList(
+                "Tất cả", "Hoạt động", "Không hoạt động"
+            ));
+            trangThaiTaiKhoanCombo.setValue("Tất cả");
+        }
     }
 
     public void setParentController(KhungController controller) {
@@ -529,9 +596,10 @@ public class Home_list implements Initializable {
             parentController.updateScreenLabel("Danh sách căn hộ");
         }
         
-        // Setup table nhưng KHÔNG load dữ liệu lại (sử dụng cache)
+        // Auto-refresh apartment data when entering tab
+        System.out.println("🔄 Auto-refreshing apartment data on tab switch...");
+        refreshApartmentData();
         setupCanHoTable();
-        loadDataFromCache();
     }
 
     @FXML
@@ -547,9 +615,10 @@ public class Home_list implements Initializable {
             parentController.updateScreenLabel("Danh sách cư dân");
         }
         
-        // Setup table và load dữ liệu cư dân (tương tự như goToCanHo)
+        // Auto-refresh resident data when entering tab
+        System.out.println("🔄 Auto-refreshing resident data on tab switch...");
+        refreshCuDanData();
         setupCuDanTable();
-        loadCuDanData();
     }
 
     @FXML
@@ -559,9 +628,23 @@ public class Home_list implements Initializable {
             parentController.updateScreenLabel("Danh sách khoản thu");
         }
         
-        // Setup table và load dữ liệu khoản thu
+        // Auto-refresh fee data when entering tab
+        System.out.println("🔄 Auto-refreshing fee data on tab switch...");
+        refreshKhoanThuData();
         setupKhoanThuTable();
-        loadKhoanThuData();
+    }
+
+    @FXML
+    void gotoTaiKhoan(ActionEvent event) {
+        show("TaiKhoan");
+        if (parentController != null) {
+            parentController.updateScreenLabel("Danh sách tài khoản");
+        }
+        
+        // Auto-refresh account data when entering tab
+        System.out.println("🔄 Auto-refreshing account data on tab switch...");
+        refreshTaiKhoanData();
+        setupTaiKhoanTable();
     }
     @FXML
     private void gotothemcanho(ActionEvent event) {
@@ -1143,34 +1226,35 @@ public class Home_list implements Initializable {
         public void setTrangThaiCuTru(String trangThaiCuTru) { this.trangThaiCuTru = trangThaiCuTru; }
         public void setNgayChuyenDen(String ngayChuyenDen) { this.ngayChuyenDen = ngayChuyenDen; }
     }
-    public class TaiKhoanTableData {
+    
+    public static class TaiKhoanTableData {
         private String email;
         private String hoVaTen;
         private String vaiTro;
         private String ngayTao;
         private String ngayCapNhat;
 
-        public TaiKhoanTableData(String email, String hoVaTen, String vaiTro,String ngayTao ,String ngayCapNhat) {
+        public TaiKhoanTableData(String email, String hoVaTen, String vaiTro, String ngayTao, String ngayCapNhat) {
             this.email = email;
             this.hoVaTen = hoVaTen;
             this.vaiTro = vaiTro;
             this.ngayTao = ngayTao;
             this.ngayCapNhat = ngayCapNhat;
-
         }
+        
         // Getters
         public String getEmail() { return email; }
         public String getHoVaTen() { return hoVaTen; }
         public String getVaiTro() { return vaiTro; }
         public String getNgayCapNhat() { return ngayCapNhat; }
-        public String getNgayTao(){ return ngayTao; }
+        public String getNgayTao() { return ngayTao; }
+        
         // Setters
         public void setEmail(String email) { this.email = email; }
         public void setHoVaTen(String hoVaTen) { this.hoVaTen = hoVaTen; }
         public void setVaiTro(String vaiTro) { this.vaiTro = vaiTro; }
-        public void setNgayTao(String ngayTao){this.ngayTao = ngayTao; }
+        public void setNgayTao(String ngayTao) { this.ngayTao = ngayTao; }
         public void setNgayCapNhat(String ngayCapNhat) { this.ngayCapNhat = ngayCapNhat; }
-
     }
     
     public static class KhoanThuTableData {
@@ -1230,17 +1314,19 @@ public class Home_list implements Initializable {
             ((TableColumn<TaiKhoanTableData, String>) tableColumnEmail).setCellValueFactory(new PropertyValueFactory<>("email"));
             ((TableColumn<TaiKhoanTableData, String>) tableColumnHoVaTenTaiKhoan).setCellValueFactory(new PropertyValueFactory<>("hoVaTen"));
             ((TableColumn<TaiKhoanTableData, String>) tableColumnVaiTro).setCellValueFactory(new PropertyValueFactory<>("vaiTro"));
-            ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayTao).setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
+            ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayTaoTK).setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
             ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayCapNhat).setCellValueFactory(new PropertyValueFactory<>("ngayCapNhat"));
 
-            // Thêm sự kiện LEFT-click để xem chi tiết tài khoản (chỉ chuột trái)
+
+
+            // Thêm sự kiện double-click để mở form sửa/xóa tài khoản
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<TaiKhoanTableData> row = new javafx.scene.control.TableRow<>();
                 row.setOnMouseClicked(event -> {
-                    // CHỈ LEFT-CLICK để mở chi tiết (tránh conflict với right-click refresh)
-                    if (!row.isEmpty() && event.getClickCount() == 1 && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                    // DOUBLE-CLICK để mở form sửa/xóa tài khoản
+                    if (!row.isEmpty() && event.getClickCount() == 2 && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                         TaiKhoanTableData rowData = row.getItem();
-                        handleXemChiTietTaiKhoan(rowData);
+                        handleEditTaiKhoan(rowData);
                     }
                 });
                 return row;
@@ -1303,6 +1389,69 @@ public class Home_list implements Initializable {
             stage.show();
         } catch (IOException e) {
             showError("Lỗi mở chi tiết", "Không thể mở trang chi tiết tài khoản: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handle edit account action - opens edit form with edit/delete options
+     */
+    private void handleEditTaiKhoan(TaiKhoanTableData rowData) {
+        try {
+            if (taiKhoanService != null) {
+                String email = rowData.getEmail();
+                String hoVaTen = rowData.getHoVaTen();
+                String vaiTro = rowData.getVaiTro();
+
+                LocalDateTime ngayTao = LocalDateTime.parse(rowData.getNgayTao());
+                LocalDateTime ngayCapNhat = LocalDateTime.parse(rowData.getNgayCapNhat());
+
+                ThongTinTaiKhoanDto taiKhoanDto = new ThongTinTaiKhoanDto(email, hoVaTen, vaiTro, ngayTao, ngayCapNhat);
+                if (taiKhoanDto != null) {
+                    openEditTaiKhoan(taiKhoanDto);
+                } else {
+                    showError("Lỗi", "Không tìm thấy thông tin tài khoản");
+                }
+            } else {
+                showError("Lỗi", "Dịch vụ quản lý tài khoản không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi khi mở form sửa", "Chi tiết: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Open edit account form
+     */
+    private void openEditTaiKhoan(ThongTinTaiKhoanDto taiKhoanDto) {
+        try {
+            // Sử dụng form tài khoản có sẵn với mode edit
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/tai_khoan.fxml"));
+            Parent root = loader.load();
+
+            ChiTietTaiKhoanController controller = loader.getController();
+            // Inject ApplicationContext và services
+            if (applicationContext != null) {
+                controller.setApplicationContext(applicationContext);
+            }
+            if (taiKhoanService != null) {
+                controller.setTaiKhoanService(taiKhoanService);
+            }
+            // Set data cho form
+            controller.setTaiKhoanData(taiKhoanDto);
+            
+            // Tạo cửa sổ mới
+            Stage stage = new Stage();
+            stage.setTitle("Chỉnh sửa tài khoản - " + taiKhoanDto.getEmail());
+            stage.setScene(new Scene(root, 800, 600));
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(tabelViewTaiKhoan.getScene().getWindow());
+            
+            // Refresh table sau khi đóng
+            stage.setOnHidden(e -> refreshTaiKhoanData());
+            
+            stage.show();
+        } catch (IOException e) {
+            showError("Lỗi mở form sửa", "Không thể mở form chỉnh sửa tài khoản: " + e.getMessage());
         }
     }
 
@@ -1719,48 +1868,370 @@ public class Home_list implements Initializable {
 
     /**
      * Thiết lập quyền cho các nút dựa trên vai trò người dùng
-     * Chỉ "Tổ phó" mới có thể thêm cư dân và căn hộ
+     * - Tổ trưởng: Disable tất cả nút thêm
+     * - Kế toán: Chỉ disable thêm căn hộ và thêm cư dân, được phép thêm khoản thu
      */
     private void setupButtonPermissions() {
-        boolean isToPhO = false;
+        boolean isToTruong = false;
+        boolean isKeToan = false;
+        String vaiTro = "";
 
         try {
             if (Session.getCurrentUser() != null) {
-                String vaiTro = Session.getCurrentUser().getVaiTro();
-                isToPhO = "Tổ phó".equals(vaiTro);
-                System.out.println("DEBUG: User role = " + vaiTro + ", isToPhO = " + isToPhO);
+                vaiTro = Session.getCurrentUser().getVaiTro();
+                isToTruong = "Tổ trưởng".equals(vaiTro);
+                isKeToan = "Kế toán".equals(vaiTro);
+                System.out.println("DEBUG: User role = " + vaiTro + ", isToTruong = " + isToTruong + ", isKeToan = " + isKeToan);
             } else {
                 System.out.println("DEBUG: Không có user hiện tại");
             }
         } catch (Exception e) {
             System.err.println("Lỗi khi kiểm tra vai trò người dùng: " + e.getMessage());
-            isToPhO = false; // Mặc định không có quyền
+            isToTruong = false;
+            isKeToan = false;
         }
 
-        // Disable/enable các nút thêm dựa trên quyền
+        // Disable nút thêm cư dân cho Tổ trưởng và Kế toán
         if (buttonThemCuDan != null) {
-            buttonThemCuDan.setDisable(!isToPhO);
-            if (!isToPhO) {
-                // Thêm tooltip giải thích tại sao nút bị disable
-                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
-                    "Chỉ người dùng có vai trò 'Tổ phó' mới có thể thêm cư dân");
+            boolean shouldDisableCuDan = isToTruong || isKeToan;
+            buttonThemCuDan.setDisable(shouldDisableCuDan);
+            if (shouldDisableCuDan) {
+                String reason = isToTruong ? "Tổ trưởng không có quyền thêm cư dân" : 
+                                           "Kế toán không có quyền thêm cư dân";
+                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonThemCuDan, tooltip);
-                System.out.println("DEBUG: Đã disable nút thêm cư dân");
+                System.out.println("DEBUG: Đã disable nút thêm cư dân cho " + vaiTro);
             }
         }
 
+        // Disable nút thêm căn hộ cho Tổ trưởng và Kế toán  
         if (buttonThemCanHo != null) {
-            buttonThemCanHo.setDisable(!isToPhO);
-            if (!isToPhO) {
-                // Thêm tooltip giải thích tại sao nút bị disable
-                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
-                    "Chỉ người dùng có vai trò 'Tổ phó' mới có thể thêm căn hộ");
+            boolean shouldDisableCanHo = isToTruong || isKeToan;
+            buttonThemCanHo.setDisable(shouldDisableCanHo);
+            if (shouldDisableCanHo) {
+                String reason = isToTruong ? "Tổ trưởng không có quyền thêm căn hộ" : 
+                                           "Kế toán không có quyền thêm căn hộ";
+                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonThemCanHo, tooltip);
-                System.out.println("DEBUG: Đã disable nút thêm căn hộ");
+                System.out.println("DEBUG: Đã disable nút thêm căn hộ cho " + vaiTro);
+            }
+        }
+
+        // Disable nút thêm khoản thu cho tất cả trừ Kế toán (chỉ Kế toán được phép)
+        if (buttonThemKhoanThu != null) {
+            boolean shouldDisableKhoanThu = !isKeToan; // Chỉ Kế toán được phép
+            buttonThemKhoanThu.setDisable(shouldDisableKhoanThu);
+            if (shouldDisableKhoanThu) {
+                String reason;
+                if (isToTruong) {
+                    reason = "Tổ trưởng không có quyền thêm khoản thu";
+                } else {
+                    reason = "Chỉ Kế toán mới có quyền thêm khoản thu";
+                }
+                javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
+                javafx.scene.control.Tooltip.install(buttonThemKhoanThu, tooltip);
+                System.out.println("DEBUG: Đã disable nút thêm khoản thu cho " + vaiTro);
+            } else {
+                System.out.println("DEBUG: Kế toán được phép thêm khoản thu - nút enable");
             }
         }
 
         System.out.println("DEBUG: Hoàn thành thiết lập quyền nút");
+    }
+    
+    // ============= SEARCH FUNCTIONS =============
+    
+    /**
+     * Xử lý tìm kiếm căn hộ
+     */
+    @FXML
+    private void handleTimKiemCanHo() {
+        String maCanHo = textFieldMaCanHo != null ? textFieldMaCanHo.getText().trim() : "";
+        String chuSoHuu = textFieldChuSoHuu != null ? textFieldChuSoHuu.getText().trim() : "";
+        String soNha = textFieldSoNha != null ? textFieldSoNha.getText().trim() : "";
+        String tang = textFieldTang != null ? textFieldTang.getText().trim() : "";
+        String toa = textFieldToa != null ? textFieldToa.getText().trim() : "";
+        String trangThai = comboBoxTrangThai != null && comboBoxTrangThai.getValue() != null ? comboBoxTrangThai.getValue().toString() : "";
+        
+        // Nếu tất cả các điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
+        if (maCanHo.isEmpty() && chuSoHuu.isEmpty() && soNha.isEmpty() &&
+            tang.isEmpty() && 
+            toa.isEmpty() && 
+            ("Tất cả".equals(trangThai) || trangThai.isEmpty())) {
+            
+            filteredList = FXCollections.observableArrayList(canHoList);
+            if (tabelViewCanHo != null) {
+                ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
+            }
+            updateKetQuaLabel();
+            return;
+        }
+        
+        // Lọc dữ liệu dựa trên các tiêu chí tìm kiếm
+        if (canHoList != null) {
+            ObservableList<CanHoTableData> searchResults = canHoList.stream()
+                .filter(canHo -> {
+                    boolean matchesMaCanHo = maCanHo.isEmpty() || 
+                        canHo.getMaCanHo().toLowerCase().contains(maCanHo.toLowerCase());
+                    boolean matchesChuSoHuu = chuSoHuu.isEmpty() || 
+                        canHo.getChuHo().toLowerCase().contains(chuSoHuu.toLowerCase());
+                    boolean matchesSoNha = soNha.isEmpty() || 
+                        canHo.getSoNha().toLowerCase().contains(soNha.toLowerCase());
+                    boolean matchesTang = tang.isEmpty() ||
+                        canHo.getTang().toLowerCase().contains(tang.toLowerCase());
+                    boolean matchesToa = toa.isEmpty() ||
+                        canHo.getToaNha().toLowerCase().contains(toa.toLowerCase());
+                    
+                    // Xử lý logic tìm kiếm trạng thái căn hộ
+                    boolean matchesTrangThai = true;
+                    if (!"Tất cả".equals(trangThai) && !trangThai.isEmpty()) {
+                        String actualTrangThai = canHo.getTrangThaiSuDung();
+                        if ("Sử dụng".equals(trangThai)) {
+                            // "Sử dụng" sẽ match với các trạng thái khác "Trống"
+                            matchesTrangThai = actualTrangThai != null && 
+                                             !actualTrangThai.equalsIgnoreCase("Trống") &&
+                                             !actualTrangThai.equalsIgnoreCase("Không sử dụng");
+                        } else if ("Trống".equals(trangThai)) {
+                            // "Trống" sẽ match với trạng thái "Trống" hoặc "Không sử dụng"
+                            matchesTrangThai = actualTrangThai != null && 
+                                             (actualTrangThai.equalsIgnoreCase("Trống") ||
+                                              actualTrangThai.equalsIgnoreCase("Không sử dụng"));
+                        } else {
+                            // Tìm kiếm chính xác theo tên trạng thái
+                            matchesTrangThai = actualTrangThai != null && actualTrangThai.equals(trangThai);
+                        }
+                    }
+                    
+                    return matchesMaCanHo && matchesChuSoHuu && matchesSoNha && matchesTang && matchesToa && matchesTrangThai;
+                })
+                .collect(FXCollections::observableArrayList, 
+                        ObservableList::add, 
+                        ObservableList::addAll);
+            
+            filteredList = searchResults;
+            if (tabelViewCanHo != null) {
+                ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
+            }
+            updateKetQuaLabel();
+            
+            System.out.println("🔍 Apartment search completed:");
+            System.out.println("  - Search criteria: MaCanHo=" + maCanHo + ", ChuSoHuu=" + chuSoHuu + 
+                             ", SoNha=" + soNha + ", Tang=" + tang + ", Toa=" + toa + ", TrangThai=" + trangThai);
+            System.out.println("  - Results: " + searchResults.size() + "/" + canHoList.size());
+        }
+    }
+    
+    /**
+     * Xử lý tìm kiếm cư dân
+     */
+    @FXML
+    private void handleTimKiemCuDan() {
+        String maDinhDanh = textFieldMaDinhDanh != null ? textFieldMaDinhDanh.getText().trim() : "";
+        String hoVaTen = textFieldHoVaTen != null ? textFieldHoVaTen.getText().trim() : "";
+        String maCanHo = textFieldMaCanHoCuDan != null ? textFieldMaCanHoCuDan.getText().trim() : "";
+        String email = textFieldEmail != null ? textFieldEmail.getText().trim() : "";
+        String trangThai = comboBoxTrangThaiCuDan != null && comboBoxTrangThaiCuDan.getValue() != null ? 
+                          comboBoxTrangThaiCuDan.getValue().toString() : "";
+        
+        // Nếu tất cả các điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
+        if (maDinhDanh.isEmpty() && hoVaTen.isEmpty() && maCanHo.isEmpty() && email.isEmpty() &&
+            ("Tất cả".equals(trangThai) || trangThai.isEmpty())) {
+            
+            filteredCuDanList = FXCollections.observableArrayList(cuDanList);
+            if (tabelViewCuDan != null) {
+                ((TableView<CuDanTableData>) tabelViewCuDan).setItems(filteredCuDanList);
+            }
+            updateCuDanKetQuaLabel();
+            return;
+        }
+        
+        // Lọc dữ liệu dựa trên các tiêu chí tìm kiếm
+        if (cuDanList != null) {
+            ObservableList<CuDanTableData> searchResults = cuDanList.stream()
+                .filter(cuDan -> {
+                    boolean matchesMaDinhDanh = maDinhDanh.isEmpty() || 
+                        cuDan.getMaDinhDanh().toLowerCase().contains(maDinhDanh.toLowerCase());
+                    boolean matchesHoVaTen = hoVaTen.isEmpty() || 
+                        cuDan.getHoVaTen().toLowerCase().contains(hoVaTen.toLowerCase());
+                    boolean matchesMaCanHo = maCanHo.isEmpty() || 
+                        cuDan.getMaCanHo().toLowerCase().contains(maCanHo.toLowerCase());
+                    boolean matchesEmail = email.isEmpty() || 
+                        cuDan.getEmail().toLowerCase().contains(email.toLowerCase());
+                    boolean matchesTrangThai = "Tất cả".equals(trangThai) || trangThai.isEmpty() ||
+                        cuDan.getTrangThaiCuTru().equals(trangThai);
+                    
+                    return matchesMaDinhDanh && matchesHoVaTen && matchesMaCanHo && matchesEmail && matchesTrangThai;
+                })
+                .collect(FXCollections::observableArrayList, 
+                        ObservableList::add, 
+                        ObservableList::addAll);
+            
+            filteredCuDanList = searchResults;
+            if (tabelViewCuDan != null) {
+                ((TableView<CuDanTableData>) tabelViewCuDan).setItems(filteredCuDanList);
+            }
+            updateCuDanKetQuaLabel();
+            
+            System.out.println("🔍 Resident search completed:");
+            System.out.println("  - Search criteria: MaDinhDanh=" + maDinhDanh + ", HoVaTen=" + hoVaTen + 
+                             ", MaCanHo=" + maCanHo + ", Email=" + email + ", TrangThai=" + trangThai);
+            System.out.println("  - Results: " + searchResults.size() + "/" + cuDanList.size());
+        }
+    }
+    
+    /**
+     * Xử lý tìm kiếm khoản thu
+     */
+    @FXML
+    private void handleTimKiemKhoanThu() {
+        String maKhoanThu = textFieldMaKhoanThu != null ? textFieldMaKhoanThu.getText().trim() : "";
+        String tenKhoanThu = textFieldTenKhoanThu != null ? textFieldTenKhoanThu.getText().trim() : "";
+        String loaiKhoanThu = comboBoxLoaiKhoanThu != null && comboBoxLoaiKhoanThu.getValue() != null ? 
+                             comboBoxLoaiKhoanThu.getValue().toString() : "";
+        
+        // Nếu tất cả các điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
+        if (maKhoanThu.isEmpty() && tenKhoanThu.isEmpty() && 
+            ("Tất cả".equals(loaiKhoanThu) || loaiKhoanThu.isEmpty())) {
+            
+            filteredKhoanThuList = FXCollections.observableArrayList(khoanThuList);
+            if (tabelViewKhoanThu != null) {
+                ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
+            }
+            updateKhoanThuKetQuaLabel();
+            return;
+        }
+        
+        // Lọc dữ liệu dựa trên các tiêu chí tìm kiếm
+        if (khoanThuList != null) {
+            ObservableList<KhoanThuTableData> searchResults = khoanThuList.stream()
+                .filter(khoanThu -> {
+                    boolean matchesMaKhoanThu = maKhoanThu.isEmpty() || 
+                        khoanThu.getMaKhoanThu().toLowerCase().contains(maKhoanThu.toLowerCase());
+                    boolean matchesTenKhoanThu = tenKhoanThu.isEmpty() || 
+                        khoanThu.getTenKhoanThu().toLowerCase().contains(tenKhoanThu.toLowerCase());
+                    boolean matchesLoaiKhoanThu = "Tất cả".equals(loaiKhoanThu) || loaiKhoanThu.isEmpty() ||
+                        khoanThu.getLoaiKhoanThu().equals(loaiKhoanThu) ||
+                        khoanThu.getLoaiKhoanThu().toLowerCase().contains(loaiKhoanThu.toLowerCase());
+                    
+                    return matchesMaKhoanThu && matchesTenKhoanThu && matchesLoaiKhoanThu;
+                })
+                .collect(FXCollections::observableArrayList, 
+                        ObservableList::add, 
+                        ObservableList::addAll);
+            
+            filteredKhoanThuList = searchResults;
+            if (tabelViewKhoanThu != null) {
+                ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
+            }
+            updateKhoanThuKetQuaLabel();
+            
+            System.out.println("🔍 Fee search completed:");
+            System.out.println("  - Search criteria: MaKhoanThu=" + maKhoanThu + ", TenKhoanThu=" + tenKhoanThu + 
+                             ", LoaiKhoanThu=" + loaiKhoanThu);
+            System.out.println("  - Results: " + searchResults.size() + "/" + khoanThuList.size());
+        }
+    }
+    
+    /**
+     * Xử lý tìm kiếm thu phí (trang lịch sử thu)
+     */
+    @FXML
+    private void handleTimKiemThuPhi() {
+        String maCanHo = textFieldMaCanHoThuPhi != null ? textFieldMaCanHoThuPhi.getText().trim() : "";
+        String maHoaDon = textFieldMaHoaDon != null ? textFieldMaHoaDon.getText().trim() : "";
+        String tenKhoanThu = textFieldTenKhoanThu1 != null ? textFieldTenKhoanThu1.getText().trim() : "";
+        String loaiKhoanThu = comboBoxLoaiKhoanThu1 != null && comboBoxLoaiKhoanThu1.getValue() != null ? 
+                             comboBoxLoaiKhoanThu1.getValue().toString() : "";
+        String trangThaiHoaDon = comboBoxTrangThaiHoaDon != null && comboBoxTrangThaiHoaDon.getValue() != null ? 
+                                comboBoxTrangThaiHoaDon.getValue().toString() : "";
+        
+        System.out.println("🔍 Payment history search initiated:");
+        System.out.println("  - MaCanHo: " + maCanHo);
+        System.out.println("  - MaHoaDon: " + maHoaDon);
+        System.out.println("  - TenKhoanThu: " + tenKhoanThu);
+        System.out.println("  - LoaiKhoanThu: " + loaiKhoanThu);
+        System.out.println("  - TrangThaiHoaDon: " + trangThaiHoaDon);
+        
+        // Hiện tại trang thu phí chưa có dữ liệu, chỉ log thông tin tìm kiếm
+        showInfo("Tìm kiếm thu phí", "Chức năng tìm kiếm thu phí đang được phát triển.\n" +
+                "Tiêu chí tìm kiếm:\n" +
+                "- Mã căn hộ: " + (maCanHo.isEmpty() ? "Tất cả" : maCanHo) + "\n" +
+                "- Mã hóa đơn: " + (maHoaDon.isEmpty() ? "Tất cả" : maHoaDon) + "\n" +
+                "- Tên khoản thu: " + (tenKhoanThu.isEmpty() ? "Tất cả" : tenKhoanThu) + "\n" +
+                "- Loại khoản thu: " + (loaiKhoanThu.isEmpty() ? "Tất cả" : loaiKhoanThu) + "\n" +
+                "- Trạng thái hóa đơn: " + (trangThaiHoaDon.isEmpty() ? "Tất cả" : trangThaiHoaDon));
+    }
+    
+    /**
+     * Setup search listeners for auto-search on text input
+     */
+    private void setupSearchListeners() {
+        // Căn hộ search listeners
+        if (textFieldMaCanHo != null) {
+            textFieldMaCanHo.textProperty().addListener((obs, oldText, newText) -> handleTimKiemCanHo());
+        }
+        if (textFieldChuSoHuu != null) {
+            textFieldChuSoHuu.textProperty().addListener((obs, oldText, newText) -> handleTimKiemCanHo());
+        }
+        if (textFieldSoNha != null) {
+            textFieldSoNha.textProperty().addListener((obs, oldText, newText) -> handleTimKiemCanHo());
+        }
+        if (textFieldTang != null) {
+            textFieldTang.textProperty().addListener((obs, oldText, newText) -> handleTimKiemCanHo());
+        }
+        if (textFieldToa != null) {
+            textFieldToa.textProperty().addListener((obs, oldText, newText) -> handleTimKiemCanHo());
+        }
+        if (comboBoxTrangThai != null) {
+            comboBoxTrangThai.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemCanHo());
+        }
+        
+        // Cư dân search listeners
+        if (textFieldMaDinhDanh != null) {
+            textFieldMaDinhDanh.textProperty().addListener((obs, oldText, newText) -> handleTimKiemCuDan());
+        }
+        if (textFieldHoVaTen != null) {
+            textFieldHoVaTen.textProperty().addListener((obs, oldText, newText) -> handleTimKiemCuDan());
+        }
+        if (textFieldMaCanHoCuDan != null) {
+            textFieldMaCanHoCuDan.textProperty().addListener((obs, oldText, newText) -> handleTimKiemCuDan());
+        }
+        if (textFieldEmail != null) {
+            textFieldEmail.textProperty().addListener((obs, oldText, newText) -> handleTimKiemCuDan());
+        }
+        if (comboBoxTrangThaiCuDan != null) {
+            comboBoxTrangThaiCuDan.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemCuDan());
+        }
+        
+        // Khoản thu search listeners
+        if (textFieldMaKhoanThu != null) {
+            textFieldMaKhoanThu.textProperty().addListener((obs, oldText, newText) -> handleTimKiemKhoanThu());
+        }
+        if (textFieldTenKhoanThu != null) {
+            textFieldTenKhoanThu.textProperty().addListener((obs, oldText, newText) -> handleTimKiemKhoanThu());
+        }
+        if (comboBoxLoaiKhoanThu != null) {
+            comboBoxLoaiKhoanThu.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemKhoanThu());
+        }
+        
+        // Thu phí search listeners
+        if (textFieldMaCanHoThuPhi != null) {
+            textFieldMaCanHoThuPhi.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());
+        }
+        if (textFieldMaHoaDon != null) {
+            textFieldMaHoaDon.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());
+        }
+        if (textFieldTenKhoanThu1 != null) {
+            textFieldTenKhoanThu1.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());
+        }
+        if (comboBoxLoaiKhoanThu1 != null) {
+            comboBoxLoaiKhoanThu1.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemThuPhi());
+        }
+        if (comboBoxTrangThaiHoaDon != null) {
+            comboBoxTrangThaiHoaDon.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemThuPhi());
+        }
+        
+        System.out.println("✅ Search listeners setup completed");
     }
 
     /**
@@ -1912,8 +2383,8 @@ public class Home_list implements Initializable {
      */
     private void refreshFeeDataRightClick() {
         System.out.println("🖱️ Right-click refresh: Fees");
-        // TODO: Implement fee data refresh when available
-        System.out.println("✅ Fee data refresh requested via right-click (implementation pending)");
+        refreshKhoanThuDataInternal();
+        System.out.println("✅ Fee data refreshed via right-click");
     }
     
     /**
@@ -1932,17 +2403,29 @@ public class Home_list implements Initializable {
     /**
      * Refresh accounts data
      */
-    private void refreshTaiKhoanData() {
+    public void refreshTaiKhoanData() {
         loadTaiKhoanData();
         System.out.println("✅ Accounts data refreshed");
     }
     
     /**
-     * Refresh fee data (placeholder)
+     * Public method to refresh fee data - can be called from other controllers
      */
-    private void refreshKhoanThuData() {
+    public void refreshKhoanThuData() {
+        // Clear cache and reload fee data
+        if (cacheDataService != null) {
+            cacheDataService.refreshCacheData();
+        }
         loadKhoanThuData();
         System.out.println("✅ Fee data refreshed");
+    }
+    
+    /**
+     * Private method for internal refresh fee data
+     */
+    private void refreshKhoanThuDataInternal() {
+        loadKhoanThuData();
+        System.out.println("✅ Fee data refreshed internally");
     }
     
     /**
@@ -1958,15 +2441,12 @@ public class Home_list implements Initializable {
             ((TableColumn<KhoanThuTableData, String>) tableColumnTenKhoanThu).setCellValueFactory(new PropertyValueFactory<>("tenKhoanThu"));
             ((TableColumn<KhoanThuTableData, String>) tableColumnLoaiKhoanThu).setCellValueFactory(new PropertyValueFactory<>("loaiKhoanThu"));
             
-            // "Phạm vi" -> map với phamVi
+            // "Bộ phận quản lý" -> map với ghiChu 
             if (tableColumnBoPhanQuanLy != null) {
-                ((TableColumn<KhoanThuTableData, String>) tableColumnBoPhanQuanLy).setCellValueFactory(new PropertyValueFactory<>("phamVi"));
+                ((TableColumn<KhoanThuTableData, String>) tableColumnBoPhanQuanLy).setCellValueFactory(new PropertyValueFactory<>("ghiChu"));
             }
             
-            // "Ngày tạo" 
-            if (tableColumnNgayTao != null) {
-                ((TableColumn<KhoanThuTableData, String>) tableColumnNgayTao).setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
-            }
+            // Bỏ cột "Ngày tạo" trong bảng khoản thu - không cần hiển thị nữa
             
             // "Hạn nộp" (tableColumnNgayTao1) -> map với thoiHan
             if (tableColumnNgayTao1 != null) {
@@ -2006,11 +2486,9 @@ public class Home_list implements Initializable {
             details.append(" Số tiền: ").append(rowData.getSoTien()).append("\n");
             details.append(" Đơn vị tính: ").append(rowData.getDonViTinh()).append("\n");
             details.append(" Phạm vi: ").append(rowData.getPhamVi()).append("\n");
+            details.append(" Bộ phận quản lý: ").append(rowData.getGhiChu() != null ? rowData.getGhiChu() : "Không có").append("\n");
             details.append(" Ngày tạo: ").append(rowData.getNgayTao()).append("\n");
-            details.append(" Thời hạn: ").append(rowData.getThoiHan()).append("\n");
-            if (rowData.getGhiChu() != null && !rowData.getGhiChu().isEmpty()) {
-                details.append("Ghi chú: ").append(rowData.getGhiChu());
-            }
+            details.append(" Thời hạn: ").append(rowData.getThoiHan());
             
             showInfo("Chi tiết khoản thu", details.toString());
         } catch (Exception e) {
@@ -2072,10 +2550,10 @@ public class Home_list implements Initializable {
         khoanThuList = FXCollections.observableArrayList();
         
         // Add sample data
-        khoanThuList.add(new KhoanThuTableData("KT001", "Phí quản lý", "Bắt buộc", "VNĐ/m²", "15,000 VNĐ", "Tất cả", "2024-01-01", "2024-01-31", "Phí quản lý chung cư"));
-        khoanThuList.add(new KhoanThuTableData("KT002", "Phí điện", "Bắt buộc", "VNĐ/kWh", "3,500 VNĐ", "Căn hộ đang sử dụng", "2024-01-01", "2024-01-31", "Phí điện hàng tháng"));
-        khoanThuList.add(new KhoanThuTableData("KT003", "Phí nước", "Bắt buộc", "VNĐ/m³", "25,000 VNĐ", "Căn hộ đang sử dụng", "2024-01-01", "2024-01-31", "Phí nước hàng tháng"));
-        khoanThuList.add(new KhoanThuTableData("KT004", "Phí gửi xe", "Tự nguyện", "VNĐ/tháng", "100,000 VNĐ", "Tất cả", "2024-01-01", "2024-01-31", "Phí gửi xe tháng"));
+        khoanThuList.add(new KhoanThuTableData("KT001", "Phí quản lý", "Bắt buộc", "VNĐ/m²", "15,000 VNĐ", "Tất cả", "2024-01-01", "2024-01-31", "Ban quản lý"));
+        khoanThuList.add(new KhoanThuTableData("KT002", "Phí điện", "Bắt buộc", "VNĐ/kWh", "3,500 VNĐ", "Căn hộ đang sử dụng", "2024-01-01", "2024-01-31", "Bên thứ 3"));
+        khoanThuList.add(new KhoanThuTableData("KT003", "Phí nước", "Bắt buộc", "VNĐ/m³", "25,000 VNĐ", "Căn hộ đang sử dụng", "2024-01-01", "2024-01-31", "Bên thứ 3"));
+        khoanThuList.add(new KhoanThuTableData("KT004", "Phí gửi xe", "Tự nguyện", "VNĐ/tháng", "100,000 VNĐ", "Tất cả", "2024-01-01", "2024-01-31", "Ban quản lý"));
         
         filteredKhoanThuList = FXCollections.observableArrayList(khoanThuList);
         if (tabelViewKhoanThu != null) {
@@ -2100,7 +2578,7 @@ public class Home_list implements Initializable {
         refreshApartmentData();
         refreshCuDanData();
         refreshTaiKhoanData();
-        refreshKhoanThuData();
+        refreshKhoanThuDataInternal();
         System.out.println("✅ All data refreshed");
     }
     

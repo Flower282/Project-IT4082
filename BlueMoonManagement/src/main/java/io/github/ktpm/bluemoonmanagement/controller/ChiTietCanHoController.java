@@ -94,6 +94,7 @@ public class ChiTietCanHoController implements Initializable {
     @FXML private ComboBox<String> comboBoxSoKetQuaCuDan;
     @FXML private TextField textFieldTimKiemCuDan;
     @FXML private TextField textFieldMaDinhDanh;
+    @FXML private ComboBox<String> comboBoxTrangThaiCuDan;
     @FXML private Button buttonTimKiemCuDan;
     @FXML private Label labelHienThiKetQuaCuDan;
 
@@ -351,10 +352,10 @@ public class ChiTietCanHoController implements Initializable {
                     handleDeletePhuongTien(phuongTien);
                 });
                 
-                // Disable nút xóa cho Tổ trưởng
+                // Disable nút xóa cho tất cả trừ Tổ phó (chỉ Tổ phó được phép xóa phương tiện)
                 try {
                     String userRole = getCurrentUserRole();
-                    if ("Tổ trưởng".equals(userRole)) {
+                    if (!"Tổ phó".equals(userRole)) {
                         deleteButton.setDisable(true);
                         deleteButton.setOpacity(0.5);
                     }
@@ -407,6 +408,38 @@ public class ChiTietCanHoController implements Initializable {
                 handleTimKiemCuDan();
             });
         }
+        
+        // Setup search functionality for Phương tiện tab
+        if (textFieldMaSoXe != null) {
+            textFieldMaSoXe.textProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemPhuongTien();
+            });
+        }
+        
+        if (comboBoxLoaiPhuongTien != null) {
+            comboBoxLoaiPhuongTien.valueProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemPhuongTien();
+            });
+        }
+        
+        // Setup search functionality for Thu phí tab
+        if (textFieldTenKhoanThu != null) {
+            textFieldTenKhoanThu.textProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemThuPhi();
+            });
+        }
+        
+        if (comboBoxTrangThaiCuDan != null) {
+            comboBoxTrangThaiCuDan.valueProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemCuDan();
+            });
+        }
+        
+        if (comboBoxLoaiKhoanThu != null) {
+            comboBoxLoaiKhoanThu.valueProperty().addListener((observable, oldValue, newValue) -> {
+                handleTimKiemThuPhi();
+            });
+        }
     }
 
     /**
@@ -433,10 +466,10 @@ public class ChiTietCanHoController implements Initializable {
                     handleDeleteCuDan(cuDan);
                 });
 
-                // Disable nút cho Tổ trưởng
+                // Disable nút cho tất cả trừ Tổ phó (chỉ Tổ phó được phép sửa/xóa cư dân)
                 try {
                     String userRole = getCurrentUserRole();
-                    if ("Tổ trưởng".equals(userRole)) {
+                    if (!"Tổ phó".equals(userRole)) {
                         editButton.setDisable(true);
                         deleteButton.setDisable(true);
                         editButton.setOpacity(0.5);
@@ -539,6 +572,12 @@ public class ChiTietCanHoController implements Initializable {
             comboBoxSoKetQuaCuDan.setValue("10");
         }
 
+        // Setup ComboBox trạng thái cư dân
+        if (comboBoxTrangThaiCuDan != null) {
+            comboBoxTrangThaiCuDan.setItems(FXCollections.observableArrayList("Tất cả", "Đang cư trú", "Đã chuyển đi", "Tạm vắng"));
+            comboBoxTrangThaiCuDan.setValue("Tất cả");
+        }
+
         // Setup ComboBox loại phương tiện - will be populated from actual data after loading
         if (comboBoxLoaiPhuongTien != null) {
             comboBoxLoaiPhuongTien.setItems(FXCollections.observableArrayList("Tất cả"));
@@ -579,13 +618,20 @@ public class ChiTietCanHoController implements Initializable {
             System.out.println("DEBUG: getCurrentUserRole() returns: '" + userRole + "'");
             
             boolean isToTruong = "Tổ trưởng".equals(userRole);
-            System.out.println("DEBUG: isToTruong = " + isToTruong);
+            boolean isKeToan = "Kế toán".equals(userRole);
+            boolean isToPho = "Tổ phó".equals(userRole);
+            boolean shouldDisableButtons = isToTruong || isKeToan || isToPho; // Disable cho tất cả vai trò có logic riêng
             
-            if (isToTruong) {
-                // Disable/làm mờ các nút cho Tổ trưởng (trừ nút tìm kiếm)
-                disableButtonsForToTruong();
+            System.out.println("DEBUG: isToTruong = " + isToTruong);
+            System.out.println("DEBUG: isKeToan = " + isKeToan);
+            System.out.println("DEBUG: isToPho = " + isToPho);
+            System.out.println("DEBUG: shouldDisableButtons = " + shouldDisableButtons);
+            
+            if (shouldDisableButtons) {
+                // Disable/làm mờ các nút tùy theo vai trò
+                disableButtonsForRestrictedRoles(userRole);
             } else {
-                System.out.println("DEBUG: ❌ NOT disabling buttons - User role: '" + userRole + "' - buttons enabled");
+                System.out.println("DEBUG: ❌ NOT disabling buttons - User role: '" + userRole + "' - all buttons enabled");
             }
         } catch (Exception e) {
             System.err.println("ERROR: Cannot setup button permissions: " + e.getMessage());
@@ -609,50 +655,70 @@ public class ChiTietCanHoController implements Initializable {
     }
     
     /**
-     * Disable các nút cho Tổ trưởng (trừ nút tìm kiếm)
+     * Disable các nút tùy theo vai trò:
+     * - Tổ trưởng: Disable tất cả (chỉ xem)
+     * - Kế toán: Disable căn hộ/cư dân/phương tiện, được phép khoản thu
+     * - Tổ phó: Disable khoản thu, được phép căn hộ/cư dân/phương tiện
      */
-    private void disableButtonsForToTruong() {
-        System.out.println("=== DEBUG: disableButtonsForToTruong() called ===");
+    private void disableButtonsForRestrictedRoles(String userRole) {
+        System.out.println("=== DEBUG: disableButtonsForRestrictedRoles() called for role: " + userRole + " ===");
         
-        // Phần thông tin căn hộ - disable nút chỉnh sửa
+        boolean isToTruong = "Tổ trưởng".equals(userRole);
+        boolean isKeToan = "Kế toán".equals(userRole);
+        boolean isToPho = "Tổ phó".equals(userRole);
+        
+        // Phần thông tin căn hộ - chỉ Tổ phó và Kế toán bị disable chỉnh sửa
         if (buttonChinhSua != null) {
-            buttonChinhSua.setDisable(true);
-            buttonChinhSua.setOpacity(0.5);
+            boolean shouldDisableEdit = isToTruong || isKeToan;
+            buttonChinhSua.setDisable(shouldDisableEdit);
+            if (shouldDisableEdit) {
+                buttonChinhSua.setOpacity(0.5);
+                System.out.println("DEBUG: ✅ Disabled buttonChinhSua for " + userRole);
+            }
         } else {
             System.out.println("DEBUG: ❌ buttonChinhSua is NULL!");
         }
         
-        // Phần cư dân - disable tất cả nút thao tác, giữ nút tìm kiếm
-        // (Nút xóa cư dân trong table sẽ được disable trong setupTables)
+        // Phần cư dân - chỉ Tổ phó được phép (nút trong table sẽ được xử lý riêng)
         
-        // Phần phương tiện - disable nút thêm
+        // Phần phương tiện - chỉ Tổ phó được phép
         if (buttonThemPhuongTien != null) {
-            buttonThemPhuongTien.setDisable(true);
-            buttonThemPhuongTien.setOpacity(0.5);
+            boolean shouldDisableVehicle = isToTruong || isKeToan;
+            buttonThemPhuongTien.setDisable(shouldDisableVehicle);
+            if (shouldDisableVehicle) {
+                buttonThemPhuongTien.setOpacity(0.5);
+                System.out.println("DEBUG: ✅ Disabled buttonThemPhuongTien for " + userRole);
+            }
         } else {
             System.out.println("DEBUG: ❌ buttonThemPhuongTien is NULL!");
         }
         
-        // Phần khoản thu - disable nút thu toàn bộ và xem lịch sử
-        if (buttonThuToanBo != null) {
-            buttonThuToanBo.setDisable(true);
-            buttonThuToanBo.setOpacity(0.5);
-            System.out.println("DEBUG: ✅ Disabled buttonThuToanBo");
+        // Phần khoản thu - chỉ Kế toán được phép
+        if (!isKeToan) {
+            // Disable nút thu toàn bộ và xem lịch sử cho tất cả trừ Kế toán
+            if (buttonThuToanBo != null) {
+                buttonThuToanBo.setDisable(true);
+                buttonThuToanBo.setOpacity(0.5);
+                System.out.println("DEBUG: ✅ Disabled buttonThuToanBo for " + userRole);
+            } else {
+                System.out.println("DEBUG: ❌ buttonThuToanBo is NULL!");
+            }
+            
+            if (buttonXemLichSu != null) {
+                buttonXemLichSu.setDisable(true);
+                buttonXemLichSu.setOpacity(0.5);
+                System.out.println("DEBUG: ✅ Disabled buttonXemLichSu for " + userRole);
+            } else {
+                System.out.println("DEBUG: ❌ buttonXemLichSu is NULL!");
+            }
         } else {
-            System.out.println("DEBUG: ❌ buttonThuToanBo is NULL!");
-        }
-        
-        if (buttonXemLichSu != null) {
-            buttonXemLichSu.setDisable(true);
-            buttonXemLichSu.setOpacity(0.5);
-        } else {
-            System.out.println("DEBUG: ❌ buttonXemLichSu is NULL!");
+            System.out.println("DEBUG: ✅ Chỉ Kế toán được phép thao tác với khoản thu - buttons enabled");
         }
         
         // Note: Nút tìm kiếm (buttonTimKiemCuDan, buttonTimKiemPhuongTien, buttonTimKiemThuPhi) 
         // sẽ KHÔNG bị disable theo yêu cầu
         
-        System.out.println("DEBUG: ✅ COMPLETED disabling action buttons for Tổ trưởng");
+        System.out.println("DEBUG: ✅ COMPLETED disabling action buttons for " + userRole);
     }
 
     /**
@@ -1129,9 +1195,11 @@ public class ChiTietCanHoController implements Initializable {
     private void handleTimKiemCuDan() {
         String keywordHoTen = textFieldTimKiemCuDan != null ? textFieldTimKiemCuDan.getText().trim() : "";
         String keywordMaDinhDanh = textFieldMaDinhDanh != null ? textFieldMaDinhDanh.getText().trim() : "";
+        String trangThaiCuDan = comboBoxTrangThaiCuDan != null ? comboBoxTrangThaiCuDan.getValue() : "";
         
-        // Nếu cả 2 ô tìm kiếm đều trống thì hiển thị toàn bộ danh sách
-        if (keywordHoTen.isEmpty() && keywordMaDinhDanh.isEmpty()) {
+        // Nếu tất cả ô tìm kiếm đều trống thì hiển thị toàn bộ danh sách
+        if (keywordHoTen.isEmpty() && keywordMaDinhDanh.isEmpty() && 
+            ("Tất cả".equals(trangThaiCuDan) || trangThaiCuDan == null || trangThaiCuDan.isEmpty())) {
             setTableData(); // Reset to full list
             updateResultCount();
             return;
@@ -1145,8 +1213,11 @@ public class ChiTietCanHoController implements Initializable {
                         cuDan.getHoVaTen().toLowerCase().contains(keywordHoTen.toLowerCase());
                     boolean matchesMaDinhDanh = keywordMaDinhDanh.isEmpty() ||
                         cuDan.getMaDinhDanh().toLowerCase().contains(keywordMaDinhDanh.toLowerCase());
-                    // Cả 2 điều kiện phải thỏa mãn (AND logic)
-                    return matchesHoTen && matchesMaDinhDanh;
+                    boolean matchesTrangThai = "Tất cả".equals(trangThaiCuDan) || 
+                        trangThaiCuDan == null || trangThaiCuDan.isEmpty() ||
+                        (cuDan.getTrangThaiCuTru() != null && cuDan.getTrangThaiCuTru().equals(trangThaiCuDan));
+                    // Tất cả điều kiện phải thỏa mãn (AND logic)
+                    return matchesHoTen && matchesMaDinhDanh && matchesTrangThai;
                 })
                 .collect(FXCollections::observableArrayList, 
                         ObservableList::add, 
@@ -1158,6 +1229,7 @@ public class ChiTietCanHoController implements Initializable {
                 System.out.println("=== DEBUG: Search completed ===");
                 System.out.println("Search by name: '" + keywordHoTen + "'");
                 System.out.println("Search by ID: '" + keywordMaDinhDanh + "'");
+                System.out.println("Search by status: '" + trangThaiCuDan + "'");
                 System.out.println("Results: " + filteredList.size() + "/" + cuDanList.size());
             }
         }
@@ -1168,8 +1240,10 @@ public class ChiTietCanHoController implements Initializable {
         String maSoXe = textFieldMaSoXe != null ? textFieldMaSoXe.getText().trim() : "";
         String loaiPhuongTien = comboBoxLoaiPhuongTien != null ? comboBoxLoaiPhuongTien.getValue() : "";
         
-        if (maSoXe.isEmpty() && "Tất cả".equals(loaiPhuongTien)) {
+        // Nếu tất cả điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
+        if (maSoXe.isEmpty() && ("Tất cả".equals(loaiPhuongTien) || loaiPhuongTien == null || loaiPhuongTien.isEmpty())) {
             setTableData(); // Reset to full list
+            System.out.println("🔍 Vehicle search: Reset to full list");
             return;
         }
         
@@ -1180,6 +1254,7 @@ public class ChiTietCanHoController implements Initializable {
                     boolean matchesBienSo = maSoXe.isEmpty() || 
                         pt.getBienSo().toLowerCase().contains(maSoXe.toLowerCase());
                     boolean matchesLoai = "Tất cả".equals(loaiPhuongTien) || 
+                        loaiPhuongTien == null || loaiPhuongTien.isEmpty() ||
                         pt.getLoaiPhuongTien().equals(loaiPhuongTien);
                     return matchesBienSo && matchesLoai;
                 })
@@ -1190,6 +1265,15 @@ public class ChiTietCanHoController implements Initializable {
             if (tableViewPhuongTien != null) {
                 tableViewPhuongTien.setItems(filteredList);
             }
+            
+            // Update label hiển thị kết quả
+            if (labelHienThiKetQuaPhuongTien != null) {
+                labelHienThiKetQuaPhuongTien.setText("Hiển thị " + filteredList.size() + "/" + phuongTienList.size() + " phương tiện");
+            }
+            
+            System.out.println("🔍 Vehicle search completed:");
+            System.out.println("  - Search criteria: BienSo=" + maSoXe + ", LoaiPhuongTien=" + loaiPhuongTien);
+            System.out.println("  - Results: " + filteredList.size() + "/" + phuongTienList.size());
         }
     }
 
@@ -1486,9 +1570,9 @@ public class ChiTietCanHoController implements Initializable {
             // Kiểm tra quyền
             String userRole = getCurrentUserRole();
             System.out.println("DEBUG: User role: " + userRole);
-            if ("Tổ trưởng".equals(userRole)) {
+            if ("Tổ trưởng".equals(userRole) || "Kế toán".equals(userRole)) {
                 System.out.println("DEBUG: Access denied for role: " + userRole);
-                showError("Không có quyền", "Bạn không có quyền chỉnh sửa căn hộ. Chỉ có Tổ phó mới có thể chỉnh sửa.");
+                showError("Không có quyền", "Bạn không có quyền chỉnh sửa căn hộ. Chỉ được xem thông tin.");
                 return;
             }
             
