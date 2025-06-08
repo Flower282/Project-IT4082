@@ -467,13 +467,12 @@
                            <children>
                               <TableView fx:id="tabelViewKhoanThu" prefWidth="970.0">
                                  <columns>
-                                    <TableColumn fx:id="tableColumnMaKhoanThu" prefWidth="107.19997483491898" text="Mã khoản thu" />
-                                    <TableColumn fx:id="tableColumnTenKhoanThu" prefWidth="156.800048828125" text="Tên khoản thu" />
-                                    <TableColumn fx:id="tableColumnLoaiKhoanThu" prefWidth="121.5999755859375" text="Loại khoản thu" />
-                                    <TableColumn fx:id="tableColumnBoPhanQuanLy" prefWidth="152.79998779296875" text="Bộ phận quản lý" />
-                                    <TableColumn fx:id="tableColumnNgayTao" prefWidth="151.20001220703125" text="Ngày tạo" />
-                                    <TableColumn fx:id="tableColumnNgayTao1" prefWidth="124.79998779296875" text="Hạn nộp" />
-                                    <TableColumn fx:id="tableColumnTrangThaiHoaDon" prefWidth="151.199951171875" text="Trạng thái hóa đơn" />
+                                    <TableColumn fx:id="tableColumnMaKhoanThu" prefWidth="186.39998322725296" text="Mã khoản thu" />
+                                    <TableColumn fx:id="tableColumnTenKhoanThu" prefWidth="227.1999969482422" text="Tên khoản thu" />
+                                    <TableColumn fx:id="tableColumnLoaiKhoanThu" prefWidth="149.60000610351562" text="Loại khoản thu" />
+                                    <TableColumn fx:id="tableColumnBoPhanQuanLy" prefWidth="139.20001220703125" text="Bộ phận quản lý" />
+                                    <TableColumn fx:id="tableColumnNgayTao1" prefWidth="129.59991455078125" text="Hạn nộp" />
+                                    <TableColumn fx:id="tableColumnTrangThaiHoaDon" prefWidth="148.800048828125" text="Tạo hóa đơn" />
                                  </columns>
                               </TableView>
                               <AnchorPane prefWidth="970.0">
