@@ -470,7 +470,7 @@
                                     <TableColumn fx:id="tableColumnMaKhoanThu" prefWidth="107.19997483491898" text="Mã khoản thu" />
                                     <TableColumn fx:id="tableColumnTenKhoanThu" prefWidth="156.800048828125" text="Tên khoản thu" />
                                     <TableColumn fx:id="tableColumnLoaiKhoanThu" prefWidth="121.5999755859375" text="Loại khoản thu" />
-                                    <TableColumn fx:id="tableColumnBoPhanQuanLy" prefWidth="152.79998779296875" text="Bộ phận quản lý" />
+                                    <TableColumn fx:id="tableColumnBoPhanQuanLy" prefWidth="152.79998779296875" text="Phạm vi" />
                                     <TableColumn fx:id="tableColumnNgayTao" prefWidth="151.20001220703125" text="Ngày tạo" />
                                     <TableColumn fx:id="tableColumnNgayTao1" prefWidth="124.79998779296875" text="Hạn nộp" />
                                     <TableColumn fx:id="tableColumnTrangThaiHoaDon" prefWidth="151.199951171875" text="Trạng thái hóa đơn" />
@@ -498,7 +498,7 @@
                      <children>
                         <TextField fx:id="textFieldMaKhoanThu" prefWidth="195.0" promptText="Nhập mã khoản thu" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldTenKhoanThu" prefWidth="210.0" promptText="Nhập tên khoản thu" styleClass="text-field-normal" />
-                        <TextField fx:id="textFieldBoPhanQuanLy" layoutX="421.0" layoutY="10.0" prefWidth="206.0" promptText="Nhập bộ phận quản lý" styleClass="text-field-normal" />
+                        <TextField fx:id="textFieldBoPhanQuanLy" layoutX="421.0" layoutY="10.0" prefWidth="206.0" promptText="Nhập phạm vi" styleClass="text-field-normal" />
                         <ComboBox fx:id="comboBoxLoaiKhoanThu" prefWidth="187.0" promptText="Bắt buộc" style="-fx-background-color: transparent;" />
                         <ComboBox fx:id="comboBoxTrangThaiHoaDon" layoutX="722.0" layoutY="10.0" prefWidth="187.0" promptText="Trạng thái" style="-fx-background-color: transparent;" />
                         <Button fx:id="buttonTimKiemKhoanThu" mnemonicParsing="false" prefWidth="150.0" text="Tìm kiếm">

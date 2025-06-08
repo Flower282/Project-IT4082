@@ -1,26 +1,27 @@
 package io.github.ktpm.bluemoonmanagement.service.khoanThu.Impl;
 
-import java.util.List;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto;
+import org.apache.poi.ss.usermodel.Row;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
-import io.github.ktpm.bluemoonmanagement.service.khoanThu.KhoanThuService;
+import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto;
 import io.github.ktpm.bluemoonmanagement.model.entity.KhoanThu;
 import io.github.ktpm.bluemoonmanagement.model.mapper.KhoanThuMapper;
 import io.github.ktpm.bluemoonmanagement.repository.KhoanThuRepository;
-import org.springframework.stereotype.Service;
-import java.util.stream.Collectors;
+import io.github.ktpm.bluemoonmanagement.service.khoanThu.KhoanThuService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil;
 import io.github.ktpm.bluemoonmanagement.util.XlxsFileUtil;
-
-import org.springframework.web.multipart.MultipartFile;
-import org.apache.poi.ss.usermodel.Row;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.function.Function;
 
 @Service
 public class KhoanThuServiceImpl implements KhoanThuService {
@@ -33,8 +34,9 @@ public class KhoanThuServiceImpl implements KhoanThuService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<KhoanThuDto> getAllKhoanThu() {
-        List<KhoanThu> khoanThuList = khoanThuRepository.findAll();
+        List<KhoanThu> khoanThuList = khoanThuRepository.findAllWithPhiGuiXe();
         return khoanThuList.stream()
                 .map(khoanThuMapper::toKhoanThuDto)
                 .collect(Collectors.toList());

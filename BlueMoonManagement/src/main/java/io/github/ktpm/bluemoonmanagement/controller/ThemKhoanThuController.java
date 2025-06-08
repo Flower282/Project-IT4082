@@ -28,8 +28,7 @@ public class ThemKhoanThuController {
     @FXML
     private Button button_close_up;
 
-    @FXML
-    private ComboBox<String> comboBoxBoPhanQuanLy;
+
 
     @FXML
     private ComboBox<String> comboBoxDonViTinh;
@@ -39,6 +38,9 @@ public class ThemKhoanThuController {
 
     @FXML
     private ComboBox<String> comboBoxPhamVi;
+
+    @FXML
+    private ComboBox<String> comboBoxBoPhanQuanLy;
 
     @FXML
     private DatePicker datePickerHanNop;
@@ -80,15 +82,23 @@ public class ThemKhoanThuController {
     public void initialize() {
         // Khởi tạo các ComboBox với dữ liệu mẫu
         comboBoxLoaiKhoanThu.getItems().addAll("Bắt buộc", "Tự nguyện");
-        comboBoxBoPhanQuanLy.getItems().addAll("Ban quản lý", "Bên thứ ba");
         comboBoxDonViTinh.getItems().addAll("Diện tích", "Căn hộ", "Phương tiện");
-        comboBoxPhamVi.getItems().addAll("Tất cả căn hộ", "Căn hộ đang sử dụng");
+        comboBoxPhamVi.getItems().addAll(
+            "Tất cả", 
+            "Căn hộ đang sử dụng"
+        );
+        comboBoxBoPhanQuanLy.getItems().addAll("Ban quản lý", "Bên thứ 3");
 
         // Lắng nghe sự thay đổi của comboBoxDonViTinh để kiểm tra giá trị
         comboBoxDonViTinh.setOnAction(this::onDonViTinhChanged);
 
         // Gọi hàm xử lý ban đầu
         onDonViTinhChanged(null); // Kiểm tra ngay khi bắt đầu
+        
+        // Setup close button
+        if (button_close_up != null) {
+            button_close_up.setOnAction(this::handleClose);
+        }
     }
     @FXML
     private void onDonViTinhChanged(ActionEvent event) {
@@ -148,7 +158,7 @@ public class ThemKhoanThuController {
         khoanThuDto.setPhamVi(phamVi);
         khoanThuDto.setNgayTao(java.time.LocalDate.parse(ngayTao));
         khoanThuDto.setThoiHan(java.time.LocalDate.parse(thoiHanNop));
-        khoanThuDto.setGhiChu(boPhanQuanLy);
+        khoanThuDto.setGhiChu(boPhanQuanLy); // Sử dụng bộ phận quản lý làm ghi chú
 
         // Tạo danh sách các khoản phí gửi xe
         PhiGuiXeDto phiGuiXeDto = new PhiGuiXeDto();
@@ -173,9 +183,9 @@ public class ThemKhoanThuController {
     private boolean isAnyFieldEmpty() {
         // Kiểm tra các trường ComboBox có giá trị không
         if (comboBoxLoaiKhoanThu.getValue() == null ||
-                comboBoxBoPhanQuanLy.getValue() == null ||
                 comboBoxDonViTinh.getValue() == null ||
-                comboBoxPhamVi.getValue() == null) {
+                comboBoxPhamVi.getValue() == null ||
+                comboBoxBoPhanQuanLy.getValue() == null) {
             return true;
         }
 
@@ -200,5 +210,15 @@ public class ThemKhoanThuController {
         }
 
         return false; // Tất cả các trường đều có giá trị
+    }
+    
+    @FXML
+    private void handleClose(ActionEvent event) {
+        try {
+            javafx.stage.Stage stage = (javafx.stage.Stage) button_close_up.getScene().getWindow();
+            stage.close();
+        } catch (Exception e) {
+            System.err.println("Lỗi khi đóng cửa sổ: " + e.getMessage());
+        }
     }
 }
