@@ -313,44 +313,46 @@ public class CanHoServiceImpl implements CanHoService {
             System.out.println("=== DEBUG: Bắt đầu xóa căn hộ và dữ liệu liên quan ===");
             System.out.println("Mã căn hộ: " + maCanHo);
             
-            // 1. Xóa tất cả hóa đơn của căn hộ
+            // Tìm căn hộ trước để đảm bảo nó tồn tại
+            CanHo canHo = canHoRepository.findById(maCanHo).orElse(null);
+            if (canHo == null) {
+                return new ResponseDto(false, "Không tìm thấy căn hộ để xóa");
+            }
+            
+            // 1. Trước tiên, xóa reference từ căn hộ đến chủ hộ để tránh constraint violation
+            if (canHo.getChuHo() != null) {
+                System.out.println("DEBUG: Xóa reference chủ hộ khỏi căn hộ");
+                canHo.setChuHo(null);
+                canHoRepository.save(canHo);
+                entityManager.flush();
+            }
+            
+            // 2. Xóa tất cả hóa đơn của căn hộ
             List<HoaDon> hoaDonList = hoaDonRepository.findAll().stream()
                 .filter(hoaDon -> hoaDon.getCanHo() != null && maCanHo.equals(hoaDon.getCanHo().getMaCanHo()))
                 .collect(java.util.stream.Collectors.toList());
             
             if (!hoaDonList.isEmpty()) {
                 System.out.println("DEBUG: Tìm thấy " + hoaDonList.size() + " hóa đơn cần xóa");
-                for (HoaDon hoaDon : hoaDonList) {
-                    System.out.println("DEBUG: Xóa hóa đơn ID: " + hoaDon.getMaHoaDon());
-                    hoaDonRepository.delete(hoaDon);
-                }
-                // Flush changes để đảm bảo hóa đơn được xóa trước
+                hoaDonRepository.deleteAll(hoaDonList);
                 entityManager.flush();
                 System.out.println("DEBUG: Đã xóa tất cả hóa đơn");
-            } else {
-                System.out.println("DEBUG: Không có hóa đơn nào cần xóa");
             }
 
-            // 2. Xóa HOÀN TOÀN tất cả phương tiện của căn hộ
+            // 3. Xóa tất cả phương tiện của căn hộ
             List<io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien> allPhuongTienList = 
                 phuongTienRepository.findAll().stream()
                     .filter(pt -> pt.getCanHo() != null && maCanHo.equals(pt.getCanHo().getMaCanHo()))
                     .collect(java.util.stream.Collectors.toList());
             
             if (!allPhuongTienList.isEmpty()) {
-                System.out.println("DEBUG: Tìm thấy " + allPhuongTienList.size() + " phương tiện cần xóa hoàn toàn");
-                for (io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien phuongTien : allPhuongTienList) {
-                    System.out.println("DEBUG: Xóa hoàn toàn phương tiện biển số: " + phuongTien.getBienSo());
-                    phuongTienRepository.delete(phuongTien);
-                }
-                // Flush changes để đảm bảo phương tiện được xóa trước
+                System.out.println("DEBUG: Tìm thấy " + allPhuongTienList.size() + " phương tiện cần xóa");
+                phuongTienRepository.deleteAll(allPhuongTienList);
                 entityManager.flush();
-                System.out.println("DEBUG: Đã xóa hoàn toàn tất cả phương tiện");
-            } else {
-                System.out.println("DEBUG: Không có phương tiện nào cần xóa");
+                System.out.println("DEBUG: Đã xóa tất cả phương tiện");
             }
             
-            // 3. Xóa HOÀN TOÀN tất cả cư dân trong căn hộ
+            // 4. Cập nhật trạng thái cư dân thành "Đã chuyển đi" và xóa reference căn hộ
             List<io.github.ktpm.bluemoonmanagement.model.entity.CuDan> allCuDanList = 
                 cuDanRepository.findAll().stream()
                     .filter(cuDan -> cuDan.getCanHo() != null && 
@@ -358,27 +360,32 @@ public class CanHoServiceImpl implements CanHoService {
                     .collect(java.util.stream.Collectors.toList());
             
             if (!allCuDanList.isEmpty()) {
-                System.out.println("DEBUG: Tìm thấy " + allCuDanList.size() + " cư dân cần xóa hoàn toàn");
+                System.out.println("DEBUG: Tìm thấy " + allCuDanList.size() + " cư dân cần cập nhật trạng thái 'Đã chuyển đi'");
                 for (io.github.ktpm.bluemoonmanagement.model.entity.CuDan cuDan : allCuDanList) {
-                    System.out.println("DEBUG: Xóa hoàn toàn cư dân: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
-                    cuDanRepository.delete(cuDan);
+                    System.out.println("DEBUG: Cập nhật cư dân: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
+                    
+                    // Cập nhật trạng thái thành "Đã chuyển đi"
+                    cuDan.setTrangThaiCuTru("Đã chuyển đi");
+                    cuDan.setNgayChuyenDi(java.time.LocalDate.now());
+                    cuDan.setNgayChuyenDen(null); // Clear ngày chuyển đến
+                    
+                    // Xóa reference căn hộ
+                    cuDan.setCanHo(null);
+                    
+                    System.out.println("DEBUG: -> Trạng thái mới: 'Đã chuyển đi', Ngày chuyển đi: " + java.time.LocalDate.now());
                 }
-                // Flush changes để đảm bảo cư dân được xóa trước
+                cuDanRepository.saveAll(allCuDanList);
                 entityManager.flush();
-                System.out.println("DEBUG: Đã xóa hoàn toàn tất cả cư dân");
-            } else {
-                System.out.println("DEBUG: Không có cư dân nào cần xóa");
+                System.out.println("DEBUG: Đã cập nhật trạng thái tất cả cư dân thành 'Đã chuyển đi'");
             }
             
-            // 4. Xóa căn hộ (đã xóa tất cả dữ liệu liên quan)
+            // 5. Cuối cùng, xóa căn hộ
             System.out.println("DEBUG: Bắt đầu xóa căn hộ...");
             canHoRepository.deleteById(maCanHo);
-            
-            // Force flush để đảm bảo tất cả thay đổi được lưu
             entityManager.flush();
             
-            System.out.println("DEBUG: Đã xóa hoàn toàn căn hộ và tất cả dữ liệu liên quan thành công!");
-            return new ResponseDto(true, "Căn hộ cùng với tất cả hóa đơn, phương tiện và cư dân đã được xóa hoàn toàn thành công");
+            System.out.println("DEBUG: Đã xóa căn hộ thành công! Cư dân được giữ lại.");
+            return new ResponseDto(true, "Căn hộ đã được xóa thành công. Cư dân và hóa đơn, phương tiện liên quan đã được xử lý.");
             
         } catch (Exception e) {
             System.err.println("ERROR: Lỗi khi xóa căn hộ: " + e.getMessage());

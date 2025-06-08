@@ -75,8 +75,8 @@ public class KhungController implements Initializable{
         
         buttonTaiKhoan.setDisable(true);
         
-        System.out.println("KhungController được khởi tạo");
-        System.out.println("CanHoService trong KhungController: " + (canHoService != null ? "Có" : "NULL"));
+
+
         
         String name = Session.getCurrentUser().getHoTen();
         setAccountName(name);

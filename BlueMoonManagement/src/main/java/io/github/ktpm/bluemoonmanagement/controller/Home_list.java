@@ -460,9 +460,7 @@ public class Home_list implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        System.out.println("Home_list controller được khởi tạo");
-        System.out.println("CanHoService status: " + (canHoService != null ? "Đã inject" : "NULL - Chưa inject"));
-        System.out.println("CuDanService status: " + (cuDanService != null ? "Đã inject" : "NULL - Chưa inject"));
+        // Controller initialization completed
         
         allPanes = List.of(gridPaneTrangChu, scrollPaneCanHo, scrollPaneCuDan, scrollPaneTaiKhoan, scrollPaneKhoanThu, scrollPaneLichSuThu, scrollPaneCanHo1);
         
@@ -476,6 +474,10 @@ public class Home_list implements Initializable {
         setupCanHoTable();
         setupCuDanTable();
         setupTaiKhoanTable();
+        
+        // Setup right-click refresh functionality with new method names
+        setupRightClickRefresh();
+        
         // Load data
         loadData();
         loadCuDanData();
@@ -490,7 +492,7 @@ public class Home_list implements Initializable {
             vaiTroLabel.setText("Vai trò: " + Session.getCurrentUser().getVaiTro());
         }
         
-        System.out.println("Home_list đã được khởi tạo");
+        // Home_list initialization completed
     }
 
     public void setParentController(KhungController controller) {
@@ -552,7 +554,7 @@ public class Home_list implements Initializable {
     @FXML
     private void gotothemcanho(ActionEvent event) {
         try {
-            System.out.println("Mở form thêm căn hộ...");
+            // Opening apartment form
             
             // Sử dụng FXMLLoader thông thường cho JavaFX modal
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/them_can_ho.fxml"));
@@ -570,7 +572,7 @@ public class Home_list implements Initializable {
                 }
                 if (applicationContext != null) {
                     controller.setApplicationContext(applicationContext);
-                    System.out.println("DEBUG: ApplicationContext injected to ThemCanHoButton");
+                    // ApplicationContext injected to form controller
                 }
             }
             
@@ -601,9 +603,9 @@ public class Home_list implements Initializable {
             // Hiển thị dialog và chờ đóng
             dialogStage.showAndWait();
             
-            // Sau khi đóng form, load dữ liệu từ cache (không refresh database)
-            System.out.println("Form thêm căn hộ đã đóng, load dữ liệu từ cache...");
-            loadDataFromCache();
+            // Sau khi đóng form thêm căn hộ, reload dữ liệu để cập nhật danh sách
+            // Form closed, reloading data
+            refreshApartmentData();
             
         } catch (Exception e) {
             showError("Lỗi khi mở form thêm căn hộ", "Chi tiết: " + e.getMessage());
@@ -612,20 +614,37 @@ public class Home_list implements Initializable {
     }
     
     /**
+     * Refresh apartment data after add/edit/delete operations
+     */
+    public void refreshApartmentData() {
+        // Clear cache to ensure fresh data
+        if (cacheDataService != null) {
+            cacheDataService.refreshCacheData();
+        }
+        
+        // Reload data from database
+        loadData();
+    }
+    
+    /**
      * Loads data from cache (no database refresh)
      */
     private void loadDataFromCache() {
         try {
             if (cacheDataService != null) {
-                System.out.println("DEBUG: Loading apartment data from cache...");
+                // Loading apartment data from cache
                 List<CanHoDto> canHoDtoList = canHoService.getAllCanHo();
                 canHoList = FXCollections.observableArrayList();
                 
                 if (canHoDtoList != null) {
                     for (CanHoDto dto : canHoDtoList) {
-                        // Sử dụng cache để kiểm tra cư dân thay vì gọi database
-                        if (shouldShowApartmentFromCache(dto)) {
+                        // Tạm thời hiển thị tất cả căn hộ (tắt logic ẩn căn hộ)
+                        if (true || shouldShowApartmentFromCache(dto)) {
                             String chuHoName = dto.getChuHo() != null ? dto.getChuHo().getHoVaTen() : "";
+                            // Cột "Sử dụng" chỉ hiển thị "Trống" hoặc "Đang sử dụng"
+                            String trangThaiSuDung = dto.getTrangThaiSuDung(); // Không hiển thị "Đã bán" ở cột này
+                            // Cột "Tình trạng" hiển thị trạng thái bán
+                            String trangThaiBan = dto.isDaBanChua() ? "Đã bán" : "Chưa bán";
                             CanHoTableData tableData = new CanHoTableData(
                                 dto.getMaCanHo(),
                                 dto.getToaNha(),
@@ -633,8 +652,9 @@ public class Home_list implements Initializable {
                                 dto.getSoNha(),
                                 dto.getDienTich() + " m²",
                                 chuHoName,
-                                dto.getTrangThaiSuDung(),
-                                dto.getTrangThaiKiThuat()
+                                trangThaiSuDung,
+                                dto.getTrangThaiKiThuat(),
+                                trangThaiBan
                             );
                             canHoList.add(tableData);
                         }
@@ -646,9 +666,9 @@ public class Home_list implements Initializable {
                     ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
                 }
                 updateKetQuaLabel();
-                System.out.println("DEBUG: Loaded " + canHoList.size() + " apartments from cache");
+                // Successfully loaded apartments from cache
             } else {
-                System.out.println("DEBUG: Cache service not available, falling back to database load");
+                // Cache service not available, falling back to database load
                 loadData();
             }
         } catch (Exception e) {
@@ -665,13 +685,19 @@ public class Home_list implements Initializable {
         try {
             if (canHoService != null) {
                 List<CanHoDto> canHoDtoList = canHoService.getAllCanHo();
+                System.out.println("=== DEBUG: loadData() called ===");
+                System.out.println("DEBUG: canHoService available, got " + (canHoDtoList != null ? canHoDtoList.size() : 0) + " apartments from service");
                 canHoList = FXCollections.observableArrayList();
                 
                 if (canHoDtoList != null) {
                     for (CanHoDto dto : canHoDtoList) {
-                        // Kiểm tra xem căn hộ có cư dân còn đang ở không
-                        if (shouldShowApartment(dto)) {
+                        // Tạm thời hiển thị tất cả căn hộ (tắt logic ẩn căn hộ)
+                        if (true || shouldShowApartment(dto)) {
                             String chuHoName = dto.getChuHo() != null ? dto.getChuHo().getHoVaTen() : "";
+                            // Cột "Sử dụng" chỉ hiển thị "Trống" hoặc "Đang sử dụng"
+                            String trangThaiSuDung = dto.getTrangThaiSuDung(); // Không hiển thị "Đã bán" ở cột này
+                            // Cột "Tình trạng" hiển thị trạng thái bán
+                            String trangThaiBan = dto.isDaBanChua() ? "Đã bán" : "Chưa bán";
                             CanHoTableData tableData = new CanHoTableData(
                                 dto.getMaCanHo(),
                                 dto.getToaNha(),
@@ -679,8 +705,9 @@ public class Home_list implements Initializable {
                                 dto.getSoNha(),
                                 dto.getDienTich() + " m²",
                                 chuHoName,
-                                dto.getTrangThaiSuDung(),
-                                dto.getTrangThaiKiThuat()
+                                trangThaiSuDung,
+                                dto.getTrangThaiKiThuat(),
+                                trangThaiBan
                             );
                             canHoList.add(tableData);
                         }
@@ -690,9 +717,14 @@ public class Home_list implements Initializable {
                 filteredList = FXCollections.observableArrayList(canHoList);
                 if (tabelViewCanHo != null) {
                     ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
+                    System.out.println("DEBUG: Set " + filteredList.size() + " apartments to table view");
+                } else {
+                    System.err.println("ERROR: tabelViewCanHo is null!");
                 }
                 updateKetQuaLabel();
+                System.out.println("=== DEBUG: loadData() completed with " + canHoList.size() + " apartments ===");
             } else {
+                System.err.println("ERROR: canHoService is null! Using sample data");
                 // Fallback to sample data nếu service chưa có
                 loadSampleData();
             }
@@ -827,12 +859,17 @@ public class Home_list implements Initializable {
             ((TableColumn<CanHoTableData, String>) tableColumnSuDung).setCellValueFactory(new PropertyValueFactory<>("trangThaiSuDung"));
             ((TableColumn<CanHoTableData, String>) tableColumnKiThuat).setCellValueFactory(new PropertyValueFactory<>("trangThaiKiThuat"));
             
-            // Thêm sự kiện single-click để xem chi tiết căn hộ
+            // Map cột "Tình trạng" (tableColumnSoHuu trong FXML) với dữ liệu trangThaiBan
+            if (tableColumnSoHuu != null) {
+                ((TableColumn<CanHoTableData, String>) tableColumnSoHuu).setCellValueFactory(new PropertyValueFactory<>("trangThaiBan"));
+            }
+            
+            // Thêm sự kiện LEFT-click để xem chi tiết căn hộ (chỉ chuột trái)
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<CanHoTableData> row = new javafx.scene.control.TableRow<>();
                 row.setOnMouseClicked(event -> {
-                    // Single-click vào bất kỳ chỗ nào của dòng sẽ mở chi tiết
-                    if (!row.isEmpty() && event.getClickCount() == 1) {
+                    // CHỈ LEFT-CLICK để mở chi tiết (tránh conflict với right-click refresh)
+                    if (!row.isEmpty() && event.getClickCount() == 1 && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                         CanHoTableData rowData = row.getItem();
                         handleXemChiTietCanHo(rowData);
                     }
@@ -1007,9 +1044,10 @@ public class Home_list implements Initializable {
         private String chuHo;
         private String trangThaiSuDung;
         private String trangThaiKiThuat;
+        private String trangThaiBan; // Thêm trường trạng thái bán
 
         public CanHoTableData(String maCanHo, String toaNha, String tang, String soNha, 
-                            String dienTich, String chuHo, String trangThaiSuDung, String trangThaiKiThuat) {
+                            String dienTich, String chuHo, String trangThaiSuDung, String trangThaiKiThuat, String trangThaiBan) {
             this.maCanHo = maCanHo;
             this.toaNha = toaNha;
             this.tang = tang;
@@ -1018,6 +1056,7 @@ public class Home_list implements Initializable {
             this.chuHo = chuHo;
             this.trangThaiSuDung = trangThaiSuDung;
             this.trangThaiKiThuat = trangThaiKiThuat;
+            this.trangThaiBan = trangThaiBan;
         }
 
         // Getters
@@ -1029,6 +1068,7 @@ public class Home_list implements Initializable {
         public String getChuHo() { return chuHo; }
         public String getTrangThaiSuDung() { return trangThaiSuDung; }
         public String getTrangThaiKiThuat() { return trangThaiKiThuat; }
+        public String getTrangThaiBan() { return trangThaiBan; }
 
         // Setters
         public void setMaCanHo(String maCanHo) { this.maCanHo = maCanHo; }
@@ -1039,6 +1079,7 @@ public class Home_list implements Initializable {
         public void setChuHo(String chuHo) { this.chuHo = chuHo; }
         public void setTrangThaiSuDung(String trangThaiSuDung) { this.trangThaiSuDung = trangThaiSuDung; }
         public void setTrangThaiKiThuat(String trangThaiKiThuat) { this.trangThaiKiThuat = trangThaiKiThuat; }
+        public void setTrangThaiBan(String trangThaiBan) { this.trangThaiBan = trangThaiBan; }
     }
 
     /**
@@ -1132,12 +1173,12 @@ public class Home_list implements Initializable {
             ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayTao).setCellValueFactory(new PropertyValueFactory<>("ngayTao"));
             ((TableColumn<TaiKhoanTableData, String>) tableColumnNgayCapNhat).setCellValueFactory(new PropertyValueFactory<>("ngayCapNhat"));
 
-            // Thêm sự kiện single-click để xem chi tiết tài khoản
+            // Thêm sự kiện LEFT-click để xem chi tiết tài khoản (chỉ chuột trái)
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<TaiKhoanTableData> row = new javafx.scene.control.TableRow<>();
                 row.setOnMouseClicked(event -> {
-                    // Single-click vào bất kỳ chỗ nào của dòng sẽ mở chi tiết
-                    if (!row.isEmpty() && event.getClickCount() == 1) {
+                    // CHỈ LEFT-CLICK để mở chi tiết (tránh conflict với right-click refresh)
+                    if (!row.isEmpty() && event.getClickCount() == 1 && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                         TaiKhoanTableData rowData = row.getItem();
                         handleXemChiTietTaiKhoan(rowData);
                     }
@@ -1369,11 +1410,12 @@ public class Home_list implements Initializable {
             ((TableColumn<CuDanTableData, String>) tableColumnNgayChuyenDen).setCellValueFactory(new PropertyValueFactory<>("ngayChuyenDen"));
             ((TableColumn<CuDanTableData, String>) tableColumnTrangThaiCuDan).setCellValueFactory(new PropertyValueFactory<>("trangThaiCuTru"));
             
-            // Setup row click event để mở popup chỉnh sửa cư dân
+            // Setup LEFT double-click event để mở popup chỉnh sửa cư dân (chỉ chuột trái)
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<CuDanTableData> row = new javafx.scene.control.TableRow<>();
                 row.setOnMouseClicked(event -> {
-                    if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    // CHỈ LEFT DOUBLE-CLICK để mở chỉnh sửa (tránh conflict với right-click refresh)
+                    if (event.getClickCount() == 2 && !row.isEmpty() && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                         CuDanTableData rowData = row.getItem();
                         handleEditCuDan(rowData);
                     }
@@ -1415,7 +1457,7 @@ public class Home_list implements Initializable {
             
             // Thêm tooltip hướng dẫn
             javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
-                "Double-click vào dòng cư dân để chỉnh sửa thông tin");
+                "Left double-click vào dòng cư dân để chỉnh sửa thông tin\nRight-click để refresh dữ liệu");
             javafx.scene.control.Tooltip.install(typedTableView, tooltip);
             
             // Đảm bảo TableView có thể focus để nhận sự kiện phím
@@ -1541,6 +1583,18 @@ public class Home_list implements Initializable {
         }
     }
 
+    /**
+     * Public method to refresh residents data (called by other controllers)
+     */
+    public void refreshCuDanData() {
+        // Clear cache and reload residents data
+        if (cacheDataService != null) {
+            cacheDataService.refreshCacheData();
+        }
+        loadCuDanData();
+        System.out.println("✅ Residents data refreshed");
+    }
+    
     /**
      * Load dữ liệu cư dân từ service
      */
@@ -1685,6 +1739,189 @@ public class Home_list implements Initializable {
             e.printStackTrace();
             return false;
         }
+    }
+
+    /**
+     * Setup right-click refresh functionality for all panes
+     */
+    private void setupRightClickRefresh() {
+        System.out.println("=== DEBUG: Setting up right-click refresh functionality ===");
+        
+        // Add right-click event handler for each pane
+        for (Node pane : allPanes) {
+            if (pane != null) {
+                pane.setOnMouseClicked(event -> {
+                    if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
+                        System.out.println("🔄 RIGHT CLICK DETECTED - Refreshing page...");
+                        handleRightClickRefresh();
+                        event.consume(); // Prevent context menu
+                    }
+                });
+                System.out.println("✅ Added right-click handler to: " + pane.getClass().getSimpleName());
+            }
+        }
+        
+        System.out.println("=== DEBUG: Right-click refresh setup completed ===");
+    }
+    
+    /**
+     * Handle right-click refresh based on current visible pane
+     */
+    private void handleRightClickRefresh() {
+        try {
+            System.out.println("🔄 Starting right-click refresh...");
+            
+            // Determine which pane is currently visible and refresh accordingly using right-click methods
+            if (gridPaneTrangChu.isVisible()) {
+                System.out.println("📊 Refreshing Dashboard...");
+                refreshDashboard();
+            } else if (scrollPaneCanHo.isVisible()) {
+                System.out.println("🏠 Refreshing Apartments data...");
+                refreshApartmentDataRightClick();
+            } else if (scrollPaneCuDan.isVisible()) {
+                System.out.println("👥 Refreshing Residents data...");
+                refreshResidentDataRightClick();
+            } else if (scrollPaneTaiKhoan.isVisible()) {
+                System.out.println("👤 Refreshing Accounts data...");
+                refreshAccountDataRightClick();
+            } else if (scrollPaneKhoanThu.isVisible()) {
+                System.out.println("💰 Refreshing Fee data...");
+                refreshFeeDataRightClick();
+            } else {
+                System.out.println("🔄 Refreshing all data...");
+                refreshAllDataRightClick();
+            }
+            
+            // Show success feedback
+            
+            
+        } catch (Exception e) {
+            System.err.println("❌ ERROR during right-click refresh: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Refresh dashboard data
+     */
+    private void refreshDashboard() {
+        // Reload all basic data for dashboard
+        loadData();
+        loadCuDanData();
+        loadTaiKhoanData();
+        System.out.println("✅ Dashboard refreshed");
+    }
+    
+    /**
+     * Refresh apartment data for right-click (separate from main refresh)
+     */
+    private void refreshApartmentDataRightClick() {
+        System.out.println("🖱️ Right-click refresh: Apartments");
+        // Clear cache and reload apartments data
+        if (cacheDataService != null) {
+            cacheDataService.refreshCacheData();
+        }
+        loadData();
+        System.out.println("✅ Apartments data refreshed via right-click");
+    }
+    
+    /**
+     * Refresh residents data for right-click (separate from main refresh)
+     */
+    private void refreshResidentDataRightClick() {
+        System.out.println("🖱️ Right-click refresh: Residents");
+        // Clear cache and reload residents data
+        if (cacheDataService != null) {
+            cacheDataService.refreshCacheData();
+        }
+        loadCuDanData();
+        System.out.println("✅ Residents data refreshed via right-click");
+    }
+    
+    /**
+     * Refresh accounts data for right-click
+     */
+    private void refreshAccountDataRightClick() {
+        System.out.println("🖱️ Right-click refresh: Accounts");
+        loadTaiKhoanData();
+        System.out.println("✅ Accounts data refreshed via right-click");
+    }
+    
+    /**
+     * Refresh fee data for right-click
+     */
+    private void refreshFeeDataRightClick() {
+        System.out.println("🖱️ Right-click refresh: Fees");
+        // TODO: Implement fee data refresh when available
+        System.out.println("✅ Fee data refresh requested via right-click (implementation pending)");
+    }
+    
+    /**
+     * Refresh all data for right-click
+     */
+    private void refreshAllDataRightClick() {
+        System.out.println("🖱️ Right-click refresh: All data");
+        refreshApartmentDataRightClick();
+        refreshResidentDataRightClick();
+        refreshAccountDataRightClick();
+        refreshFeeDataRightClick();
+        System.out.println("✅ All data refreshed via right-click");
+    }
+
+    
+    /**
+     * Refresh accounts data
+     */
+    private void refreshTaiKhoanData() {
+        loadTaiKhoanData();
+        System.out.println("✅ Accounts data refreshed");
+    }
+    
+    /**
+     * Refresh fee data (placeholder)
+     */
+    private void refreshKhoanThuData() {
+        // TODO: Implement fee data refresh when available
+        System.out.println("✅ Fee data refresh requested (implementation pending)");
+    }
+    
+    /**
+     * Refresh all data
+     */
+    private void refreshAllData() {
+        refreshApartmentData();
+        refreshCuDanData();
+        refreshTaiKhoanData();
+        refreshKhoanThuData();
+        System.out.println("✅ All data refreshed");
+    }
+    
+    /**
+     * Show visual feedback for successful refresh
+     */
+    private void showRefreshSuccess() {
+        javafx.application.Platform.runLater(() -> {
+            try {
+                // Show success message using existing showSuccess method
+                showSuccess("Refresh thành công", "🔄 Trang đã được làm mới!");
+            } catch (Exception e) {
+                System.err.println("Could not show refresh feedback: " + e.getMessage());
+            }
+        });
+    }
+    
+    /**
+     * Show visual feedback for successful right-click refresh
+     */
+    private void showRefreshSuccessRightClick() {
+        javafx.application.Platform.runLater(() -> {
+            try {
+                // Show success message for right-click refresh
+                showSuccess("Refresh bằng chuột phải", "🖱️ Dữ liệu đã được làm mới!");
+            } catch (Exception e) {
+                System.err.println("Could not show right-click refresh feedback: " + e.getMessage());
+            }
+        });
     }
 
 }
