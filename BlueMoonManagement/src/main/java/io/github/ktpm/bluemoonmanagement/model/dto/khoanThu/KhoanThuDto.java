@@ -22,4 +22,5 @@ public class KhoanThuDto {
     private LocalDate thoiHan;
     private String ghiChu;
     private List<PhiGuiXeDto> phiGuiXeList;
+    private boolean taoHoaDon;
 }

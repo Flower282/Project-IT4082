@@ -16,6 +16,9 @@ import javafx.scene.text.Text;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
 public class ThemKhoanThuController {
 
@@ -160,16 +163,7 @@ public class ThemKhoanThuController {
         khoanThuDto.setThoiHan(java.time.LocalDate.parse(thoiHanNop));
         khoanThuDto.setGhiChu(boPhanQuanLy); // Sử dụng bộ phận quản lý làm ghi chú
 
-        // Tạo danh sách các khoản phí gửi xe
-        PhiGuiXeDto phiGuiXeDto = new PhiGuiXeDto();
-//        phiGuiXeDto.setGiaXeDap(Integer.parseInt(giaXeDap));
-//        phiGuiXeDto.setGiaXeMay(Integer.parseInt(giaXeMay));
-//        phiGuiXeDto.setGiaXeOTo(Integer.parseInt(giaXeOTo));
-//        phiGuiXeDto.setDonGia(Integer.parseInt(donGia));
-        khoanThuDto.setPhiGuiXeList(java.util.Collections.singletonList(phiGuiXeDto));
         // Gọi service để thêm khoản thu
-
-
         ResponseDto response = khoanThuService.addKhoanThu(khoanThuDto);
         if (response.isSuccess()) {
             textError.setText("Thêm khoản thu thành công!");
@@ -179,6 +173,24 @@ public class ThemKhoanThuController {
             textError.setText("Lỗi: " + response.getMessage());
             textError.setStyle("-fx-fill: red;");
         }
+        // Tạo danh sách phiGuiXeDtos nếu đơn vị tính là "Phương tiện"
+        String maKhoanThu = khoanThuDto.getMaKhoanThu();
+        List<PhiGuiXeDto> phiGuiXeDtos= new ArrayList<>();
+        if ("Phương tiện".equals(donViTinh)) {
+            // Chỉ thêm các khoản phí nếu đơn vị tính là "Phương tiện"
+            if (!giaXeDap.isEmpty()) {
+                phiGuiXeDtos.add(new PhiGuiXeDto("Xe đạp", Integer.parseInt(giaXeDap),maKhoanThu));
+            }
+            if (!giaXeMay.isEmpty()) {
+                phiGuiXeDtos.add(new PhiGuiXeDto("Xe máy", Integer.parseInt(giaXeMay),maKhoanThu));
+            }
+            if (!giaXeOTo.isEmpty()) {
+                phiGuiXeDtos.add(new PhiGuiXeDto( "Ô tô", Integer.parseInt(giaXeOTo),maKhoanThu));
+            }
+        }
+        // Gán danh sách phiGuiXeDtos vào khoanThuDto
+        khoanThuDto.setPhiGuiXeList(phiGuiXeDtos);
+
     }
     private boolean isAnyFieldEmpty() {
         // Kiểm tra các trường ComboBox có giá trị không

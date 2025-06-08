@@ -470,7 +470,7 @@
                                     <TableColumn fx:id="tableColumnMaKhoanThu" prefWidth="107.19997483491898" text="Mã khoản thu" />
                                     <TableColumn fx:id="tableColumnTenKhoanThu" prefWidth="156.800048828125" text="Tên khoản thu" />
                                     <TableColumn fx:id="tableColumnLoaiKhoanThu" prefWidth="121.5999755859375" text="Loại khoản thu" />
-                                    <TableColumn fx:id="tableColumnBoPhanQuanLy" prefWidth="152.79998779296875" text="Phạm vi" />
+                                    <TableColumn fx:id="tableColumnBoPhanQuanLy" prefWidth="152.79998779296875" text="Bộ phận quản lý" />
                                     <TableColumn fx:id="tableColumnNgayTao" prefWidth="151.20001220703125" text="Ngày tạo" />
                                     <TableColumn fx:id="tableColumnNgayTao1" prefWidth="124.79998779296875" text="Hạn nộp" />
                                     <TableColumn fx:id="tableColumnTrangThaiHoaDon" prefWidth="151.199951171875" text="Trạng thái hóa đơn" />
