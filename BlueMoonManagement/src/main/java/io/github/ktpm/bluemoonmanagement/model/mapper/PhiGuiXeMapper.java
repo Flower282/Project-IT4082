@@ -12,6 +12,9 @@ public interface PhiGuiXeMapper {
     PhiGuiXeDto toPhiGuiXeDto(PhiGuiXe phiGuiXe);
 
     @Mapping(target = "khoanThu.maKhoanThu", source = "maKhoanThu")
+
+
     @Mapping(target = "id", ignore = true) // Assuming id is auto-generated
+
     PhiGuiXe fromPhiGuiXeDto(PhiGuiXeDto phiGuiXeDto);
 }
