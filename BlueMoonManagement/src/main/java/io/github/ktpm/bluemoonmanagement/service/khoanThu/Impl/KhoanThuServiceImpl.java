@@ -3,6 +3,7 @@ package io.github.ktpm.bluemoonmanagement.service.khoanThu.Impl;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Function;
@@ -73,29 +74,15 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         // Phần 1: TN hoặc BB (Tự nguyện / Bắt buộc)
         boolean batBuoc = khoanThuDto.isBatBuoc();
         String loaiKhoanThu = batBuoc ? "BB" : "TN";
-        
-        // Phần 2: Thời điểm tạo yyyyMM (năm + tháng)
-        LocalDate now = LocalDate.now();
-        String thoiDiemTao = now.format(DateTimeFormatter.ofPattern("yyyyMM"));
-        
-        // Lấy tháng và năm hiện tại
-        int month = now.getMonthValue();
-        int year = now.getYear();
-        
-        // Đếm số lượng khoản thu cùng loại trong tháng và năm hiện tại
-        long count = khoanThuRepository.countByBatBuocAndMonthAndYear(batBuoc, month, year);
-        
-        // Tăng số thứ tự lên 1 (vì count là số lượng hiện có)
-        String soThuTu = String.format("%03d", count + 1);
-        
+
+        // Phần 2: Thời điểm tạo yyMM (năm + tháng)
+        LocalDateTime now = LocalDateTime.now();
+        String thoiDiemTao = now.format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
+
         // Ghép các phần lại với nhau sử dụng StringBuilder
         StringBuilder maBuilder = new StringBuilder();
         maBuilder.append(loaiKhoanThu)
-                .append("-")
-                .append(thoiDiemTao)
-                .append("-")
-                .append(soThuTu);
-                
+                .append(thoiDiemTao);
         return maBuilder.toString();
     }
 
