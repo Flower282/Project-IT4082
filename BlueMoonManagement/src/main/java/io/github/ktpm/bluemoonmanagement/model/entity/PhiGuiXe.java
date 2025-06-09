@@ -1,11 +1,6 @@
 package io.github.ktpm.bluemoonmanagement.model.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,6 +12,10 @@ import lombok.NoArgsConstructor;
 @Entity
 public class PhiGuiXe {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(name = "loai_xe")
     private String loaiXe;
 
     @Column(name = "so_tien")
