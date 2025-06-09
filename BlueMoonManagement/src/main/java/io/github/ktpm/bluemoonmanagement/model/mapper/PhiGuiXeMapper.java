@@ -12,5 +12,6 @@ public interface PhiGuiXeMapper {
     PhiGuiXeDto toPhiGuiXeDto(PhiGuiXe phiGuiXe);
 
     @Mapping(target = "khoanThu.maKhoanThu", source = "maKhoanThu")
+    @Mapping(target = "id", ignore = true) // ID sẽ được auto-generate
     PhiGuiXe fromPhiGuiXeDto(PhiGuiXeDto phiGuiXeDto);
 }

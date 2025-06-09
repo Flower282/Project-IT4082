@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoDto;
+import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
@@ -41,8 +42,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.beans.property.SimpleStringProperty;
-import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto;
 
 @Component
 public class Home_list implements Initializable {
@@ -1543,7 +1542,7 @@ public class Home_list implements Initializable {
     public void ThemKhoanThuClicked(ActionEvent event) {
         try {
             // Load view + controller
-            FxView<?> fxView = fxViewLoader.loadFxView("/view/them_khoan_thu.fxml");
+            FxView<?> fxView = fxViewLoader.loadFxView("/view/khoan_thu.fxml");
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
@@ -2441,6 +2440,42 @@ public class Home_list implements Initializable {
             ((TableColumn<KhoanThuTableData, String>) tableColumnTenKhoanThu).setCellValueFactory(new PropertyValueFactory<>("tenKhoanThu"));
             ((TableColumn<KhoanThuTableData, String>) tableColumnLoaiKhoanThu).setCellValueFactory(new PropertyValueFactory<>("loaiKhoanThu"));
             
+            // Setup cột "Số tiền" với nút "Xem thêm" cho khoản thu phương tiện
+            if (tableColumnSoTien != null) {
+                TableColumn<KhoanThuTableData, String> soTienColumn = (TableColumn<KhoanThuTableData, String>) tableColumnSoTien;
+                soTienColumn.setCellFactory(column -> new javafx.scene.control.TableCell<KhoanThuTableData, String>() {
+                    private final javafx.scene.control.Button btnXemThem = new javafx.scene.control.Button("Xem thêm");
+                    
+                    {
+                        btnXemThem.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 12px; -fx-padding: 5 10;");
+                        btnXemThem.setOnAction(event -> {
+                            KhoanThuTableData rowData = getTableView().getItems().get(getIndex());
+                            handleXemChiTietPhiXe(rowData);
+                        });
+                    }
+                    
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (empty || getIndex() >= getTableView().getItems().size()) {
+                            setGraphic(null);
+                            setText(null);
+                        } else {
+                            KhoanThuTableData rowData = getTableView().getItems().get(getIndex());
+                            if ("Phương tiện".equals(rowData.getDonViTinh())) {
+                                // Hiển thị nút "Xem thêm" cho khoản thu phương tiện
+                                setGraphic(btnXemThem);
+                                setText(null);
+                            } else {
+                                // Hiển thị số tiền bình thường cho khoản thu khác
+                                setGraphic(null);
+                                setText(rowData.getSoTien());
+                            }
+                        }
+                    }
+                });
+            }
+            
             // "Bộ phận quản lý" -> map với ghiChu 
             if (tableColumnBoPhanQuanLy != null) {
                 ((TableColumn<KhoanThuTableData, String>) tableColumnBoPhanQuanLy).setCellValueFactory(new PropertyValueFactory<>("ghiChu"));
@@ -2464,9 +2499,18 @@ public class Home_list implements Initializable {
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<KhoanThuTableData> row = new javafx.scene.control.TableRow<>();
                 row.setOnMouseClicked(event -> {
-                    if (!row.isEmpty() && event.getClickCount() == 1 && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
+                    if (!row.isEmpty() && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                         KhoanThuTableData rowData = row.getItem();
-                        handleXemChiTietKhoanThu(rowData);
+                        if (event.getClickCount() == 1) {
+                            // Single click - kiểm tra quyền để quyết định hành động
+                            if (hasKhoanThuEditPermission()) {
+                                // Kế toán: mở form chỉnh sửa
+                                handleEditKhoanThu(rowData);
+                            } else {
+                                // Các vị trí khác: chỉ xem chi tiết
+                                handleXemChiTietKhoanThu(rowData);
+                            }
+                        }
                     }
                 });
                 return row;
@@ -2474,6 +2518,80 @@ public class Home_list implements Initializable {
         }
     }
     
+    /**
+     * Kiểm tra quyền chỉnh sửa khoản thu (chỉ Kế toán mới được chỉnh sửa)
+     */
+    private boolean hasKhoanThuEditPermission() {
+        try {
+            io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto currentUser = 
+                io.github.ktpm.bluemoonmanagement.session.Session.getCurrentUser();
+            
+            if (currentUser != null && currentUser.getVaiTro() != null) {
+                String vaiTro = currentUser.getVaiTro();
+                return "Kế toán".equals(vaiTro);
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Lỗi khi kiểm tra quyền: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Handle Xem chi tiết phí xe - chỉ hiển thị thông tin phí xe
+     */
+    private void handleXemChiTietPhiXe(KhoanThuTableData rowData) {
+        try {
+            if (!"Phương tiện".equals(rowData.getDonViTinh())) {
+                showInfo("Thông tin", "Đây không phải là khoản thu phương tiện.");
+                return;
+            }
+            
+            StringBuilder phiXeDetails = new StringBuilder();
+            phiXeDetails.append("📋 CHI TIẾT PHÍ GỬI XE - ").append(rowData.getTenKhoanThu()).append("\n");
+            phiXeDetails.append("Mã khoản thu: ").append(rowData.getMaKhoanThu()).append("\n\n");
+            
+            if (khoanThuService != null) {
+                try {
+                    // Lấy thông tin chi tiết khoản thu từ service
+                    List<io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto> khoanThuList = khoanThuService.getAllKhoanThu();
+                    io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto khoanThuDto = khoanThuList.stream()
+                        .filter(kt -> kt.getMaKhoanThu().equals(rowData.getMaKhoanThu()))
+                        .findFirst()
+                        .orElse(null);
+                        
+                    if (khoanThuDto != null && khoanThuDto.getPhiGuiXeList() != null && !khoanThuDto.getPhiGuiXeList().isEmpty()) {
+                        phiXeDetails.append("🚗 BẢNG GIÁ PHÍ GỬI XE:");
+                        phiXeDetails.append("\n" + "=".repeat(35));
+                        
+                        for (io.github.ktpm.bluemoonmanagement.model.dto.phiGuiXe.PhiGuiXeDto phiXe : khoanThuDto.getPhiGuiXeList()) {
+                            phiXeDetails.append("\n🔸 ").append(phiXe.getLoaiXe())
+                                      .append(": ").append(String.format("%,d", phiXe.getSoTien()))
+                                      .append(" VND");
+                        }
+                        phiXeDetails.append("\n" + "=".repeat(35));
+                        
+                        // Thêm ghi chú
+                        phiXeDetails.append("\n\n📝 Ghi chú: Phí được tính theo tháng cho mỗi loại phương tiện.");
+                    } else {
+                        phiXeDetails.append("⚠️ Chưa có thông tin chi tiết phí xe.");
+                        phiXeDetails.append("\nVui lòng liên hệ ban quản lý để biết thêm thông tin.");
+                    }
+                } catch (Exception ex) {
+                    System.err.println("Error loading vehicle fee details: " + ex.getMessage());
+                    phiXeDetails.append("❌ Không thể tải thông tin chi tiết phí xe.");
+                    phiXeDetails.append("\nLỗi: ").append(ex.getMessage());
+                }
+            } else {
+                phiXeDetails.append("❌ Dịch vụ không khả dụng.");
+            }
+            
+            showInfo("Chi tiết phí gửi xe", phiXeDetails.toString());
+        } catch (Exception e) {
+            showError("Lỗi khi xem chi tiết phí xe", "Chi tiết: " + e.getMessage());
+        }
+    }
+
     /**
      * Handle Khoản Thu detail view
      */
@@ -2490,9 +2608,95 @@ public class Home_list implements Initializable {
             details.append(" Ngày tạo: ").append(rowData.getNgayTao()).append("\n");
             details.append(" Thời hạn: ").append(rowData.getThoiHan());
             
+            // Nếu là khoản thu phương tiện, hiển thị chi tiết phí xe luôn
+            if ("Phương tiện".equals(rowData.getDonViTinh()) && khoanThuService != null) {
+                try {
+                    // Lấy thông tin chi tiết khoản thu từ service
+                    List<io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto> khoanThuList = khoanThuService.getAllKhoanThu();
+                    io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto khoanThuDto = khoanThuList.stream()
+                        .filter(kt -> kt.getMaKhoanThu().equals(rowData.getMaKhoanThu()))
+                        .findFirst()
+                        .orElse(null);
+                        
+                    if (khoanThuDto != null && khoanThuDto.getPhiGuiXeList() != null && !khoanThuDto.getPhiGuiXeList().isEmpty()) {
+                        details.append("\n\n📋 CHI TIẾT PHÍ GỬI XE:");
+                        details.append("\n" + "=".repeat(30));
+                        
+                        for (io.github.ktpm.bluemoonmanagement.model.dto.phiGuiXe.PhiGuiXeDto phiXe : khoanThuDto.getPhiGuiXeList()) {
+                            details.append("\n• ").append(phiXe.getLoaiXe())
+                                  .append(": ").append(String.format("%,d", phiXe.getSoTien()))
+                                  .append(" VND");
+                        }
+                        details.append("\n" + "=".repeat(30));
+                    } else {
+                        details.append("\n\n⚠️ Chưa có thông tin chi tiết phí xe.");
+                    }
+                } catch (Exception ex) {
+                    System.err.println("Error loading vehicle fee details: " + ex.getMessage());
+                    details.append("\n\n❌ Không thể tải thông tin chi tiết phí xe.");
+                }
+            }
+            
             showInfo("Chi tiết khoản thu", details.toString());
         } catch (Exception e) {
             showError("Lỗi khi xem chi tiết", "Chi tiết: " + e.getMessage());
+        }
+    }
+    
+
+    
+    /**
+     * Handle Khoản Thu edit
+     */
+    private void handleEditKhoanThu(KhoanThuTableData rowData) {
+        try {
+            System.out.println("Mở form chỉnh sửa khoản thu: " + rowData.getTenKhoanThu() + " (" + rowData.getMaKhoanThu() + ")");
+            
+            // Load view + controller using FxViewLoader
+            FxView<?> fxView = fxViewLoader.loadFxView("/view/khoan_thu.fxml");
+            
+            // Get controller and setup edit mode (bỏ phần set ApplicationContext gây lỗi)
+            Object controller = fxView.getController();
+            if (controller instanceof io.github.ktpm.bluemoonmanagement.controller.ThemKhoanThuController) {
+                io.github.ktpm.bluemoonmanagement.controller.ThemKhoanThuController khoanThuController = 
+                    (io.github.ktpm.bluemoonmanagement.controller.ThemKhoanThuController) controller;
+                
+                // Setup edit mode với dữ liệu khoản thu hiện tại
+                khoanThuController.setupEditMode(rowData);
+            }
+
+            // Tạo cửa sổ mới
+            Stage newStage = new Stage();
+            newStage.setScene(new Scene(fxView.getView()));
+            newStage.setTitle("Chỉnh sửa khoản thu - " + rowData.getTenKhoanThu());
+
+            // Thiết lập modal
+            newStage.initModality(Modality.APPLICATION_MODAL);
+
+            // Gán owner là cửa sổ hiện tại
+            Stage currentStage = (Stage) scrollPaneKhoanThu.getScene().getWindow();
+            newStage.initOwner(currentStage);
+
+            // Thiết lập kích thước cửa sổ
+            newStage.setMinWidth(700);
+            newStage.setMinHeight(600);
+            newStage.setResizable(true);
+
+            // Hiển thị cửa sổ mới và chờ đóng
+            newStage.showAndWait();
+            
+            // Reload dữ liệu sau khi đóng form chỉnh sửa
+            System.out.println("Form chỉnh sửa khoản thu đã đóng, reload dữ liệu...");
+            refreshKhoanThuData();
+
+        } catch (IOException e) {
+            System.err.println("Không thể mở cửa sổ chỉnh sửa khoản thu:");
+            e.printStackTrace();
+            showError("Lỗi", "Không thể mở form chỉnh sửa khoản thu: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Lỗi khi xử lý chỉnh sửa khoản thu: " + e.getMessage());
+            e.printStackTrace();
+            showError("Lỗi", "Lỗi khi xử lý chỉnh sửa khoản thu: " + e.getMessage());
         }
     }
     

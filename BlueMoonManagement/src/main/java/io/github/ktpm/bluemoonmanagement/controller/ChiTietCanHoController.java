@@ -672,7 +672,7 @@ public class ChiTietCanHoController implements Initializable {
             boolean shouldDisableEdit = isToTruong || isKeToan;
             buttonChinhSua.setDisable(shouldDisableEdit);
             if (shouldDisableEdit) {
-                buttonChinhSua.setOpacity(0.5);
+            buttonChinhSua.setOpacity(0.5);
                 System.out.println("DEBUG: ✅ Disabled buttonChinhSua for " + userRole);
             }
         } else {
@@ -686,7 +686,7 @@ public class ChiTietCanHoController implements Initializable {
             boolean shouldDisableVehicle = isToTruong || isKeToan;
             buttonThemPhuongTien.setDisable(shouldDisableVehicle);
             if (shouldDisableVehicle) {
-                buttonThemPhuongTien.setOpacity(0.5);
+            buttonThemPhuongTien.setOpacity(0.5);
                 System.out.println("DEBUG: ✅ Disabled buttonThemPhuongTien for " + userRole);
             }
         } else {
@@ -696,20 +696,20 @@ public class ChiTietCanHoController implements Initializable {
         // Phần khoản thu - chỉ Kế toán được phép
         if (!isKeToan) {
             // Disable nút thu toàn bộ và xem lịch sử cho tất cả trừ Kế toán
-            if (buttonThuToanBo != null) {
-                buttonThuToanBo.setDisable(true);
-                buttonThuToanBo.setOpacity(0.5);
+        if (buttonThuToanBo != null) {
+            buttonThuToanBo.setDisable(true);
+            buttonThuToanBo.setOpacity(0.5);
                 System.out.println("DEBUG: ✅ Disabled buttonThuToanBo for " + userRole);
-            } else {
-                System.out.println("DEBUG: ❌ buttonThuToanBo is NULL!");
-            }
-            
-            if (buttonXemLichSu != null) {
-                buttonXemLichSu.setDisable(true);
-                buttonXemLichSu.setOpacity(0.5);
+        } else {
+            System.out.println("DEBUG: ❌ buttonThuToanBo is NULL!");
+        }
+        
+        if (buttonXemLichSu != null) {
+            buttonXemLichSu.setDisable(true);
+            buttonXemLichSu.setOpacity(0.5);
                 System.out.println("DEBUG: ✅ Disabled buttonXemLichSu for " + userRole);
-            } else {
-                System.out.println("DEBUG: ❌ buttonXemLichSu is NULL!");
+        } else {
+            System.out.println("DEBUG: ❌ buttonXemLichSu is NULL!");
             }
         } else {
             System.out.println("DEBUG: ✅ Chỉ Kế toán được phép thao tác với khoản thu - buttons enabled");
