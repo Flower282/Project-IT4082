@@ -59,7 +59,7 @@
                               <Font name="Arial Bold" size="24.0" />
                            </font>
                         </Label>
-                        <Label fx:id="labelCanHoNumber" layoutX="30.0" layoutY="118.0" text="1000" textFill="WHITE" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0">
+                        <Label fx:id="labelCanHoNumber" layoutX="30.0" layoutY="118.0" textFill="WHITE" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0">
                            <font>
                               <Font name="Arial Bold" size="24.0" />
                            </font>
@@ -87,7 +87,7 @@
                               <Font name="Arial Bold" size="24.0" />
                            </font>
                         </Label>
-                        <Label fx:id="labelCuDanNumber" layoutX="30.0" layoutY="118.0" text="1000" textFill="WHITE" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0">
+                        <Label fx:id="labelCuDanNumber" layoutX="30.0" layoutY="118.0" textFill="WHITE" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0">
                            <font>
                               <Font name="Arial Bold" size="24.0" />
                            </font>
@@ -118,7 +118,7 @@
                               <Font name="Arial Bold" size="24.0" />
                            </font>
                         </Label>
-                        <Label fx:id="labelCuDanNumber1" layoutX="30.0" layoutY="118.0" text="1000" textFill="WHITE" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0">
+                        <Label fx:id="labelCuDanNumber1" layoutX="30.0" layoutY="118.0" textFill="WHITE" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0">
                            <font>
                               <Font name="Arial Bold" size="24.0" />
                            </font>

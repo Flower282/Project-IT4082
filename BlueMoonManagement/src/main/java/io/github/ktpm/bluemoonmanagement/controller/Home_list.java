@@ -495,6 +495,11 @@ public class Home_list implements Initializable {
         loadData();
         loadCuDanData();
         loadTaiKhoanData();
+        loadKhoanThuData(); // Load fee data as well
+        
+        // Cập nhật tổng số liệu sau khi load data
+        updateTotalStatistics();
+        
         // Show default tab
         show("TrangChu");
         
@@ -579,7 +584,12 @@ public class Home_list implements Initializable {
         }
 
         switch (key) {
-            case "TrangChu" -> gridPaneTrangChu.setVisible(true);
+            case "TrangChu" -> {
+                gridPaneTrangChu.setVisible(true);
+                // Refresh data khi quay về trang chủ
+                System.out.println("🔄 Refreshing data when returning to homepage...");
+                refreshAllDataForHomepage();
+            }
             case "CanHo" -> scrollPaneCanHo.setVisible(true);
             case "CuDan" -> scrollPaneCuDan.setVisible(true);
             case "KhoanThu" -> scrollPaneKhoanThu.setVisible(true);
@@ -2814,4 +2824,75 @@ public class Home_list implements Initializable {
         });
     }
 
+    // Ensure updateTotalStatistics method is defined
+    private void updateTotalStatistics() {
+        System.out.println("📊 Updating total statistics...");
+        
+        try {
+            // Tính tổng số căn hộ từ ArrayList (hiển thị 0 nếu database rỗng)
+            int totalApartments = (canHoList != null && !canHoList.isEmpty()) ? canHoList.size() : 0;
+            
+            // Tính tổng số cư dân từ ArrayList (hiển thị 0 nếu database rỗng)
+            int totalResidents = (cuDanList != null && !cuDanList.isEmpty()) ? cuDanList.size() : 0;
+            
+            // Tính tổng số khoản thu từ ArrayList (hiển thị 0 nếu database rỗng)
+            int totalFees = (khoanThuList != null && !khoanThuList.isEmpty()) ? khoanThuList.size() : 0;
+            
+            // Cập nhật labelCanHoNumber = tổng số căn hộ
+            if (labelCanHoNumber != null) {
+                labelCanHoNumber.setText(String.valueOf(totalApartments));
+                System.out.println("🏠 Updated labelCanHoNumber with total apartments: " + totalApartments);
+            }
+            
+            // Cập nhật labelCuDanNumber = tổng số cư dân
+            if (labelCuDanNumber != null) {
+                labelCuDanNumber.setText(String.valueOf(totalResidents));
+                System.out.println("👥 Updated labelCuDanNumber with total residents: " + totalResidents);
+            }
+            
+            // Cập nhật labelCuDanNumber1 = tổng số khoản thu
+            if (labelCuDanNumber1 != null) {
+                labelCuDanNumber1.setText(String.valueOf(totalFees));
+                System.out.println("💰 Updated labelCuDanNumber1 with total fees: " + totalFees);
+            }
+            
+            System.out.println("✅ Total statistics updated successfully");
+            
+            // Hiển thị thông báo nếu database trống
+            if (totalApartments == 0 && totalResidents == 0 && totalFees == 0) {
+                System.out.println("⚠️ Database appears to be empty - all counts are 0");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error updating statistics: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Trong trường hợp lỗi, vẫn hiển thị 0 cho 3 label chính
+            if (labelCanHoNumber != null) labelCanHoNumber.setText("0");
+            if (labelCuDanNumber != null) labelCuDanNumber.setText("0");
+            if (labelCuDanNumber1 != null) labelCuDanNumber1.setText("0");
+        }
+    }
+
+    /**
+     * Refresh all data for homepage
+     */
+    private void refreshAllDataForHomepage() {
+        try {
+            // Refresh all data
+            loadData();           // Load apartment data
+            loadCuDanData();      // Load resident data  
+            loadTaiKhoanData();   // Load account data
+            loadKhoanThuData();   // Load fee data
+            
+            // Update total statistics after loading data
+            updateTotalStatistics();
+            
+            System.out.println("✅ Homepage data refreshed successfully");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error refreshing homepage data: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
