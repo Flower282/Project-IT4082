@@ -3,6 +3,7 @@ package io.github.ktpm.bluemoonmanagement.service.khoanThu.Impl;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -161,41 +162,19 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         // Phần 1: TN hoặc BB (Tự nguyện / Bắt buộc) - 2 ký tự
         boolean batBuoc = khoanThuDto.isBatBuoc();
         String loaiKhoanThu = batBuoc ? "BB" : "TN";
-        
-        // Phần 2: Thời điểm tạo YYYYMM (năm đầy đủ + tháng) - 6 ký tự
-        LocalDate now = LocalDate.now();
-        String thoiDiemTao = now.format(DateTimeFormatter.ofPattern("yyyyMM"));
-        
-        // Lấy tháng và năm hiện tại
-        int month = now.getMonthValue();
-        int year = now.getYear();
-        
-        // Đếm số lượng khoản thu cùng loại trong tháng và năm hiện tại
-        long count = khoanThuRepository.countByBatBuocAndMonthAndYear(batBuoc, month, year);
-        
-        // Tăng số thứ tự lên 1 (vì count là số lượng hiện có) - 3 ký tự
-        String soThuTu = String.format("%03d", count + 1);
-        
-        // Ghép các phần lại với nhau theo format cũ: TN/BB-YYYYMM-XXX = 2 + 1 + 6 + 1 + 3 = 13 ký tự
+
+
+
+        // Phần 2: Thời điểm tạo yyMM (năm + tháng)
+        LocalDateTime now = LocalDateTime.now();
+        String thoiDiemTao = now.format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
+
+        // Ghép các phần lại với nhau sử dụng StringBuilder
         StringBuilder maBuilder = new StringBuilder();
         maBuilder.append(loaiKhoanThu)
-                .append("-")
-                .append(thoiDiemTao)
-                .append("-")
-                .append(soThuTu);
-                
-        String result = maBuilder.toString();
-        System.out.println("DEBUG generateMaKhoanThu (OLD FORMAT): loaiKhoanThu='" + loaiKhoanThu + "', thoiDiemTao='" + thoiDiemTao + "', soThuTu='" + soThuTu + "', count=" + count);
-        System.out.println("DEBUG generateMaKhoanThu (OLD FORMAT): Full result='" + result + "' (length: " + result.length() + ")");
-        
-        // Database chỉ chấp nhận varchar(15), nên phải truncate
-        if (result.length() > 15) {
-            String truncated = result.substring(0, 15);
-            System.out.println("DEBUG generateMaKhoanThu: Truncating from '" + result + "' to '" + truncated + "' due to database constraint");
-            return truncated;
-        }
-        
-        return result;
+                .append(thoiDiemTao);
+        return maBuilder.toString();
+
     }
 
     @Override
