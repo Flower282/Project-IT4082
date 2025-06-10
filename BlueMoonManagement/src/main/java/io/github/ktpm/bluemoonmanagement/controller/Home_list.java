@@ -3058,6 +3058,10 @@ public class Home_list implements Initializable {
 
             // Setup cell value factories
             ((TableColumn<HoaDonTableData, String>) tableColumnMaHoaDon).setCellValueFactory(new PropertyValueFactory<>("maHoaDon"));
+            
+            // Ẩn cột mã hóa đơn
+            tableColumnMaHoaDon.setVisible(false);
+            
             ((TableColumn<HoaDonTableData, String>) tableColumnMaCanHoThuPhi).setCellValueFactory(new PropertyValueFactory<>("maCanHo"));
             ((TableColumn<HoaDonTableData, String>) tableColumnTenKhoanThuThuPhi).setCellValueFactory(new PropertyValueFactory<>("tenKhoanThu"));
             ((TableColumn<HoaDonTableData, String>) tableColumnLoaiKhoanThuThuPhi).setCellValueFactory(new PropertyValueFactory<>("loaiKhoanThu"));
@@ -3073,7 +3077,47 @@ public class Home_list implements Initializable {
                 ((TableColumn<HoaDonTableData, String>) tableColumnThaoTacLichSuThu).setCellValueFactory(new PropertyValueFactory<>("trangThaiThanhToan"));
             }
             
-            System.out.println("HoaDon table setup completed");
+            // Thiết lập chiều rộng các cột để chia đều toàn bộ bảng
+            double tableWidth = 970; // Chiều rộng tổng của bảng
+            
+            // Chia đều cho 5 cột hiển thị (loại trừ cột mã hóa đơn đã ẩn)
+            if (tableColumnMaCanHoThuPhi != null) {
+                tableColumnMaCanHoThuPhi.setPrefWidth(tableWidth * 0.15); // 15% - Mã căn hộ
+                tableColumnMaCanHoThuPhi.setMinWidth(120);
+                tableColumnMaCanHoThuPhi.setMaxWidth(150);
+            }
+            
+            if (tableColumnTenKhoanThuThuPhi != null) {
+                tableColumnTenKhoanThuThuPhi.setPrefWidth(tableWidth * 0.25); // 25% - Tên khoản thu (dài nhất)
+                tableColumnTenKhoanThuThuPhi.setMinWidth(200);
+                tableColumnTenKhoanThuThuPhi.setMaxWidth(300);
+            }
+            
+            if (tableColumnLoaiKhoanThuThuPhi != null) {
+                tableColumnLoaiKhoanThuThuPhi.setPrefWidth(tableWidth * 0.15); // 15% - Loại khoản thu
+                tableColumnLoaiKhoanThuThuPhi.setMinWidth(120);
+                tableColumnLoaiKhoanThuThuPhi.setMaxWidth(150);
+            }
+            
+            if (tableColumnSoTien != null && typedTableView == tabelViewThuPhi) {
+                tableColumnSoTien.setPrefWidth(tableWidth * 0.15); // 15% - Số tiền
+                tableColumnSoTien.setMinWidth(120);
+                tableColumnSoTien.setMaxWidth(150);
+            }
+            
+            if (tableColumnNgayNop != null) {
+                tableColumnNgayNop.setPrefWidth(tableWidth * 0.15); // 15% - Ngày nộp
+                tableColumnNgayNop.setMinWidth(120);
+                tableColumnNgayNop.setMaxWidth(150);
+            }
+            
+            if (tableColumnThaoTacLichSuThu != null) {
+                tableColumnThaoTacLichSuThu.setPrefWidth(tableWidth * 0.15); // 15% - Trạng thái thanh toán
+                tableColumnThaoTacLichSuThu.setMinWidth(120);
+                tableColumnThaoTacLichSuThu.setMaxWidth(150);
+            }
+            
+            System.out.println("HoaDon table setup completed with invoice ID column hidden and column widths set");
         } else {
             System.out.println("WARNING: tabelViewThuPhi or tableColumnMaHoaDon is null");
         }
