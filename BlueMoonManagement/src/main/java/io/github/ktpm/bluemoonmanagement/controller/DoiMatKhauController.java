@@ -105,5 +105,11 @@ public class DoiMatKhauController {
         }
     }
 
+    @FXML
+    void handleClose(ActionEvent event) {
+        // Đóng cửa sổ hiện tại
+        javafx.stage.Stage stage = (javafx.stage.Stage) button_close_up.getScene().getWindow();
+        stage.close();
+    }
 
 }

@@ -1124,6 +1124,7 @@ public class Home_list implements Initializable {
             System.out.println("DEBUG: CanHo data set successfully");
             
             javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             stage.setTitle("Chi tiết căn hộ - " + chiTiet.getMaCanHo());
             stage.setScene(new javafx.scene.Scene(root, 1000, 700));
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
@@ -1458,6 +1459,7 @@ public class Home_list implements Initializable {
             controller.setTaiKhoanData(taiKhoanDto);
             // Tạo cửa sổ mới
             Stage stage = new Stage();
+            stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             stage.setTitle("Chi tiết tài khoản - " + taiKhoanDto.getEmail());
             stage.setScene(new Scene(root, 800, 600));
             stage.initModality(Modality.WINDOW_MODAL);
@@ -1517,6 +1519,7 @@ public class Home_list implements Initializable {
             
             // Tạo cửa sổ mới
             Stage stage = new Stage();
+            stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             stage.setTitle("Chỉnh sửa tài khoản - " + taiKhoanDto.getEmail());
             stage.setScene(new Scene(root, 800, 600));
             stage.initModality(Modality.WINDOW_MODAL);
@@ -1573,6 +1576,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Thêm tài khoản");
 
@@ -1598,6 +1602,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Đổi mật khẩu");
 
@@ -1623,6 +1628,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Thêm khoản thu");
 
@@ -1652,6 +1658,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Thêm cư dân");
 
@@ -1788,6 +1795,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Chỉnh sửa cư dân - " + cuDan.getHoVaTen());
 
@@ -2911,6 +2919,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Chỉnh sửa khoản thu - " + rowData.getTenKhoanThu());
 
