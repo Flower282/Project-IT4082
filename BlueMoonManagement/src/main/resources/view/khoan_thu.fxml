@@ -141,7 +141,7 @@
                                     <TextField fx:id="textFieldTenCoQuan" promptText="Nhập tên cơ quan" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
                                  </children>
                               </HBox>
-                              <Button fx:id="buttonThemFile" mnemonicParsing="false" text="Nhập excel hóa đơn" HBox.hgrow="ALWAYS">
+                              <Button fx:id="buttonThemFile" mnemonicParsing="false" onAction="#handleNhapExcelHoaDon" text="Nhập excel hóa đơn" HBox.hgrow="ALWAYS">
                                  <graphic>
                                     <Group>
                                        <children>

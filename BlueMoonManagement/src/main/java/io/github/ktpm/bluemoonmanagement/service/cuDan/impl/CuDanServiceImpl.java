@@ -205,8 +205,8 @@ public class CuDanServiceImpl implements CuDanService {
 
     @Override
     public ResponseDto importFromExcel(MultipartFile file) {
-        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
-            return new ResponseDto(false, "Bạn không có quyền thêm cư dân. Chỉ Tổ phó mới được phép.");
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền nhập Excel cư dân. Chỉ Tổ phó mới được phép.");
         }
         try {
             File tempFile = File.createTempFile("cudan_temp", ".xlsx");
@@ -215,22 +215,141 @@ public class CuDanServiceImpl implements CuDanService {
             }
             Function<Row, CudanDto> rowMapper = row -> {
                 try {
+                    // Skip header row (row index 0)
+                    if (row.getRowNum() == 0) {
+                        System.out.println("DEBUG: Skipping header row");
+                        return null;
+                    }
+                    
+                    System.out.println("DEBUG: Processing row " + row.getRowNum());
                     CudanDto cudanDto = new CudanDto();
-                    cudanDto.setMaDinhDanh(row.getCell(0).getStringCellValue());
-                    cudanDto.setHoVaTen(row.getCell(1).getStringCellValue());
-                    cudanDto.setGioiTinh(row.getCell(2).getStringCellValue());
-                    cudanDto.setNgaySinh(row.getCell(3).getDateCellValue()
-                        .toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-                    cudanDto.setSoDienThoai(row.getCell(4).getStringCellValue());
-                    cudanDto.setEmail(row.getCell(5).getStringCellValue());
-                    cudanDto.setTrangThaiCuTru(row.getCell(6).getStringCellValue());
-                    cudanDto.setNgayChuyenDen(row.getCell(7).getDateCellValue()
-                        .toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-                    cudanDto.setNgayChuyenDi(row.getCell(8).getDateCellValue()
-                        .toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-                    cudanDto.setMaCanHo(row.getCell(9).getStringCellValue());
+                    
+                    // Mã định danh (column 0)
+                    String maDinhDanh = "";
+                    if (row.getCell(0) != null) {
+                        try {
+                            maDinhDanh = row.getCell(0).getStringCellValue();
+                        } catch (Exception e) {
+                            maDinhDanh = String.valueOf((long) row.getCell(0).getNumericCellValue());
+                        }
+                    }
+                    cudanDto.setMaDinhDanh(maDinhDanh);
+                    System.out.println("DEBUG: Mã định danh: " + maDinhDanh);
+                    
+                    // Họ và tên (column 1)
+                    String hoVaTen = "";
+                    if (row.getCell(1) != null) {
+                        try {
+                            hoVaTen = row.getCell(1).getStringCellValue();
+                        } catch (Exception e) {
+                            hoVaTen = String.valueOf(row.getCell(1).getNumericCellValue());
+                        }
+                    }
+                    cudanDto.setHoVaTen(hoVaTen);
+                    
+                    // Giới tính (column 2)
+                    String gioiTinh = "";
+                    if (row.getCell(2) != null) {
+                        try {
+                            gioiTinh = row.getCell(2).getStringCellValue();
+                        } catch (Exception e) {
+                            gioiTinh = String.valueOf(row.getCell(2).getNumericCellValue());
+                        }
+                    }
+                    cudanDto.setGioiTinh(gioiTinh);
+                    
+                    // Ngày sinh (column 3)
+                    if (row.getCell(3) != null) {
+                        try {
+                            cudanDto.setNgaySinh(row.getCell(3).getDateCellValue()
+                                .toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+                        } catch (Exception e) {
+                            System.err.println("WARNING: Không thể đọc ngày sinh ở row " + row.getRowNum());
+                            cudanDto.setNgaySinh(null);
+                        }
+                    }
+                    
+                    // Số điện thoại (column 4)
+                    String soDienThoai = "";
+                    if (row.getCell(4) != null) {
+                        try {
+                            soDienThoai = row.getCell(4).getStringCellValue();
+                        } catch (Exception e) {
+                            soDienThoai = String.valueOf((long) row.getCell(4).getNumericCellValue());
+                        }
+                    }
+                    cudanDto.setSoDienThoai(soDienThoai);
+                    
+                    // Email (column 5)
+                    String email = "";
+                    if (row.getCell(5) != null) {
+                        try {
+                            email = row.getCell(5).getStringCellValue();
+                        } catch (Exception e) {
+                            email = String.valueOf(row.getCell(5).getNumericCellValue());
+                        }
+                    }
+                    cudanDto.setEmail(email);
+                    
+                    // Trạng thái cư trú (column 6)
+                    String trangThaiCuTru = "";
+                    if (row.getCell(6) != null) {
+                        try {
+                            trangThaiCuTru = row.getCell(6).getStringCellValue();
+                        } catch (Exception e) {
+                            trangThaiCuTru = String.valueOf(row.getCell(6).getNumericCellValue());
+                        }
+                    }
+                    cudanDto.setTrangThaiCuTru(trangThaiCuTru);
+                    
+                    // Ngày chuyển đến (column 7)
+                    if (row.getCell(7) != null) {
+                        try {
+                            cudanDto.setNgayChuyenDen(row.getCell(7).getDateCellValue()
+                                .toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+                        } catch (Exception e) {
+                            System.err.println("WARNING: Không thể đọc ngày chuyển đến ở row " + row.getRowNum());
+                            cudanDto.setNgayChuyenDen(null);
+                        }
+                    }
+                    
+                    // Ngày chuyển đi (column 8)
+                    if (row.getCell(8) != null) {
+                        try {
+                            cudanDto.setNgayChuyenDi(row.getCell(8).getDateCellValue()
+                                .toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+                        } catch (Exception e) {
+                            System.err.println("WARNING: Không thể đọc ngày chuyển đi ở row " + row.getRowNum());
+                            cudanDto.setNgayChuyenDi(null);
+                        }
+                    }
+                    
+                    // Mã căn hộ (column 9) - có thể null
+                    String maCanHo = "";
+                    if (row.getCell(9) != null) {
+                        try {
+                            maCanHo = row.getCell(9).getStringCellValue();
+                        } catch (Exception e) {
+                            try {
+                                maCanHo = String.valueOf((long) row.getCell(9).getNumericCellValue());
+                            } catch (Exception e2) {
+                                // Để trống nếu không đọc được
+                                maCanHo = "";
+                            }
+                        }
+                    }
+                    // Nếu mã căn hộ rỗng hoặc trống thì set null
+                    if (maCanHo == null || maCanHo.trim().isEmpty()) {
+                        cudanDto.setMaCanHo(null);
+                    } else {
+                        cudanDto.setMaCanHo(maCanHo.trim());
+                    }
+                    
+                    System.out.println("DEBUG: Successfully parsed row " + row.getRowNum() + " - " + maDinhDanh);
                     return cudanDto;
                 } catch (Exception e) {
+                    System.err.println("ERROR: Lỗi khi đọc dòng Excel cư dân row " + row.getRowNum() + ": " + e.getMessage());
+                    e.printStackTrace();
                     return null;
                 }
             };
@@ -258,23 +377,35 @@ public class CuDanServiceImpl implements CuDanService {
     }
     @Override
     public ResponseDto exportToExcel(String filePath) {
-        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
-            return new ResponseDto(false, "Bạn không có quyền xuất dữ liệu cư dân. Chỉ Kế toán mới được phép.");
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền xuất dữ liệu cư dân. Chỉ Tổ phó mới được phép.");
         }
         List<CudanDto> cudanDtoList = getAllCuDan();
         String[] headers = {"Mã định danh", "Họ và tên", "Giới tính", "Ngày sinh", "Số điện thoại", "Email", "Trạng thái cư trú", "Ngày chuyển đến", "Ngày chuyển đi", "Mã căn hộ"};
         try {
             XlsxExportUtil.exportToExcel(filePath, headers, cudanDtoList, (row, cudanDto) -> {
-                row.createCell(0).setCellValue(cudanDto.getMaDinhDanh());
-                row.createCell(1).setCellValue(cudanDto.getHoVaTen());
-                row.createCell(2).setCellValue(cudanDto.getGioiTinh());
-                row.createCell(3).setCellValue(java.sql.Date.valueOf(cudanDto.getNgaySinh()));
-                row.createCell(4).setCellValue(cudanDto.getSoDienThoai());
-                row.createCell(5).setCellValue(cudanDto.getEmail());
-                row.createCell(6).setCellValue(cudanDto.getTrangThaiCuTru());
-                row.createCell(7).setCellValue(java.sql.Date.valueOf(cudanDto.getNgayChuyenDen()));
-                row.createCell(8).setCellValue(java.sql.Date.valueOf(cudanDto.getNgayChuyenDi()));
-                row.createCell(9).setCellValue(cudanDto.getMaCanHo());
+                row.createCell(0).setCellValue(cudanDto.getMaDinhDanh() != null ? cudanDto.getMaDinhDanh() : "");
+                row.createCell(1).setCellValue(cudanDto.getHoVaTen() != null ? cudanDto.getHoVaTen() : "");
+                row.createCell(2).setCellValue(cudanDto.getGioiTinh() != null ? cudanDto.getGioiTinh() : "");
+                if (cudanDto.getNgaySinh() != null) {
+                    row.createCell(3).setCellValue(java.sql.Date.valueOf(cudanDto.getNgaySinh()));
+                } else {
+                    row.createCell(3).setCellValue("");
+                }
+                row.createCell(4).setCellValue(cudanDto.getSoDienThoai() != null ? cudanDto.getSoDienThoai() : "");
+                row.createCell(5).setCellValue(cudanDto.getEmail() != null ? cudanDto.getEmail() : "");
+                row.createCell(6).setCellValue(cudanDto.getTrangThaiCuTru() != null ? cudanDto.getTrangThaiCuTru() : "");
+                if (cudanDto.getNgayChuyenDen() != null) {
+                    row.createCell(7).setCellValue(java.sql.Date.valueOf(cudanDto.getNgayChuyenDen()));
+                } else {
+                    row.createCell(7).setCellValue("");
+                }
+                if (cudanDto.getNgayChuyenDi() != null) {
+                    row.createCell(8).setCellValue(java.sql.Date.valueOf(cudanDto.getNgayChuyenDi()));
+                } else {
+                    row.createCell(8).setCellValue("");
+                }
+                row.createCell(9).setCellValue(cudanDto.getMaCanHo() != null ? cudanDto.getMaCanHo() : "");
             });
             return new ResponseDto(true, "Xuất cư dân thành công");
         } catch (Exception e) {

@@ -3,6 +3,7 @@ package io.github.ktpm.bluemoonmanagement.service.hoaDon.impl;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -538,38 +539,38 @@ public class HoaDonServiceImpl implements HoaDonService {
                         // Count and calculate for Xe đạp
                         int countXeDap = (int) phuongTienList.stream()
                                 .filter(phuongTien -> "Xe đạp".equals(phuongTien.getLoaiPhuongTien()))
-                                .count();
+                                        .count();
                         int soTienXeDap = khoanThuDto.getPhiGuiXeList() != null ? 
                                 khoanThuDto.getPhiGuiXeList().stream()
                                     .filter(phiGuiXe -> "Xe đạp".equals(phiGuiXe.getLoaiXe()))
-                                    .findFirst()
-                                    .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                        .findFirst()
+                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
                                     .orElse(0) : 0;
-                        int tienGuiXeDap = countXeDap * soTienXeDap;
-                        
+                    int tienGuiXeDap = countXeDap * soTienXeDap;
+
                         // Count and calculate for Xe máy  
                         int countXeMay = (int) phuongTienList.stream()
                                 .filter(phuongTien -> "Xe máy".equals(phuongTien.getLoaiPhuongTien()))
-                                .count();
+                                        .count();
                         int soTienXeMay = khoanThuDto.getPhiGuiXeList() != null ?
                                 khoanThuDto.getPhiGuiXeList().stream()
                                     .filter(phiGuiXe -> "Xe máy".equals(phiGuiXe.getLoaiXe()))
-                                    .findFirst()
-                                    .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                        .findFirst()
+                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
                                     .orElse(0) : 0;
-                        int tienGuiXeMay = countXeMay * soTienXeMay;
-                        
+                    int tienGuiXeMay = countXeMay * soTienXeMay;
+
                         // Count and calculate for Ô tô
                         int countOto = (int) phuongTienList.stream()
                                 .filter(phuongTien -> "Ô tô".equals(phuongTien.getLoaiPhuongTien()))
-                                .count();
+                                        .count();
                         int soTienOto = khoanThuDto.getPhiGuiXeList() != null ?
                                 khoanThuDto.getPhiGuiXeList().stream()
                                     .filter(phiGuiXe -> "Ô tô".equals(phiGuiXe.getLoaiXe()))
-                                    .findFirst()
-                                    .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                        .findFirst()
+                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
                                     .orElse(0) : 0;
-                        int tienGuiOto = countOto * soTienOto;
+                    int tienGuiOto = countOto * soTienOto;
                         
                         totalVehicleFee = tienGuiXeDap + tienGuiXeMay + tienGuiOto;
                         
@@ -698,33 +699,388 @@ public class HoaDonServiceImpl implements HoaDonService {
     @Override
     public ResponseDto importFromExcel(MultipartFile file) {
         if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
-            return new ResponseDto(false, "Bạn không có quyền thêm hóa đơn tự nguyện. Chỉ Kế toán mới được phép.");
+            return new ResponseDto(false, "Bạn không có quyền import hóa đơn. Chỉ Kế toán mới được phép.");
         }
         try {
+            System.out.println("=== DEBUG: Starting HoaDon Excel import ===");
             File tempFile = File.createTempFile("hoadondichvu_temp", ".xlsx");
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
                 fos.write(file.getBytes());
             }
+            
             Function<Row, HoaDonDichVuDto> rowMapper = row -> {
                 try {
+                    System.out.println("DEBUG: Processing row " + row.getRowNum() + " - Total cells: " + row.getLastCellNum());
+                    
+                    // Skip header row
+                    if (row.getRowNum() == 0) {
+                        System.out.println("DEBUG: Skipping header row 0");
+                        return null;
+                    }
+                    
+                    // Check if row is empty
+                    if (row.getLastCellNum() < 3) {
+                        System.out.println("DEBUG: Row " + row.getRowNum() + " has insufficient cells: " + row.getLastCellNum());
+                        return null;
+                    }
+                    
                     HoaDonDichVuDto dto = new HoaDonDichVuDto();
-                    dto.setTenKhoanThu(row.getCell(0).getStringCellValue());
-                    dto.setMaCanHo(row.getCell(1).getStringCellValue());
-                    dto.setSoTien((int) row.getCell(2).getNumericCellValue());
+                    
+                    // Tên khoản thu (column 0)
+                    String tenKhoanThu = "";
+                    if (row.getCell(0) != null) {
+                        try {
+                            tenKhoanThu = row.getCell(0).getStringCellValue().trim();
+                        } catch (Exception e) {
+                            try {
+                                tenKhoanThu = String.valueOf(row.getCell(0).getNumericCellValue()).trim();
+                            } catch (Exception e2) {
+                                System.err.println("DEBUG: Cannot read tenKhoanThu at row " + row.getRowNum());
+                            }
+                        }
+                    }
+                    System.out.println("DEBUG: Tên khoản thu: '" + tenKhoanThu + "'");
+                    
+                    // Mã căn hộ (column 1)
+                    String maCanHo = "";
+                    if (row.getCell(1) != null) {
+                        try {
+                            maCanHo = row.getCell(1).getStringCellValue().trim();
+                        } catch (Exception e) {
+                            try {
+                                // Handle numeric apartment codes
+                                double numericValue = row.getCell(1).getNumericCellValue();
+                                maCanHo = String.valueOf((long) numericValue);
+                            } catch (Exception e2) {
+                                System.err.println("DEBUG: Cannot read maCanHo at row " + row.getRowNum());
+                            }
+                        }
+                    }
+                    System.out.println("DEBUG: Mã căn hộ: '" + maCanHo + "'");
+                    
+                    // Số tiền (column 2)
+                    int soTien = 0;
+                    if (row.getCell(2) != null) {
+                        try {
+                            soTien = (int) row.getCell(2).getNumericCellValue();
+                        } catch (Exception e) {
+                            try {
+                                String soTienStr = row.getCell(2).getStringCellValue().replaceAll("[^0-9]", "");
+                                if (!soTienStr.isEmpty()) {
+                                    soTien = Integer.parseInt(soTienStr);
+                                }
+                            } catch (Exception e2) {
+                                System.err.println("DEBUG: Cannot read soTien at row " + row.getRowNum() + ": " + e2.getMessage());
+                            }
+                        }
+                    }
+                    System.out.println("DEBUG: Số tiền: " + soTien);
+                    
+                    // Relaxed validation - chỉ cần có tên khoản thu và mã căn hộ
+                    if (tenKhoanThu.isEmpty() && maCanHo.isEmpty()) {
+                        System.err.println("DEBUG: Row " + row.getRowNum() + " is completely empty - skipping");
+                        return null;
+                    }
+                    
+                    if (tenKhoanThu.isEmpty()) {
+                        System.err.println("DEBUG: Missing tenKhoanThu at row " + row.getRowNum());
+                        return null;
+                    }
+                    
+                    if (maCanHo.isEmpty()) {
+                        System.err.println("DEBUG: Missing maCanHo at row " + row.getRowNum());
+                        return null;
+                    }
+                    
+                    if (soTien <= 0) {
+                        System.err.println("DEBUG: Invalid soTien (" + soTien + ") at row " + row.getRowNum() + " - setting to 1000");
+                        soTien = 1000; // Default amount if invalid
+                    }
+                    
+                    dto.setTenKhoanThu(tenKhoanThu);
+                    dto.setMaCanHo(maCanHo);
+                    dto.setSoTien(soTien);
+                    
+                    System.out.println("DEBUG: ✅ Successfully parsed row " + row.getRowNum() + " - " + tenKhoanThu + " | " + maCanHo + " | " + soTien);
                     return dto;
                 } catch (Exception e) {
+                    System.err.println("ERROR: Exception at row " + row.getRowNum() + ": " + e.getMessage());
+                    e.printStackTrace();
                     return null;
                 }
             };
+            
             List<HoaDonDichVuDto> hoaDonDichVuDtoList = XlxsFileUtil.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
-            List<HoaDon> hoaDonList = hoaDonDichVuDtoList.stream()
-                .map(hoaDonMapper::fromHoaDonDichVuDto)
+            System.out.println("DEBUG: Raw parsed results: " + hoaDonDichVuDtoList.size() + " entries (including nulls)");
+            
+            // Count nulls before filtering
+            long nullCount = hoaDonDichVuDtoList.stream().filter(dto -> dto == null).count();
+            long validCount = hoaDonDichVuDtoList.stream().filter(dto -> dto != null).count();
+            System.out.println("DEBUG: Null entries: " + nullCount + ", Valid entries: " + validCount);
+            
+            // Filter out null values
+            hoaDonDichVuDtoList = hoaDonDichVuDtoList.stream()
+                .filter(dto -> dto != null)
                 .collect(Collectors.toList());
+            
+            System.out.println("DEBUG: After filtering nulls: " + hoaDonDichVuDtoList.size() + " valid entries");
+            
+            if (hoaDonDichVuDtoList.isEmpty()) {
+                tempFile.delete();
+                return new ResponseDto(false, "Không có dữ liệu hợp lệ trong file Excel.\n" +
+                    "Vui lòng kiểm tra:\n" +
+                    "1. File có ít nhất 3 cột: Tên khoản thu | Mã căn hộ | Số tiền\n" +
+                    "2. Dữ liệu bắt đầu từ dòng 2 (dòng 1 là header)\n" +
+                    "3. Các trường không được để trống\n" +
+                    "4. Kiểm tra Console (F12) để xem log chi tiết");
+            }
+            
+            // Get all valid apartment codes for debugging
+            List<String> validApartmentCodes = canHoRepository.findAll().stream()
+                .map(canHo -> canHo.getMaCanHo())
+                .sorted()
+                .collect(Collectors.toList());
+            System.out.println("DEBUG: Valid apartment codes in system: " + validApartmentCodes);
+            
+            // Validate and map to entities
+            List<HoaDon> hoaDonList = new ArrayList<>();
+            List<String> invalidApartments = new ArrayList<>();
+            
+            for (HoaDonDichVuDto dto : hoaDonDichVuDtoList) {
+                try {
+                    // Check if apartment exists
+                    CanHo canHo = canHoRepository.findById(dto.getMaCanHo()).orElse(null);
+                    if (canHo == null) {
+                        System.err.println("WARNING: Căn hộ không tồn tại: '" + dto.getMaCanHo() + "' - bỏ qua hóa đơn này");
+                        invalidApartments.add(dto.getMaCanHo());
+                        continue;
+                    }
+                    
+                    // Create HoaDon entity
+                    HoaDon hoaDon = new HoaDon();
+                    hoaDon.setCanHo(canHo);
+                    hoaDon.setSoTien(dto.getSoTien());
+                    hoaDon.setDaNop(false); // Mặc định chưa nộp
+                    hoaDon.setNgayNop(null);
+                    
+                    // Create temporary KhoanThu for the invoice
+                    KhoanThu khoanThu = new KhoanThu();
+                    khoanThu.setTenKhoanThu(dto.getTenKhoanThu());
+                    khoanThu.setBatBuoc(false); // Default to optional
+                    khoanThu.setDonViTinh("Theo hóa đơn");
+                    khoanThu.setSoTien(0);
+                    khoanThu.setPhamVi("Theo căn hộ");
+                    khoanThu.setNgayTao(java.time.LocalDate.now());
+                    khoanThu.setThoiHan(java.time.LocalDate.now().plusMonths(1));
+                    khoanThu.setGhiChu("Bên thứ 3");
+                    khoanThu.setTaoHoaDon(true);
+                    
+                    // Save KhoanThu first if it doesn't exist
+                    KhoanThu existingKhoanThu = khoanThuRepository.findAll().stream()
+                        .filter(kt -> kt.getTenKhoanThu().equals(dto.getTenKhoanThu()))
+                        .findFirst()
+                        .orElse(null);
+                    
+                    if (existingKhoanThu == null) {
+                        khoanThu = khoanThuRepository.save(khoanThu);
+                        System.out.println("DEBUG: Created new KhoanThu: " + dto.getTenKhoanThu());
+                    } else {
+                        khoanThu = existingKhoanThu;
+                        System.out.println("DEBUG: Using existing KhoanThu: " + dto.getTenKhoanThu());
+                    }
+                    
+                    hoaDon.setKhoanThu(khoanThu);
+                    hoaDonList.add(hoaDon);
+                    
+                } catch (Exception e) {
+                    System.err.println("ERROR: Lỗi khi tạo hóa đơn từ DTO: " + e.getMessage());
+                    continue;
+                }
+            }
+            
+            if (hoaDonList.isEmpty()) {
+                tempFile.delete();
+                StringBuilder errorMsg = new StringBuilder();
+                errorMsg.append("Không thể tạo hóa đơn nào từ dữ liệu Excel.\n\n");
+                
+                if (!invalidApartments.isEmpty()) {
+                    errorMsg.append("❌ Mã căn hộ không tồn tại: ").append(String.join(", ", invalidApartments)).append("\n\n");
+                    errorMsg.append("✅ Mã căn hộ hợp lệ trong hệ thống:\n");
+                    
+                    // Show first 10 valid apartment codes as examples
+                    List<String> exampleCodes = validApartmentCodes.stream()
+                        .limit(10)
+                        .collect(Collectors.toList());
+                    errorMsg.append(String.join(", ", exampleCodes));
+                    
+                    if (validApartmentCodes.size() > 10) {
+                        errorMsg.append("\n... và ").append(validApartmentCodes.size() - 10).append(" mã khác");
+                    }
+                    
+                    errorMsg.append("\n\n💡 Kiểm tra tab 'Căn hộ' để xem danh sách đầy đủ");
+                } else {
+                    errorMsg.append("Vui lòng kiểm tra:\n");
+                    errorMsg.append("- Format file Excel đúng (3 cột)\n");
+                    errorMsg.append("- Dữ liệu không trống\n");
+                    errorMsg.append("- Mã căn hộ tồn tại trong hệ thống");
+                }
+                
+                return new ResponseDto(false, errorMsg.toString());
+            }
+            
             hoaDonRepository.saveAll(hoaDonList);
+            
+            // Update taoHoaDon status for all KhoanThu that had invoices created
+            Set<String> updatedKhoanThuIds = hoaDonList.stream()
+                .map(hoaDon -> hoaDon.getKhoanThu().getMaKhoanThu())
+                .collect(Collectors.toSet());
+            
+            for (String khoanThuId : updatedKhoanThuIds) {
+                KhoanThu khoanThu = khoanThuRepository.findById(khoanThuId).orElse(null);
+                if (khoanThu != null) {
+                    khoanThu.setTaoHoaDon(true);
+                    khoanThuRepository.save(khoanThu);
+                    System.out.println("DEBUG: Updated KhoanThu " + khoanThuId + " taoHoaDon = true");
+                }
+            }
+            
             tempFile.delete();
-            return new ResponseDto(true, "Đã import thành công " + hoaDonList.size() + " hóa đơn từ file Excel.");
+            
+            System.out.println("DEBUG: Successfully imported " + hoaDonList.size() + " invoices");
+            System.out.println("DEBUG: Updated " + updatedKhoanThuIds.size() + " KhoanThu status to 'đã tạo hóa đơn'");
+            
+            // Create success message with details
+            StringBuilder successMsg = new StringBuilder();
+            successMsg.append("✅ Đã import thành công ").append(hoaDonList.size()).append(" hóa đơn!\n");
+            successMsg.append("📋 Cập nhật trạng thái ").append(updatedKhoanThuIds.size()).append(" khoản thu → 'Đã tạo hóa đơn'\n\n");
+            
+            if (!invalidApartments.isEmpty()) {
+                successMsg.append("⚠️ Bỏ qua ").append(invalidApartments.size()).append(" hóa đơn do mã căn hộ không hợp lệ:\n");
+                successMsg.append("   ").append(String.join(", ", invalidApartments)).append("\n\n");
+            }
+            
+            successMsg.append("💡 Kiểm tra:\n");
+            successMsg.append("   • Tab 'Lịch sử thu' → xem hóa đơn đã tạo\n");
+            successMsg.append("   • Tab 'Khoản thu' → trạng thái đã chuyển thành 'Đã tạo'");
+            
+            return new ResponseDto(true, successMsg.toString());
         } catch (Exception e) {
+            System.err.println("ERROR: Import hóa đơn từ Excel thất bại: " + e.getMessage());
+            e.printStackTrace();
             return new ResponseDto(false, "Import hóa đơn từ Excel thất bại: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public ResponseDto updateTrangThaiThanhToan(Integer maHoaDon, boolean daNop) {
+        try {
+            System.out.println("💰 Updating payment status for invoice: " + maHoaDon + " to " + (daNop ? "PAID" : "UNPAID"));
+            
+            // Tìm hóa đơn trong database
+            HoaDon hoaDon = hoaDonRepository.findById(maHoaDon).orElse(null);
+            if (hoaDon == null) {
+                System.err.println("❌ Invoice not found: " + maHoaDon);
+                return new ResponseDto(false, "Không tìm thấy hóa đơn với mã: " + maHoaDon);
+            }
+            
+            // Cập nhật trạng thái thanh toán
+            hoaDon.setDaNop(daNop);
+            
+            // Cập nhật ngày nộp nếu đã thanh toán
+            if (daNop) {
+                hoaDon.setNgayNop(LocalDateTime.now());
+                System.out.println("✅ Set payment date to: " + hoaDon.getNgayNop());
+            } else {
+                hoaDon.setNgayNop(null);
+                System.out.println("🔄 Cleared payment date");
+            }
+            
+            // Lưu vào database
+            hoaDonRepository.save(hoaDon);
+            
+            String statusMessage = daNop ? "đã thanh toán" : "chưa thanh toán";
+            System.out.println("✅ Successfully updated invoice " + maHoaDon + " to " + statusMessage);
+            
+            return new ResponseDto(true, "Cập nhật trạng thái hóa đơn thành công: " + statusMessage);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error updating payment status: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseDto(false, "Lỗi khi cập nhật trạng thái thanh toán: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public ResponseDto thuToanBoPhiCanHo(String maCanHo, List<HoaDonDto> hoaDonList) {
+        try {
+            System.out.println("💰 Starting bulk payment for apartment: " + maCanHo);
+            System.out.println("   📋 Processing " + hoaDonList.size() + " invoices");
+            
+            // Kiểm tra quyền
+            if (Session.getCurrentUser() == null) {
+                return new ResponseDto(false, "Vui lòng đăng nhập để thực hiện thao tác này");
+            }
+            
+            String userRole = Session.getCurrentUser().getVaiTro();
+            if (!"Kế toán".equals(userRole)) {
+                return new ResponseDto(false, "Bạn không có quyền thu phí. Chỉ Kế toán mới có thể thực hiện");
+            }
+            
+            if (hoaDonList == null || hoaDonList.isEmpty()) {
+                return new ResponseDto(false, "Không có hóa đơn nào để thu");
+            }
+            
+            int successCount = 0;
+            int totalAmount = 0;
+            List<String> errors = new ArrayList<>();
+            
+            // Xử lý từng hóa đơn
+            for (HoaDonDto hoaDonDto : hoaDonList) {
+                try {
+                    // Chỉ xử lý hóa đơn chưa thanh toán
+                    if (!hoaDonDto.isDaNop()) {
+                        ResponseDto result = updateTrangThaiThanhToan(hoaDonDto.getMaHoaDon(), true);
+                        if (result.isSuccess()) {
+                            successCount++;
+                            totalAmount += hoaDonDto.getSoTien() != null ? hoaDonDto.getSoTien() : 0;
+                            System.out.println("   ✅ Processed invoice: " + hoaDonDto.getMaHoaDon() + " - " + hoaDonDto.getTenKhoanThu());
+                        } else {
+                            errors.add("Hóa đơn " + hoaDonDto.getMaHoaDon() + ": " + result.getMessage());
+                            System.err.println("   ❌ Failed to process invoice: " + hoaDonDto.getMaHoaDon());
+                        }
+                    } else {
+                        System.out.println("   ⏭️ Skipping already paid invoice: " + hoaDonDto.getMaHoaDon());
+                    }
+                } catch (Exception e) {
+                    errors.add("Hóa đơn " + hoaDonDto.getMaHoaDon() + ": " + e.getMessage());
+                    System.err.println("   ❌ Exception processing invoice " + hoaDonDto.getMaHoaDon() + ": " + e.getMessage());
+                }
+            }
+            
+            // Tạo thông báo kết quả
+            StringBuilder message = new StringBuilder();
+            message.append("Thu phí thành công cho căn hộ ").append(maCanHo).append("\n");
+            message.append("📊 Tổng kết:\n");
+            message.append("  • Đã thu: ").append(successCount).append(" hóa đơn\n");
+            message.append("  • Tổng tiền: ").append(String.format("%,d", totalAmount)).append(" VNĐ\n");
+            
+            if (!errors.isEmpty()) {
+                message.append("  • Lỗi: ").append(errors.size()).append(" hóa đơn\n");
+                message.append("\n❌ Chi tiết lỗi:\n");
+                for (String error : errors) {
+                    message.append("  - ").append(error).append("\n");
+                }
+            }
+            
+            boolean isSuccess = successCount > 0;
+            System.out.println("🏁 Bulk payment completed: " + successCount + "/" + hoaDonList.size() + " success");
+            
+            return new ResponseDto(isSuccess, message.toString().trim());
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error in bulk payment: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseDto(false, "Lỗi khi thu toàn bộ phí: " + e.getMessage());
         }
     }
 }
