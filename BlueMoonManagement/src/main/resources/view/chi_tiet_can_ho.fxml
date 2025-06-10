@@ -483,19 +483,6 @@
                               </Group>
                            </graphic>
                         </Button>
-                        <Button fx:id="buttonXemLichSu" layoutX="236.0" layoutY="39.0" mnemonicParsing="false" onAction="#handleXemLichSu" text="Xem lịch sử thu phí" AnchorPane.topAnchor="40.0">
-                           <graphic>
-                              <Group>
-                                 <children>
-                                    <FontAwesomeIcon glyphName="EDIT" styleClass="action-button-icon" />
-                                 </children>
-                              </Group>
-                           </graphic>
-                           <styleClass>
-                              <String fx:value="action-button" />
-                              <String fx:value="button-sky-blue" />
-                           </styleClass>
-                        </Button>
                      </children>
                   </AnchorPane>
                </children>
