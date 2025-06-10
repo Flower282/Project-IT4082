@@ -236,7 +236,7 @@
                               <String fx:value="button-orange" />
                            </styleClass>
                         </Button>
-                        <Button fx:id="buttonNhapExcelCanHo" layoutX="884.0" layoutY="10.0" mnemonicParsing="false" text="Nhập excel" AnchorPane.rightAnchor="120.0" AnchorPane.topAnchor="0.0">
+                        <Button fx:id="buttonNhapExcelCanHo" layoutX="884.0" layoutY="10.0" mnemonicParsing="false" onAction="#handleNhapExcelCanHo" text="Nhập excel" AnchorPane.rightAnchor="120.0" AnchorPane.topAnchor="0.0">
                            <graphic>
                               <Group>
                                  <children>
@@ -351,7 +351,7 @@
                               <String fx:value="button-orange" />
                            </styleClass>
                         </Button>
-                        <Button fx:id="buttonNhapExcelCuDan" layoutX="734.0" mnemonicParsing="false" text="Nhập excel" AnchorPane.rightAnchor="123.0" AnchorPane.topAnchor="0.0">
+                        <Button fx:id="buttonNhapExcelCuDan" layoutX="734.0" mnemonicParsing="false" onAction="#handleNhapExcelCuDan" text="Nhập excel" AnchorPane.rightAnchor="123.0" AnchorPane.topAnchor="0.0">
                            <graphic>
                               <Group>
                                  <children>
@@ -463,6 +463,7 @@
                               <String fx:value="button-orange" />
                            </styleClass>
                         </Button>
+
                         <VBox layoutY="40.0" prefWidth="970.0" spacing="10.0" AnchorPane.topAnchor="40.0">
                            <children>
                               <TableView fx:id="tabelViewKhoanThu" prefWidth="970.0">
@@ -471,7 +472,7 @@
                                     <TableColumn fx:id="tableColumnTenKhoanThu" prefWidth="267.2000427246094" text="Tên khoản thu" />
                                     <TableColumn fx:id="tableColumnLoaiKhoanThu" minWidth="8.79998779296875" prefWidth="112.800048828125" text="Loại khoản thu" />
                                     <TableColumn fx:id="tableColumnBoPhanQuanLy" prefWidth="128.79998779296875" text="Bộ phận quản lý" />
-                                    <TableColumn fx:id="tableColumnNgayTao1" prefWidth="162.4000244140625" text="Hạn nộp" />
+                                    <TableColumn fx:id="tableColumnNgayTao1" prefWidth="162.4000244140625" text="Ngày nộp" />
                                     <TableColumn fx:id="tableColumnTrangThaiHoaDon" prefWidth="144.79998779296875" text="Tạo hóa đơn" />
                                  </columns>
                               </TableView>
@@ -559,19 +560,6 @@
                            <styleClass>
                               <String fx:value="action-button" />
                               <String fx:value="button-orange" />
-                           </styleClass>
-                        </Button>
-                        <Button fx:id="buttonNhapExcelTaiKhoan" layoutX="777.0" mnemonicParsing="false" text="Nhập excel" AnchorPane.rightAnchor="120.0" AnchorPane.topAnchor="0.0">
-                           <graphic>
-                              <Group>
-                                 <children>
-                                    <FontAwesomeIcon glyphName="FOLDER_OPEN" styleClass="action-button-icon" />
-                                 </children>
-                              </Group>
-                           </graphic>
-                           <styleClass>
-                              <String fx:value="action-button" />
-                              <String fx:value="button-sky-blue" />
                            </styleClass>
                         </Button>
                         <VBox layoutY="40.0" prefWidth="970.0" spacing="10.0" AnchorPane.topAnchor="40.0">

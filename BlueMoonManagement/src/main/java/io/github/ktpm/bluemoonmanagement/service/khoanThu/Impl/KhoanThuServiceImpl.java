@@ -316,15 +316,23 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         String[] headers = {"Mã khoản thu", "Tên khoản thu", "Bắt buộc", "Đơn vị tính", "Số tiền", "Phạm vi", "Ngày tạo", "Thời hạn", "Ghi chú"};
         try {
             XlsxExportUtil.exportToExcel(filePath, headers, khoanThuList, (row, khoanThu) -> {
-                row.createCell(0).setCellValue(khoanThu.getMaKhoanThu());
-                row.createCell(1).setCellValue(khoanThu.getTenKhoanThu());
+                row.createCell(0).setCellValue(khoanThu.getMaKhoanThu() != null ? khoanThu.getMaKhoanThu() : "");
+                row.createCell(1).setCellValue(khoanThu.getTenKhoanThu() != null ? khoanThu.getTenKhoanThu() : "");
                 row.createCell(2).setCellValue(khoanThu.isBatBuoc());
-                row.createCell(3).setCellValue(khoanThu.getDonViTinh());
+                row.createCell(3).setCellValue(khoanThu.getDonViTinh() != null ? khoanThu.getDonViTinh() : "");
                 row.createCell(4).setCellValue(khoanThu.getSoTien());
-                row.createCell(5).setCellValue(khoanThu.getPhamVi());
-                row.createCell(6).setCellValue(java.sql.Date.valueOf(khoanThu.getNgayTao()));
-                row.createCell(7).setCellValue(java.sql.Date.valueOf(khoanThu.getThoiHan()));
-                row.createCell(8).setCellValue(khoanThu.getGhiChu());
+                row.createCell(5).setCellValue(khoanThu.getPhamVi() != null ? khoanThu.getPhamVi() : "");
+                if (khoanThu.getNgayTao() != null) {
+                    row.createCell(6).setCellValue(java.sql.Date.valueOf(khoanThu.getNgayTao()));
+                } else {
+                    row.createCell(6).setCellValue("");
+                }
+                if (khoanThu.getThoiHan() != null) {
+                    row.createCell(7).setCellValue(java.sql.Date.valueOf(khoanThu.getThoiHan()));
+                } else {
+                    row.createCell(7).setCellValue("");
+                }
+                row.createCell(8).setCellValue(khoanThu.getGhiChu() != null ? khoanThu.getGhiChu() : "");
             });
             return new ResponseDto(true, "Xuất file thành công");
         } catch (Exception e) {

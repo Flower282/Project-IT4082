@@ -43,6 +43,9 @@ public class ThemKhoanThuController {
     @FXML
     private Button button_close_up;
 
+    @FXML
+    private Button buttonThemFile;
+
 
 
     @FXML
@@ -309,11 +312,16 @@ public class ThemKhoanThuController {
     private void onBoPhanQuanLyChanged(ActionEvent event) {
         System.out.println("DEBUG: onBoPhanQuanLyChanged - Selected: " + comboBoxBoPhanQuanLy.getValue());
         
-                 // Kiểm tra nếu "Bên thứ 3" được chọn
+        // Kiểm tra nếu "Bên thứ 3" được chọn
         if ("Bên thứ 3".equals(comboBoxBoPhanQuanLy.getValue())) {
-            System.out.println("DEBUG: Switching to 3rd party mode - disabling Ban quản lý controls");
+            System.out.println("DEBUG: Switching to 3rd party mode - showing import excel controls");
             
-            // Bỏ phần hiển thị tên cơ quan - không cần nữa
+            // HIỂN THỊ vBoxTenCoQuan để có thể nhập excel hóa đơn
+            if (vBoxTenCoQuan != null) {
+                vBoxTenCoQuan.setVisible(true);
+                vBoxTenCoQuan.setDisable(false);
+                System.out.println("DEBUG: vBoxTenCoQuan shown and enabled (for excel import)");
+            }
             
             // Ẩn và disable phần đơn vị tính và đơn giá (các nút của Ban quản lý)
             if (vBoxDonViTinhVaDonGia != null) {
@@ -332,7 +340,12 @@ public class ThemKhoanThuController {
         } else {
             System.out.println("DEBUG: Switching to Ban quản lý mode - enabling controls");
             
-            // Bỏ phần xử lý tên cơ quan - không cần nữa
+            // ẨN vBoxTenCoQuan vì không cần nhập excel cho Ban quản lý
+            if (vBoxTenCoQuan != null) {
+                vBoxTenCoQuan.setVisible(false);
+                vBoxTenCoQuan.setDisable(true);
+                System.out.println("DEBUG: vBoxTenCoQuan hidden (not needed for Ban quản lý)");
+            }
             
             // Hiển thị và enable lại phần đơn vị tính và đơn giá
             if (vBoxDonViTinhVaDonGia != null) {
@@ -927,11 +940,14 @@ public class ThemKhoanThuController {
             buttonLuu.setVisible(false);
         }
         
-        // Hiển thị nút "Tạo hóa đơn" nếu user có quyền Kế toán
+        // Hiển thị nút "Tạo hóa đơn" nếu user có quyền Kế toán và chưa tạo hóa đơn
         if (buttonTaoHoaDon != null) {
             boolean hasPermission = hasHoaDonPermission();
-            buttonTaoHoaDon.setVisible(hasPermission);
-            System.out.println("DEBUG: buttonTaoHoaDon visible = " + hasPermission + " (user has invoice permission)");
+            boolean hasNotCreatedInvoice = (currentKhoanThu != null && !currentKhoanThu.isTaoHoaDon());
+            boolean shouldShowCreateInvoice = hasPermission && hasNotCreatedInvoice;
+            buttonTaoHoaDon.setVisible(shouldShowCreateInvoice);
+            System.out.println("DEBUG: buttonTaoHoaDon visible = " + shouldShowCreateInvoice + 
+                " (hasPermission=" + hasPermission + ", hasNotCreatedInvoice=" + hasNotCreatedInvoice + ")");
         }
         
         // Điền dữ liệu vào form
@@ -1873,6 +1889,57 @@ public class ThemKhoanThuController {
             
         } catch (Exception e) {
             // Silently continue searching if error occurs
+        }
+    }
+    
+    /**
+     * Nhập Excel hóa đơn cho bên thứ 3
+     */
+    @FXML
+    private void handleNhapExcelHoaDon(javafx.event.ActionEvent event) {
+        try {
+            if (hoaDonService != null) {
+                // Chọn file Excel để import
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Chọn file Excel hóa đơn");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx", "*.xls")
+                );
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonThemFile.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showOpenDialog(stage);
+                
+                if (selectedFile != null) {
+                    try {
+                        // Convert File thành MultipartFile
+                        io.github.ktpm.bluemoonmanagement.util.FileMultipartUtil.FileMultipartFile multipartFile = 
+                            new io.github.ktpm.bluemoonmanagement.util.FileMultipartUtil.FileMultipartFile(selectedFile);
+                        
+                        // Gọi service để import hóa đơn
+                        io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                            hoaDonService.importFromExcel(multipartFile);
+                        
+                        if (response.isSuccess()) {
+                            showSuccessDialog("Nhập Excel thành công", 
+                                "Đã nhập hóa đơn từ " + selectedFile.getName() + " thành công!\n" + 
+                                response.getMessage());
+                            
+                            // Log thành công
+                            System.out.println("✅ File imported successfully: " + selectedFile.getName());
+                        } else {
+                            showErrorDialog("Lỗi nhập Excel", "Lỗi: " + response.getMessage());
+                        }
+                    } catch (Exception ex) {
+                        showErrorDialog("Lỗi nhập Excel", "Chi tiết: " + ex.getMessage());
+                        ex.printStackTrace();
+                    }
+                }
+            } else {
+                showErrorDialog("Lỗi", "Service hóa đơn không khả dụng");
+            }
+        } catch (Exception e) {
+            showErrorDialog("Lỗi nhập Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

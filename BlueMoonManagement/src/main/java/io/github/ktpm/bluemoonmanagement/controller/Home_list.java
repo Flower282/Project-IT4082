@@ -19,6 +19,7 @@ import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.FxView;
 import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
+import io.github.ktpm.bluemoonmanagement.util.FileMultipartUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -59,6 +60,8 @@ public class Home_list implements Initializable {
 
     @FXML
     private Button buttonNhapExcelTaiKhoan;
+
+
 
     @FXML
     private Button buttonSeeAllCanHo;
@@ -3476,6 +3479,163 @@ public class Home_list implements Initializable {
             }
         } catch (Exception e) {
             showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Nhập Excel căn hộ
+     */
+    @FXML
+    private void handleNhapExcelCanHo(javafx.event.ActionEvent event) {
+        try {
+            if (canHoService == null) {
+                showError("Lỗi", "Service căn hộ không khả dụng");
+                return;
+            }
+            
+            // Chọn file Excel để import
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Chọn file Excel căn hộ");
+            fileChooser.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx", "*.xls")
+            );
+            
+            javafx.stage.Stage stage = (javafx.stage.Stage) buttonNhapExcelCanHo.getScene().getWindow();
+            java.io.File selectedFile = fileChooser.showOpenDialog(stage);
+            
+            if (selectedFile != null) {
+                // Convert File thành MultipartFile
+                org.springframework.web.multipart.MultipartFile multipartFile = 
+                    FileMultipartUtil.convertFileToMultipartFile(selectedFile);
+                
+                // Gọi service để import
+                io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                    canHoService.importFromExcel(multipartFile);
+                
+                if (response.isSuccess()) {
+                    showSuccess("Nhập Excel thành công", 
+                        "Đã nhập " + selectedFile.getName() + " thành công!\n" + response.getMessage());
+                    refreshApartmentData(); // Refresh dữ liệu sau khi import
+                } else {
+                    showError("Lỗi nhập Excel", "Lỗi: " + response.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            showError("Lỗi nhập Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Nhập Excel cư dân
+     */
+    @FXML
+    private void handleNhapExcelCuDan(javafx.event.ActionEvent event) {
+        try {
+            if (cuDanService == null) {
+                showError("Lỗi", "Service cư dân không khả dụng");
+                return;
+            }
+            
+            // Chọn file Excel để import
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Chọn file Excel cư dân");
+            fileChooser.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx", "*.xls")
+            );
+            
+            javafx.stage.Stage stage = (javafx.stage.Stage) buttonNhapExcelCuDan.getScene().getWindow();
+            java.io.File selectedFile = fileChooser.showOpenDialog(stage);
+            
+            if (selectedFile != null) {
+                // Convert File thành MultipartFile
+                org.springframework.web.multipart.MultipartFile multipartFile = 
+                    FileMultipartUtil.convertFileToMultipartFile(selectedFile);
+                
+                // Gọi service để import
+                io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                    cuDanService.importFromExcel(multipartFile);
+                
+                if (response.isSuccess()) {
+                    showSuccess("Nhập Excel thành công", 
+                        "Đã nhập " + selectedFile.getName() + " thành công!\n" + response.getMessage());
+                    refreshCuDanData(); // Refresh dữ liệu sau khi import
+                } else {
+                    showError("Lỗi nhập Excel", "Lỗi: " + response.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            showError("Lỗi nhập Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+
+    
+    /**
+     * Nhập Excel tài khoản
+     */
+    @FXML
+    @SuppressWarnings("unchecked")
+    private void handleNhapExcelTaiKhoan(javafx.event.ActionEvent event) {
+        try {
+            if (taiKhoanService == null) {
+                showError("Lỗi", "Service tài khoản không khả dụng");
+                return;
+            }
+            
+            // Chọn file Excel để import
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Chọn file Excel tài khoản");
+            fileChooser.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx", "*.xls")
+            );
+            
+            javafx.stage.Stage stage = (javafx.stage.Stage) buttonNhapExcelTaiKhoan.getScene().getWindow();
+            java.io.File selectedFile = fileChooser.showOpenDialog(stage);
+            
+            if (selectedFile != null) {
+                // Kiểm tra xem service có method importFromExcel không
+                try {
+                    // Thử gọi method importFromExcel nếu có
+                    java.lang.reflect.Method importMethod = taiKhoanService.getClass()
+                        .getMethod("importFromExcel", org.springframework.web.multipart.MultipartFile.class);
+                    
+                    // Convert File thành MultipartFile
+                    org.springframework.web.multipart.MultipartFile multipartFile = 
+                        FileMultipartUtil.convertFileToMultipartFile(selectedFile);
+                    
+                    // Gọi method import với proper exception handling
+                    Object result = importMethod.invoke(taiKhoanService, multipartFile);
+                    
+                    if (result instanceof io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto) {
+                        io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                            (io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto) result;
+                        
+                        if (response.isSuccess()) {
+                            showSuccess("Nhập Excel thành công", 
+                                "Đã nhập " + selectedFile.getName() + " thành công!\n" + response.getMessage());
+                            refreshTaiKhoanData(); // Refresh dữ liệu sau khi import
+                        } else {
+                            showError("Lỗi nhập Excel", "Lỗi: " + response.getMessage());
+                        }
+                    } else {
+                        showError("Lỗi nhập Excel", "Phản hồi từ service không đúng định dạng");
+                    }
+                    
+                } catch (NoSuchMethodException e) {
+                    // Method chưa được implement
+                    showInfo("Chức năng chưa hỗ trợ", 
+                        "Chức năng nhập Excel tài khoản chưa được implement trong service.\nFile đã chọn: " + selectedFile.getName());
+                } catch (java.lang.reflect.InvocationTargetException e) {
+                    showError("Lỗi nhập Excel", "Lỗi khi gọi service: " + e.getCause().getMessage());
+                } catch (IllegalAccessException e) {
+                    showError("Lỗi nhập Excel", "Không thể truy cập method service: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            showError("Lỗi nhập Excel", "Chi tiết: " + e.getMessage());
             e.printStackTrace();
         }
     }
