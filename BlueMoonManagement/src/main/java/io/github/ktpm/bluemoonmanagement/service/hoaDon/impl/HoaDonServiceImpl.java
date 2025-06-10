@@ -3,6 +3,7 @@ package io.github.ktpm.bluemoonmanagement.service.hoaDon.impl;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -709,13 +710,19 @@ public class HoaDonServiceImpl implements HoaDonService {
             
             Function<Row, HoaDonDichVuDto> rowMapper = row -> {
                 try {
+                    System.out.println("DEBUG: Processing row " + row.getRowNum() + " - Total cells: " + row.getLastCellNum());
+                    
                     // Skip header row
                     if (row.getRowNum() == 0) {
-                        System.out.println("DEBUG: Skipping header row");
+                        System.out.println("DEBUG: Skipping header row 0");
                         return null;
                     }
                     
-                    System.out.println("DEBUG: Processing row " + row.getRowNum());
+                    // Check if row is empty
+                    if (row.getLastCellNum() < 3) {
+                        System.out.println("DEBUG: Row " + row.getRowNum() + " has insufficient cells: " + row.getLastCellNum());
+                        return null;
+                    }
                     
                     HoaDonDichVuDto dto = new HoaDonDichVuDto();
                     
@@ -723,25 +730,33 @@ public class HoaDonServiceImpl implements HoaDonService {
                     String tenKhoanThu = "";
                     if (row.getCell(0) != null) {
                         try {
-                            tenKhoanThu = row.getCell(0).getStringCellValue();
+                            tenKhoanThu = row.getCell(0).getStringCellValue().trim();
                         } catch (Exception e) {
-                            tenKhoanThu = String.valueOf(row.getCell(0).getNumericCellValue());
+                            try {
+                                tenKhoanThu = String.valueOf(row.getCell(0).getNumericCellValue()).trim();
+                            } catch (Exception e2) {
+                                System.err.println("DEBUG: Cannot read tenKhoanThu at row " + row.getRowNum());
+                            }
                         }
                     }
-                    dto.setTenKhoanThu(tenKhoanThu);
-                    System.out.println("DEBUG: Tên khoản thu: " + tenKhoanThu);
+                    System.out.println("DEBUG: Tên khoản thu: '" + tenKhoanThu + "'");
                     
                     // Mã căn hộ (column 1)
                     String maCanHo = "";
                     if (row.getCell(1) != null) {
                         try {
-                            maCanHo = row.getCell(1).getStringCellValue();
+                            maCanHo = row.getCell(1).getStringCellValue().trim();
                         } catch (Exception e) {
-                            maCanHo = String.valueOf((long) row.getCell(1).getNumericCellValue());
+                            try {
+                                // Handle numeric apartment codes
+                                double numericValue = row.getCell(1).getNumericCellValue();
+                                maCanHo = String.valueOf((long) numericValue);
+                            } catch (Exception e2) {
+                                System.err.println("DEBUG: Cannot read maCanHo at row " + row.getRowNum());
+                            }
                         }
                     }
-                    dto.setMaCanHo(maCanHo);
-                    System.out.println("DEBUG: Mã căn hộ: " + maCanHo);
+                    System.out.println("DEBUG: Mã căn hộ: '" + maCanHo + "'");
                     
                     // Số tiền (column 2)
                     int soTien = 0;
@@ -751,53 +766,93 @@ public class HoaDonServiceImpl implements HoaDonService {
                         } catch (Exception e) {
                             try {
                                 String soTienStr = row.getCell(2).getStringCellValue().replaceAll("[^0-9]", "");
-                                soTien = Integer.parseInt(soTienStr);
+                                if (!soTienStr.isEmpty()) {
+                                    soTien = Integer.parseInt(soTienStr);
+                                }
                             } catch (Exception e2) {
-                                System.err.println("DEBUG: Không thể đọc số tiền ở row " + row.getRowNum());
-                                soTien = 0;
+                                System.err.println("DEBUG: Cannot read soTien at row " + row.getRowNum() + ": " + e2.getMessage());
                             }
                         }
                     }
-                    dto.setSoTien(soTien);
                     System.out.println("DEBUG: Số tiền: " + soTien);
                     
-                    // Validation cơ bản
-                    if (tenKhoanThu.trim().isEmpty() || maCanHo.trim().isEmpty() || soTien <= 0) {
-                        System.err.println("DEBUG: Invalid data at row " + row.getRowNum() + 
-                            " - tenKhoanThu: '" + tenKhoanThu + "', maCanHo: '" + maCanHo + "', soTien: " + soTien);
+                    // Relaxed validation - chỉ cần có tên khoản thu và mã căn hộ
+                    if (tenKhoanThu.isEmpty() && maCanHo.isEmpty()) {
+                        System.err.println("DEBUG: Row " + row.getRowNum() + " is completely empty - skipping");
                         return null;
                     }
                     
-                    System.out.println("DEBUG: Successfully parsed row " + row.getRowNum());
+                    if (tenKhoanThu.isEmpty()) {
+                        System.err.println("DEBUG: Missing tenKhoanThu at row " + row.getRowNum());
+                        return null;
+                    }
+                    
+                    if (maCanHo.isEmpty()) {
+                        System.err.println("DEBUG: Missing maCanHo at row " + row.getRowNum());
+                        return null;
+                    }
+                    
+                    if (soTien <= 0) {
+                        System.err.println("DEBUG: Invalid soTien (" + soTien + ") at row " + row.getRowNum() + " - setting to 1000");
+                        soTien = 1000; // Default amount if invalid
+                    }
+                    
+                    dto.setTenKhoanThu(tenKhoanThu);
+                    dto.setMaCanHo(maCanHo);
+                    dto.setSoTien(soTien);
+                    
+                    System.out.println("DEBUG: ✅ Successfully parsed row " + row.getRowNum() + " - " + tenKhoanThu + " | " + maCanHo + " | " + soTien);
                     return dto;
                 } catch (Exception e) {
-                    System.err.println("ERROR: Lỗi khi đọc dòng Excel hóa đơn row " + row.getRowNum() + ": " + e.getMessage());
+                    System.err.println("ERROR: Exception at row " + row.getRowNum() + ": " + e.getMessage());
                     e.printStackTrace();
                     return null;
                 }
             };
             
             List<HoaDonDichVuDto> hoaDonDichVuDtoList = XlxsFileUtil.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
-            System.out.println("DEBUG: Parsed " + hoaDonDichVuDtoList.size() + " valid rows from Excel");
+            System.out.println("DEBUG: Raw parsed results: " + hoaDonDichVuDtoList.size() + " entries (including nulls)");
+            
+            // Count nulls before filtering
+            long nullCount = hoaDonDichVuDtoList.stream().filter(dto -> dto == null).count();
+            long validCount = hoaDonDichVuDtoList.stream().filter(dto -> dto != null).count();
+            System.out.println("DEBUG: Null entries: " + nullCount + ", Valid entries: " + validCount);
             
             // Filter out null values
             hoaDonDichVuDtoList = hoaDonDichVuDtoList.stream()
                 .filter(dto -> dto != null)
                 .collect(Collectors.toList());
             
+            System.out.println("DEBUG: After filtering nulls: " + hoaDonDichVuDtoList.size() + " valid entries");
+            
             if (hoaDonDichVuDtoList.isEmpty()) {
                 tempFile.delete();
-                return new ResponseDto(false, "Không có dữ liệu hợp lệ trong file Excel. Vui lòng kiểm tra lại format file.");
+                return new ResponseDto(false, "Không có dữ liệu hợp lệ trong file Excel.\n" +
+                    "Vui lòng kiểm tra:\n" +
+                    "1. File có ít nhất 3 cột: Tên khoản thu | Mã căn hộ | Số tiền\n" +
+                    "2. Dữ liệu bắt đầu từ dòng 2 (dòng 1 là header)\n" +
+                    "3. Các trường không được để trống\n" +
+                    "4. Kiểm tra Console (F12) để xem log chi tiết");
             }
+            
+            // Get all valid apartment codes for debugging
+            List<String> validApartmentCodes = canHoRepository.findAll().stream()
+                .map(canHo -> canHo.getMaCanHo())
+                .sorted()
+                .collect(Collectors.toList());
+            System.out.println("DEBUG: Valid apartment codes in system: " + validApartmentCodes);
             
             // Validate and map to entities
             List<HoaDon> hoaDonList = new ArrayList<>();
+            List<String> invalidApartments = new ArrayList<>();
+            
             for (HoaDonDichVuDto dto : hoaDonDichVuDtoList) {
                 try {
                     // Check if apartment exists
                     CanHo canHo = canHoRepository.findById(dto.getMaCanHo()).orElse(null);
                     if (canHo == null) {
-                        System.err.println("WARNING: Căn hộ không tồn tại: " + dto.getMaCanHo() + " - bỏ qua hóa đơn này");
+                        System.err.println("WARNING: Căn hộ không tồn tại: '" + dto.getMaCanHo() + "' - bỏ qua hóa đơn này");
+                        invalidApartments.add(dto.getMaCanHo());
                         continue;
                     }
                     
@@ -845,14 +900,70 @@ public class HoaDonServiceImpl implements HoaDonService {
             
             if (hoaDonList.isEmpty()) {
                 tempFile.delete();
-                return new ResponseDto(false, "Không thể tạo hóa đơn nào từ dữ liệu Excel. Vui lòng kiểm tra lại mã căn hộ.");
+                StringBuilder errorMsg = new StringBuilder();
+                errorMsg.append("Không thể tạo hóa đơn nào từ dữ liệu Excel.\n\n");
+                
+                if (!invalidApartments.isEmpty()) {
+                    errorMsg.append("❌ Mã căn hộ không tồn tại: ").append(String.join(", ", invalidApartments)).append("\n\n");
+                    errorMsg.append("✅ Mã căn hộ hợp lệ trong hệ thống:\n");
+                    
+                    // Show first 10 valid apartment codes as examples
+                    List<String> exampleCodes = validApartmentCodes.stream()
+                        .limit(10)
+                        .collect(Collectors.toList());
+                    errorMsg.append(String.join(", ", exampleCodes));
+                    
+                    if (validApartmentCodes.size() > 10) {
+                        errorMsg.append("\n... và ").append(validApartmentCodes.size() - 10).append(" mã khác");
+                    }
+                    
+                    errorMsg.append("\n\n💡 Kiểm tra tab 'Căn hộ' để xem danh sách đầy đủ");
+                } else {
+                    errorMsg.append("Vui lòng kiểm tra:\n");
+                    errorMsg.append("- Format file Excel đúng (3 cột)\n");
+                    errorMsg.append("- Dữ liệu không trống\n");
+                    errorMsg.append("- Mã căn hộ tồn tại trong hệ thống");
+                }
+                
+                return new ResponseDto(false, errorMsg.toString());
             }
             
             hoaDonRepository.saveAll(hoaDonList);
+            
+            // Update taoHoaDon status for all KhoanThu that had invoices created
+            Set<String> updatedKhoanThuIds = hoaDonList.stream()
+                .map(hoaDon -> hoaDon.getKhoanThu().getMaKhoanThu())
+                .collect(Collectors.toSet());
+            
+            for (String khoanThuId : updatedKhoanThuIds) {
+                KhoanThu khoanThu = khoanThuRepository.findById(khoanThuId).orElse(null);
+                if (khoanThu != null) {
+                    khoanThu.setTaoHoaDon(true);
+                    khoanThuRepository.save(khoanThu);
+                    System.out.println("DEBUG: Updated KhoanThu " + khoanThuId + " taoHoaDon = true");
+                }
+            }
+            
             tempFile.delete();
             
             System.out.println("DEBUG: Successfully imported " + hoaDonList.size() + " invoices");
-            return new ResponseDto(true, "Đã import thành công " + hoaDonList.size() + " hóa đơn từ file Excel.");
+            System.out.println("DEBUG: Updated " + updatedKhoanThuIds.size() + " KhoanThu status to 'đã tạo hóa đơn'");
+            
+            // Create success message with details
+            StringBuilder successMsg = new StringBuilder();
+            successMsg.append("✅ Đã import thành công ").append(hoaDonList.size()).append(" hóa đơn!\n");
+            successMsg.append("📋 Cập nhật trạng thái ").append(updatedKhoanThuIds.size()).append(" khoản thu → 'Đã tạo hóa đơn'\n\n");
+            
+            if (!invalidApartments.isEmpty()) {
+                successMsg.append("⚠️ Bỏ qua ").append(invalidApartments.size()).append(" hóa đơn do mã căn hộ không hợp lệ:\n");
+                successMsg.append("   ").append(String.join(", ", invalidApartments)).append("\n\n");
+            }
+            
+            successMsg.append("💡 Kiểm tra:\n");
+            successMsg.append("   • Tab 'Lịch sử thu' → xem hóa đơn đã tạo\n");
+            successMsg.append("   • Tab 'Khoản thu' → trạng thái đã chuyển thành 'Đã tạo'");
+            
+            return new ResponseDto(true, successMsg.toString());
         } catch (Exception e) {
             System.err.println("ERROR: Import hóa đơn từ Excel thất bại: " + e.getMessage());
             e.printStackTrace();

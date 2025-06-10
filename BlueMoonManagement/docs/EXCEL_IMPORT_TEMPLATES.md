@@ -314,6 +314,8 @@ Dưới đây là danh sách các template để import dữ liệu vào hệ th
 | Internet      | CH002     | 200000  |
 ```
 
+⚠️ **Lưu ý**: Mã hóa đơn được tự sinh, KHÔNG cần trong file Excel
+
 ## Notes:
 
 ### **Hóa Đơn Import:**

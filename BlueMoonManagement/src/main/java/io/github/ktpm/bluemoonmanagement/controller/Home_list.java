@@ -400,8 +400,7 @@ public class Home_list implements Initializable {
     @FXML
     private TextField textFieldMaDinhDanh;
 
-    @FXML
-    private TextField textFieldMaHoaDon;
+
 
     @FXML
     private TextField textFieldMaKhoanThu;
@@ -2253,7 +2252,7 @@ public class Home_list implements Initializable {
     @FXML
     private void handleTimKiemThuPhi() {
         String maCanHo = textFieldMaCanHoThuPhi != null ? textFieldMaCanHoThuPhi.getText().trim() : "";
-        String maHoaDon = textFieldMaHoaDon != null ? textFieldMaHoaDon.getText().trim() : "";
+
         String tenKhoanThu = textFieldTenKhoanThu1 != null ? textFieldTenKhoanThu1.getText().trim() : "";
         String loaiKhoanThu = comboBoxLoaiKhoanThu1 != null && comboBoxLoaiKhoanThu1.getValue() != null ? 
                              comboBoxLoaiKhoanThu1.getValue().toString() : "";
@@ -2261,7 +2260,7 @@ public class Home_list implements Initializable {
                                 comboBoxTrangThaiHoaDon.getValue().toString() : "";
         
         // Nếu tất cả các điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
-        if (maCanHo.isEmpty() && maHoaDon.isEmpty() && tenKhoanThu.isEmpty() &&
+        if (maCanHo.isEmpty() && tenKhoanThu.isEmpty() &&
             ("Tất cả".equals(loaiKhoanThu) || loaiKhoanThu.isEmpty()) &&
             ("Tất cả".equals(trangThaiHoaDon) || trangThaiHoaDon.isEmpty())) {
             
@@ -2279,8 +2278,6 @@ public class Home_list implements Initializable {
                 .filter(hoaDon -> {
                     boolean matchesMaCanHo = maCanHo.isEmpty() || 
                         hoaDon.getMaCanHo().toLowerCase().contains(maCanHo.toLowerCase());
-                    boolean matchesMaHoaDon = maHoaDon.isEmpty() || 
-                        hoaDon.getMaHoaDon().toLowerCase().contains(maHoaDon.toLowerCase());
                     boolean matchesTenKhoanThu = tenKhoanThu.isEmpty() || 
                         hoaDon.getTenKhoanThu().toLowerCase().contains(tenKhoanThu.toLowerCase());
                     boolean matchesLoaiKhoanThu = "Tất cả".equals(loaiKhoanThu) || loaiKhoanThu.isEmpty() ||
@@ -2288,7 +2285,7 @@ public class Home_list implements Initializable {
                     boolean matchesTrangThaiHoaDon = "Tất cả".equals(trangThaiHoaDon) || trangThaiHoaDon.isEmpty() ||
                         hoaDon.getTrangThaiThanhToan().equals(trangThaiHoaDon);
                     
-                    return matchesMaCanHo && matchesMaHoaDon && matchesTenKhoanThu && 
+                    return matchesMaCanHo && matchesTenKhoanThu && 
                            matchesLoaiKhoanThu && matchesTrangThaiHoaDon;
                 })
                 .collect(FXCollections::observableArrayList, 
@@ -2302,7 +2299,7 @@ public class Home_list implements Initializable {
             updateHoaDonKetQuaLabel();
             
             System.out.println("🔍 Invoice search completed:");
-            System.out.println("  - Search criteria: MaCanHo=" + maCanHo + ", MaHoaDon=" + maHoaDon + 
+            System.out.println("  - Search criteria: MaCanHo=" + maCanHo + 
                              ", TenKhoanThu=" + tenKhoanThu + ", LoaiKhoanThu=" + loaiKhoanThu + 
                              ", TrangThaiHoaDon=" + trangThaiHoaDon);
             System.out.println("  - Results: " + searchResults.size() + "/" + hoaDonList.size());
@@ -2364,9 +2361,6 @@ public class Home_list implements Initializable {
         // Thu phí search listeners
         if (textFieldMaCanHoThuPhi != null) {
             textFieldMaCanHoThuPhi.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());
-        }
-        if (textFieldMaHoaDon != null) {
-            textFieldMaHoaDon.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());
         }
         if (textFieldTenKhoanThu1 != null) {
             textFieldTenKhoanThu1.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());

@@ -373,6 +373,15 @@ public class ThemKhoanThuController {
             // Trigger lại logic đơn vị tính để hiển thị đúng trường đơn giá
             onDonViTinhChanged(null);
         }
+        
+        // Cập nhật visibility của các button invoice sau khi thay đổi bộ phận quản lý
+        if (isEditMode && currentKhoanThu != null) {
+            // Cập nhật thông tin ghiChu để reflect thay đổi bộ phận quản lý
+            currentKhoanThu.setGhiChu(comboBoxBoPhanQuanLy.getValue().toString());
+            
+            // Cập nhật button visibility based on new selection
+            updateInvoiceButtonsVisibility();
+        }
     }
     @FXML
     void ThemKhoanThuClicked(ActionEvent event) {
@@ -940,15 +949,8 @@ public class ThemKhoanThuController {
             buttonLuu.setVisible(false);
         }
         
-        // Hiển thị nút "Tạo hóa đơn" nếu user có quyền Kế toán và chưa tạo hóa đơn
-        if (buttonTaoHoaDon != null) {
-            boolean hasPermission = hasHoaDonPermission();
-            boolean hasNotCreatedInvoice = (currentKhoanThu != null && !currentKhoanThu.isTaoHoaDon());
-            boolean shouldShowCreateInvoice = hasPermission && hasNotCreatedInvoice;
-            buttonTaoHoaDon.setVisible(shouldShowCreateInvoice);
-            System.out.println("DEBUG: buttonTaoHoaDon visible = " + shouldShowCreateInvoice + 
-                " (hasPermission=" + hasPermission + ", hasNotCreatedInvoice=" + hasNotCreatedInvoice + ")");
-        }
+        // Hiển thị/ẩn các button dựa trên trạng thái tạo hóa đơn và quyền người dùng
+        updateInvoiceButtonsVisibility();
         
         // Điền dữ liệu vào form
         fillFormWithData(khoanThuData);
@@ -1661,6 +1663,11 @@ public class ThemKhoanThuController {
                     if (response.isSuccess()) {
                         System.out.println("✅ Tạo hóa đơn thành công!");
                         
+                        // Cập nhật trạng thái local của khoản thu hiện tại
+                        if (currentKhoanThu != null) {
+                            currentKhoanThu.setTaoHoaDon(true);
+                        }
+                        
                         // Refresh dữ liệu trước khi hiển thị thông báo để đảm bảo cập nhật ngay lập tức
                         
                         // 1. Refresh invoice data in Home_list để cập nhật danh sách hóa đơn
@@ -1672,11 +1679,16 @@ public class ThemKhoanThuController {
                         // 3. Refresh cache để đảm bảo dữ liệu được cập nhật toàn bộ hệ thống
                         refreshCacheAndVehicleFees();
                         
-                        // 4. Hiển thị thông báo thành công sau khi đã refresh
-                        ThongBaoController.showSuccess("Tạo hóa đơn thành công! 🎉", 
-                            "Đã tạo hóa đơn thành công cho khoản thu: " + currentKhoanThu.getTenKhoanThu());
+                        // 4. Cập nhật visibility của các button trong form hiện tại
+                        updateButtonVisibilityAfterInvoiceCreation();
                         
-                        // 5. Đóng form hiện tại
+                        // 5. Hiển thị thông báo thành công sau khi đã refresh
+                        ThongBaoController.showSuccess("🎉 Tạo hóa đơn thành công!", 
+                            "✅ Đã tạo hóa đơn thành công cho khoản thu: " + currentKhoanThu.getTenKhoanThu() + "\n\n" +
+                            "🔄 Trạng thái khoản thu đã được cập nhật thành 'Đã tạo'\n" +
+                            "💡 Kiểm tra tab 'Lịch sử thu' để xem hóa đơn mới được tạo");
+                        
+                        // 6. Đóng form hiện tại
                         javafx.stage.Stage currentStage = (javafx.stage.Stage) buttonTaoHoaDon.getScene().getWindow();
                         currentStage.close();
                         
@@ -1920,26 +1932,122 @@ public class ThemKhoanThuController {
                             hoaDonService.importFromExcel(multipartFile);
                         
                         if (response.isSuccess()) {
-                            showSuccessDialog("Nhập Excel thành công", 
-                                "Đã nhập hóa đơn từ " + selectedFile.getName() + " thành công!\n" + 
-                                response.getMessage());
+                            System.out.println("✅ Excel import successful for: " + selectedFile.getName());
                             
-                            // Log thành công
-                            System.out.println("✅ File imported successfully: " + selectedFile.getName());
+                            // 1. Refresh dữ liệu hóa đơn trong Home_list để cập nhật danh sách hóa đơn mới
+                            refreshInvoiceDataInHomeList();
+                            
+                            // 2. Refresh bảng khoản thu để cập nhật trạng thái "Đã tạo hóa đơn"
+                            refreshKhoanThuTable();
+                            
+                            // 3. Refresh cache để đảm bảo dữ liệu được cập nhật toàn bộ hệ thống
+                            refreshCacheAndVehicleFees();
+                            
+                            // 4. Cập nhật UI form hiện tại nếu đang ở chế độ edit và khoản thu hiện tại được cập nhật
+                            if (isEditMode && currentKhoanThu != null) {
+                                // Reload current KhoanThu để lấy trạng thái mới nhất
+                                try {
+                                    currentKhoanThu.setTaoHoaDon(true); // Cập nhật local state
+                                    
+                                    // Ẩn nút "Nhập excel hóa đơn" vì đã tạo hóa đơn
+                                    if (buttonThemFile != null) {
+                                        buttonThemFile.setVisible(false);
+                                        System.out.println("🔄 Hidden 'Nhập excel hóa đơn' button after successful import");
+                                    }
+                                    
+                                    // Hiển thị nút "Tạo hóa đơn" nếu user có quyền (cho trường hợp ban quản lý)
+                                    updateButtonVisibilityAfterInvoiceCreation();
+                                    
+                                } catch (Exception refreshEx) {
+                                    System.err.println("Warning: Could not refresh current form state: " + refreshEx.getMessage());
+                                }
+                            }
+                            
+                            // 5. Hiển thị thông báo thành công
+                            showSuccessDialog("🎉 Nhập Excel thành công!", 
+                                "✅ Đã nhập hóa đơn từ " + selectedFile.getName() + " thành công!\n\n" + 
+                                response.getMessage() + "\n\n" +
+                                "🔄 Trạng thái khoản thu đã được cập nhật thành 'Đã tạo'\n" +
+                                "💡 Kiểm tra tab 'Lịch sử thu' để xem hóa đơn mới được tạo");
+                            
                         } else {
-                            showErrorDialog("Lỗi nhập Excel", "Lỗi: " + response.getMessage());
+                            showErrorDialog("❌ Lỗi nhập Excel", "Lỗi: " + response.getMessage());
                         }
                     } catch (Exception ex) {
-                        showErrorDialog("Lỗi nhập Excel", "Chi tiết: " + ex.getMessage());
+                        showErrorDialog("❌ Lỗi nhập Excel", "Chi tiết: " + ex.getMessage());
                         ex.printStackTrace();
                     }
                 }
             } else {
-                showErrorDialog("Lỗi", "Service hóa đơn không khả dụng");
+                showErrorDialog("❌ Lỗi", "Service hóa đơn không khả dụng");
             }
         } catch (Exception e) {
-            showErrorDialog("Lỗi nhập Excel", "Chi tiết: " + e.getMessage());
+            showErrorDialog("❌ Lỗi nhập Excel", "Chi tiết: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Cập nhật visibility của các button dựa trên trạng thái và quyền người dùng
+     */
+    private void updateInvoiceButtonsVisibility() {
+        try {
+            if (currentKhoanThu == null) {
+                // Nếu không có khoản thu hiện tại, ẩn tất cả
+                if (buttonTaoHoaDon != null) buttonTaoHoaDon.setVisible(false);
+                if (buttonThemFile != null) buttonThemFile.setVisible(false);
+                return;
+            }
+            
+            boolean hasInvoiceCreated = currentKhoanThu.isTaoHoaDon();
+            boolean hasAccountantPermission = hasHoaDonPermission(); // Chỉ Kế toán
+            boolean isBenThuBa = "Bên thứ 3".equals(currentKhoanThu.getGhiChu());
+            
+            // Nút "Tạo hóa đơn" (cho Ban quản lý)
+            if (buttonTaoHoaDon != null) {
+                boolean shouldShowCreateInvoice = hasAccountantPermission && !hasInvoiceCreated && !isBenThuBa;
+                buttonTaoHoaDon.setVisible(shouldShowCreateInvoice);
+                System.out.println("DEBUG: buttonTaoHoaDon visible = " + shouldShowCreateInvoice + 
+                    " (hasAccountantPermission=" + hasAccountantPermission + 
+                    ", hasInvoiceCreated=" + hasInvoiceCreated + 
+                    ", isBenThuBa=" + isBenThuBa + ")");
+            }
+            
+            // Nút "Nhập excel hóa đơn" (cho Bên thứ 3)
+            if (buttonThemFile != null) {
+                boolean shouldShowImportExcel = hasAccountantPermission && !hasInvoiceCreated && isBenThuBa;
+                buttonThemFile.setVisible(shouldShowImportExcel);
+                System.out.println("DEBUG: buttonThemFile visible = " + shouldShowImportExcel + 
+                    " (hasAccountantPermission=" + hasAccountantPermission + 
+                    ", hasInvoiceCreated=" + hasInvoiceCreated + 
+                    ", isBenThuBa=" + isBenThuBa + ")");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Warning: Could not update invoice buttons visibility: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Cập nhật visibility của các button sau khi tạo hóa đơn thành công
+     */
+    private void updateButtonVisibilityAfterInvoiceCreation() {
+        try {
+            if (currentKhoanThu != null && currentKhoanThu.isTaoHoaDon()) {
+                // Ẩn nút "Nhập excel hóa đơn" vì đã tạo
+                if (buttonThemFile != null) {
+                    buttonThemFile.setVisible(false);
+                }
+                
+                // Ẩn nút "Tạo hóa đơn" vì đã tạo
+                if (buttonTaoHoaDon != null) {
+                    buttonTaoHoaDon.setVisible(false);
+                }
+                
+                System.out.println("🔄 Updated button visibility after invoice creation - both buttons hidden");
+            }
+        } catch (Exception e) {
+            System.err.println("Warning: Could not update button visibility: " + e.getMessage());
         }
     }
 }

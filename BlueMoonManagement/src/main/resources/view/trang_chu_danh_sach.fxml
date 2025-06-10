@@ -684,7 +684,6 @@
                   </AnchorPane>
                   <HBox alignment="TOP_RIGHT" prefWidth="970.0" spacing="20.0">
                      <children>
-                        <TextField fx:id="textFieldMaHoaDon" prefWidth="195.0" promptText="Nhập mã hóa đơn" styleClass="text-field-normal" />
                         <TextField fx:id="textFieldTenKhoanThu1" prefWidth="210.0" promptText="Nhập tên khoản thu" styleClass="text-field-normal" />
                         <ComboBox fx:id="comboBoxLoaiKhoanThu1" layoutX="722.0" layoutY="10.0" prefWidth="187.0" promptText="Bắt buộc" style="-fx-background-color: transparent;" />
                         <DatePicker fx:id="datePickerNgayNop" promptText="Nhập ngày nộp" />
