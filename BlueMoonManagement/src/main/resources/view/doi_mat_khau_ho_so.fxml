@@ -20,9 +20,13 @@
    <children>
       <AnchorPane>
          <children>
-            <Button fx:id="button_close_up" layoutX="601.5999870300293" mnemonicParsing="false" styleClass="button-close" AnchorPane.rightAnchor="-10.0">
+            <Button fx:id="button_close_up" layoutX="601.5999870300293" mnemonicParsing="false" onAction="#handleClose" styleClass="button-close" AnchorPane.rightAnchor="-10.0">
                <graphic>
-                  <Group />
+                  <Group>
+                     <children>
+                        <FontAwesomeIcon fx:id="buttonClose" glyphName="CLOSE" size="25px" styleClass="button-icon-close" />
+                     </children>
+                  </Group>
                </graphic>
             </Button>
             <Label fx:id="labelTieuDe" layoutY="9.59999942779541" styleClass="popup-title" text="Đổi mật khẩu" />

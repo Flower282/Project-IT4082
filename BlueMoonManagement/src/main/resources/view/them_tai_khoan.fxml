@@ -19,11 +19,11 @@
    <children>
       <AnchorPane>
          <children>
-            <Button fx:id="button_close_up" disable="true" layoutX="601.5999870300293" mnemonicParsing="false" styleClass="button-close" AnchorPane.rightAnchor="-10.0">
+            <Button fx:id="button_close_up" layoutX="601.5999870300293" mnemonicParsing="false" onAction="#handleClose" styleClass="button-close" AnchorPane.rightAnchor="-10.0">
                <graphic>
                   <Group>
                      <children>
-                        <FontAwesomeIcon fx:id="buttonClose" glyphName="CLOSE" size="25px" styleClass="button-icon-close" visible="false" />
+                        <FontAwesomeIcon fx:id="buttonClose" glyphName="CLOSE" size="25px" styleClass="button-icon-close" />
                      </children>
                   </Group>
                </graphic>
