@@ -50,7 +50,8 @@ public class HoaDonServiceImpl implements HoaDonService {
     
 
     private List<CanHoHoaDonDto> getCanHoHoaDonDtoList() {
-        List<CanHo> canHoList = canHoRepository.findAll();
+        // Use eager fetching to avoid LazyInitializationException
+        List<CanHo> canHoList = canHoRepository.findAllWithPhuongTien();
         return canHoList.stream()
                 .map(canHoMapper::toCanHoHoaDonDto)
                 .collect(Collectors.toList());
@@ -58,77 +59,614 @@ public class HoaDonServiceImpl implements HoaDonService {
 
     @Override
     public ResponseDto generateHoaDon(KhoanThuDto khoanThuDto) {
-        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
-            return new ResponseDto(false, "Bạn không có quyền tạo hóa đơn. Chỉ Kế toán mới được phép.");
+        System.out.println("🎯 === STARTING generateHoaDon() ===");
+        System.out.println("📋 Fee details: " + khoanThuDto.getTenKhoanThu() + " (ID: " + khoanThuDto.getMaKhoanThu() + ")");
+        
+        // Check user permissions first
+        if (Session.getCurrentUser() == null || !Session.getCurrentUser().getVaiTro().equals("Kế toán")) {
+            System.out.println("❌ Permission denied: User is not accountant");
+            return new ResponseDto(false, "Bạn không có quyền tạo hóa đơn. Chỉ Kế toán mới được phép thực hiện thao tác này.");
         }
-        if(!khoanThuDto.isBatBuoc()) {
-            return new ResponseDto(false, "Đây là khoản thu tự nguyện");
+
+        // Validate fee exists and is in correct state
+        if (khoanThuDto == null || khoanThuDto.isTaoHoaDon()) {
+            System.out.println("❌ Fee validation failed: already has invoice or is null");
+            return new ResponseDto(false, "Khoản thu đã tạo hóa đơn hoặc không hợp lệ!");
         }
-        KhoanThu khoanThu = khoanThuRepository.findById(khoanThuDto.getMaKhoanThu()).orElse(null);
-        if(khoanThu.isTaoHoaDon()) {
-            return new ResponseDto(false, "Hóa đơn cho khoản thu này đã được tạo");
+        
+        // Early validation for field lengths to prevent database errors
+        if (khoanThuDto.getMaKhoanThu() != null && khoanThuDto.getMaKhoanThu().length() > 15) {
+            System.err.println("❌ Fee code too long: '" + khoanThuDto.getMaKhoanThu() + "' (" + 
+                             khoanThuDto.getMaKhoanThu().length() + " chars > 15 limit)");
+            return new ResponseDto(false, "Mã khoản thu quá dài (" + khoanThuDto.getMaKhoanThu().length() + 
+                                 " ký tự), vượt quá giới hạn 15 ký tự của database!");
         }
-        HoaDonDichVuDto hoaDonDichVuDto = new HoaDonDichVuDto();
-        List<HoaDonDichVuDto> hoaDonList = new ArrayList<>();
-        List<CanHoHoaDonDto> canHoList = getCanHoHoaDonDtoList();
-        for (CanHoHoaDonDto canHo : canHoList) {
-            hoaDonDichVuDto.setTenKhoanThu(khoanThuDto.getTenKhoanThu());
-            hoaDonDichVuDto.setMaCanHo(canHo.getMaCanHo());
+
+        System.out.println("✅ Permissions and validation passed");
+
+        try {
+            // Load fee entity
+            KhoanThu khoanThuEntity = khoanThuRepository.findById(khoanThuDto.getMaKhoanThu()).orElse(null);
+            if (khoanThuEntity == null) {
+                return new ResponseDto(false, "Không tìm thấy khoản thu trong hệ thống!");
+            }
+
+            // Load apartments with simple query
+            List<CanHo> danhSachCanHo;
+            try {
+                danhSachCanHo = canHoRepository.findAll();
+                System.out.println("📊 Loaded " + danhSachCanHo.size() + " apartments from database");
+            } catch (Exception e) {
+                System.err.println("❌ Failed to load apartments: " + e.getMessage());
+                return new ResponseDto(false, "Không thể tải danh sách căn hộ!");
+            }
+
+            // ===== BƯỚC LỌC NHANH BẰNG STREAM API =====
+            List<CanHo> eligibleApartments;
+            
+            if ("Phương tiện".equals(khoanThuDto.getDonViTinh())) {
+                System.out.println("🔍 Lọc căn hộ đủ điều kiện cho phí phương tiện...");
+                
+                // Lấy danh sách căn hộ có phương tiện
+                List<CanHo> apartmentsWithVehicles = canHoRepository.findAllWithPhuongTien();
+                System.out.println("📋 Found " + apartmentsWithVehicles.size() + " apartments with vehicle data");
+                
+                // Lọc căn hộ: ĐANG SỬ DỤNG + CÓ PHƯƠNG TIỆN
+                eligibleApartments = apartmentsWithVehicles.stream()
+                        .filter(canHo -> {
+                            // Điều kiện 1: Căn hộ đang sử dụng
+                            boolean isOccupied = "Đang sử dụng".equals(canHo.getTrangThaiSuDung());
+                            
+                            // Điều kiện 2: Có phương tiện
+                            boolean hasVehicles = canHo.getPhuongTienList() != null && 
+                                                !canHo.getPhuongTienList().isEmpty();
+                            
+                            if (isOccupied && hasVehicles) {
+                                System.out.println("   ✅ " + canHo.getMaCanHo() + " - Đang sử dụng + Có " + 
+                                                 canHo.getPhuongTienList().size() + " phương tiện");
+                                return true;
+                            } else {
+                                System.out.println("   ❌ " + canHo.getMaCanHo() + " - Bỏ qua (Sử dụng: " + 
+                                                 isOccupied + ", Có xe: " + hasVehicles + ")");
+                                return false;
+                            }
+                        })
+                        .collect(java.util.stream.Collectors.toList());
+                        
+                System.out.println("🎯 Kết quả lọc: " + eligibleApartments.size() + "/" + 
+                                 apartmentsWithVehicles.size() + " căn hộ đủ điều kiện");
+                
+            } else if ("Diện tích".equals(khoanThuDto.getDonViTinh()) && 
+                      "Căn hộ đang sử dụng".equals(khoanThuDto.getPhamVi())) {
+                System.out.println("🔍 Lọc căn hộ đang sử dụng cho phí diện tích...");
+                
+                // Lọc chỉ căn hộ đang sử dụng
+                eligibleApartments = danhSachCanHo.stream()
+                        .filter(canHo -> "Đang sử dụng".equals(canHo.getTrangThaiSuDung()))
+                        .collect(java.util.stream.Collectors.toList());
+                        
+                System.out.println("🎯 Kết quả lọc: " + eligibleApartments.size() + "/" + 
+                                 danhSachCanHo.size() + " căn hộ đang sử dụng");
+                                 
+            } else {
+                System.out.println("🔍 Sử dụng tất cả căn hộ (không cần lọc đặc biệt)");
+                eligibleApartments = danhSachCanHo;
+            }
+
+            int totalInvoicesCreated = 0;
+            int totalErrors = 0;
+
+            // Create invoices for filtered apartments only
+            System.out.println("🏭 Bắt đầu tạo hóa đơn cho " + eligibleApartments.size() + " căn hộ đã lọc...");
+            
+            for (CanHo canHo : eligibleApartments) {
+                try {
+                    // Validate apartment code length to prevent database errors
+                    if (canHo.getMaCanHo() != null && canHo.getMaCanHo().length() > 15) {
+                        System.err.println("❌ Skipping apartment " + canHo.getMaCanHo() + " - Code too long (" + 
+                                         canHo.getMaCanHo().length() + " chars > 15 limit)");
+                        totalErrors++;
+                        continue;
+                    }
+                    
+                    System.out.println("🏠 Processing apartment: " + canHo.getMaCanHo() + " (Length: " + 
+                                     (canHo.getMaCanHo() != null ? canHo.getMaCanHo().length() : "null") + " chars)");
+                    
+                    // Calculate amount - now simplified since we pre-filtered
+                    Integer soTien = calculateOptimizedInvoiceAmount(khoanThuDto, canHo);
+                    if (soTien == null || soTien <= 0) {
+                        System.out.println("⏭️ Skipping apartment " + canHo.getMaCanHo() + " (amount = " + soTien + ")");
+                        continue;
+                    }
+
+                    // Validate fee code length  
+                    if (khoanThuEntity.getMaKhoanThu() != null && khoanThuEntity.getMaKhoanThu().length() > 15) {
+                        System.err.println("❌ Skipping apartment " + canHo.getMaCanHo() + " - Fee code too long (" + 
+                                         khoanThuEntity.getMaKhoanThu().length() + " chars > 15 limit)");
+                        totalErrors++;
+                        continue;
+                    }
+
+                    // Create invoice entity
+                    HoaDon hoaDon = new HoaDon();
+                    // Don't set maHoaDon - let database auto-generate
+                    hoaDon.setKhoanThu(khoanThuEntity);
+                    hoaDon.setCanHo(canHo);
+                    hoaDon.setSoTien(soTien);
+                    hoaDon.setDaNop(false);
+
+                    System.out.println("💾 Saving invoice: Apartment=" + canHo.getMaCanHo() + 
+                                     ", Fee=" + khoanThuEntity.getMaKhoanThu() + 
+                                     ", Amount=" + String.format("%,d", soTien));
+
+                    // Save invoice
+                    HoaDon savedHoaDon = hoaDonRepository.save(hoaDon);
+                    System.out.println("✅ Created invoice " + savedHoaDon.getMaHoaDon() + " for apartment " + canHo.getMaCanHo() + " (Amount: " + String.format("%,d", soTien) + " VND)");
+                    totalInvoicesCreated++;
+
+                } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                    System.err.println("❌ Database constraint violation for apartment " + canHo.getMaCanHo() + ": " + e.getMessage());
+                    if (e.getMessage().contains("value too long")) {
+                        System.err.println("   💡 Suggestion: Check if apartment code '" + canHo.getMaCanHo() + 
+                                         "' (length: " + canHo.getMaCanHo().length() + ") exceeds database field limit");
+                    }
+                    totalErrors++;
+                } catch (Exception e) {
+                    System.err.println("❌ Error creating invoice for apartment " + canHo.getMaCanHo() + ": " + e.getMessage());
+                    totalErrors++;
+                }
+            }
+
+            // Update fee status if any invoices were created
+            if (totalInvoicesCreated > 0) {
+                try {
+                    khoanThuEntity.setTaoHoaDon(true);
+                    khoanThuRepository.save(khoanThuEntity);
+                    System.out.println("✅ Updated fee status to 'invoice created'");
+                } catch (Exception e) {
+                    System.err.println("❌ Failed to update fee status: " + e.getMessage());
+                }
+            }
+
+            System.out.println("🎯 === INVOICE GENERATION COMPLETED ===");
+            System.out.println("📈 Total invoices created: " + totalInvoicesCreated);
+            System.out.println("❌ Total errors: " + totalErrors);
+
+            if (totalInvoicesCreated > 0) {
+                return new ResponseDto(true, 
+                    "✅ Tạo hóa đơn thành công!\n\n" +
+                    "📊 Thống kê:\n" +
+                    "• Khoản thu: " + khoanThuDto.getTenKhoanThu() + "\n" +
+                    "• Số hóa đơn tạo: " + totalInvoicesCreated + "\n" +
+                    "• Số lỗi: " + totalErrors + "\n\n" +
+                    "🎯 Trạng thái khoản thu đã được cập nhật thành 'Đã tạo'\n" +
+                    "📋 Hóa đơn đã được lưu vào database và sẽ hiển thị trong bảng 'Lịch sử thu'\n\n" +
+                    "💡 Vui lòng kiểm tra tab 'Lịch sử thu' để xem danh sách hóa đơn mới được tạo!");
+            } else {
+                return new ResponseDto(false, "Không tạo được hóa đơn nào. Vui lòng kiểm tra dữ liệu!");
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ MAJOR ERROR in generateHoaDon: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseDto(false, "Lỗi hệ thống khi tạo hóa đơn: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Optimized invoice amount calculation for pre-filtered apartments
+     */
+    private Integer calculateOptimizedInvoiceAmount(KhoanThuDto khoanThuDto, CanHo canHo) {
+        try {
             String donViTinh = khoanThuDto.getDonViTinh();
+            System.out.println("💰 Tính phí tối ưu cho căn hộ " + canHo.getMaCanHo() + " (Đơn vị: " + donViTinh + ")");
+            
             switch (donViTinh) {
                 case "Diện tích":
-                    if(khoanThuDto.getPhamVi().equals("Tất cả")) {
-                        int soTien = (int)Math.ceil(khoanThuDto.getSoTien() * canHo.getDienTich());
-                        hoaDonDichVuDto.setSoTien(soTien);
-                    } else if(khoanThuDto.getPhamVi().equals("Căn hộ đang sử dụng")) {
-                        if(canHo.getTrangThaiSuDung().equals("Đang sử dụng")) {
-                            int soTien = (int)Math.ceil(khoanThuDto.getSoTien() * canHo.getDienTich());
-                            hoaDonDichVuDto.setSoTien(soTien);
-                        }else{
-                            continue;
+                    // Tính phí theo diện tích - đã lọc trước nên không cần kiểm tra điều kiện
+                    int areaFee = (int) Math.ceil(khoanThuDto.getSoTien() * canHo.getDienTich());
+                    System.out.println("   📐 Phí diện tích: " + String.format("%,d", khoanThuDto.getSoTien()) + 
+                                     " x " + canHo.getDienTich() + "m² = " + String.format("%,d", areaFee) + " VND");
+                    return areaFee;
+                    
+                case "Phương tiện":
+                    // Tính phí phương tiện - đã lọc trước nên chắc chắn có xe
+                    return calculateVehicleFeeOptimized(khoanThuDto, canHo);
+                    
+                default:
+                    // Các loại phí khác
+                    int baseFee = khoanThuDto.getSoTien();
+                    System.out.println("   💰 Phí cơ bản: " + String.format("%,d", baseFee) + " VND");
+                    return baseFee;
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi tính phí tối ưu cho căn hộ " + canHo.getMaCanHo() + ": " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Optimized vehicle fee calculation - assumes apartment already has vehicles
+     */
+    private Integer calculateVehicleFeeOptimized(KhoanThuDto khoanThuDto, CanHo canHo) {
+        try {
+            System.out.println("   🚗 Tính phí phương tiện tối ưu cho căn hộ: " + canHo.getMaCanHo());
+            
+            // Căn hộ đã được lọc trước, chắc chắn có phương tiện
+            List<io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien> phuongTienList = canHo.getPhuongTienList();
+            
+            // Đếm nhanh từng loại xe bằng Stream API
+            long countXeDap = phuongTienList.stream()
+                    .filter(pt -> "Xe đạp".equals(pt.getLoaiPhuongTien()))
+                    .count();
+            
+            long countXeMay = phuongTienList.stream()
+                    .filter(pt -> "Xe máy".equals(pt.getLoaiPhuongTien()))
+                    .count();
+            
+            long countOto = phuongTienList.stream()
+                    .filter(pt -> "Ô tô".equals(pt.getLoaiPhuongTien()))
+                    .count();
+            
+            System.out.println("   📊 Phương tiện: Xe đạp=" + countXeDap + ", Xe máy=" + countXeMay + ", Ô tô=" + countOto);
+            
+            // Tính phí nhanh bằng Stream API
+            int totalVehicleFee = 0;
+            
+            if (khoanThuDto.getPhiGuiXeList() != null) {
+                // Map loại xe -> phí, tính tổng
+                totalVehicleFee = khoanThuDto.getPhiGuiXeList().stream()
+                        .mapToInt(phi -> {
+                            String loaiXe = phi.getLoaiXe();
+                            int soLuong = 0;
+                            
+                            switch (loaiXe) {
+                                case "Xe đạp": soLuong = (int) countXeDap; break;
+                                case "Xe máy": soLuong = (int) countXeMay; break;
+                                case "Ô tô": soLuong = (int) countOto; break;
+                            }
+                            
+                            int phiLoaiXe = soLuong * phi.getSoTien();
+                            if (soLuong > 0) {
+                                System.out.println("     • " + loaiXe + ": " + soLuong + " x " + 
+                                                 String.format("%,d", phi.getSoTien()) + " = " + 
+                                                 String.format("%,d", phiLoaiXe) + " VND");
+                            }
+                            return phiLoaiXe;
+                        })
+                        .sum();
+                        
+                System.out.println("   🎯 TỔNG PHÍ PHƯƠNG TIỆN: " + String.format("%,d", totalVehicleFee) + " VND");
+            } else {
+                totalVehicleFee = khoanThuDto.getSoTien();
+                System.out.println("   ⚠️ Không có bảng giá -> Dùng phí cơ bản: " + String.format("%,d", totalVehicleFee) + " VND");
+            }
+            
+            return totalVehicleFee;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi tính phí phương tiện tối ưu: " + e.getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Simple invoice amount calculation to avoid complex logic that might cause exceptions
+     */
+    private Integer calculateSimpleInvoiceAmount(KhoanThuDto khoanThuDto, CanHo canHo) {
+        try {
+            String donViTinh = khoanThuDto.getDonViTinh();
+            System.out.println("💰 Calculating fee for apartment " + canHo.getMaCanHo() + " with unit: " + donViTinh);
+            
+            switch (donViTinh) {
+                case "Diện tích":
+                    // Tính phí theo diện tích
+                    if (khoanThuDto.getPhamVi().equals("Căn hộ đang sử dụng") && 
+                        !canHo.getTrangThaiSuDung().equals("Đang sử dụng")) {
+                        System.out.println("   ⏭️ Bỏ qua căn hộ không sử dụng: " + canHo.getMaCanHo());
+                        return 0;
+                    }
+                    int areaFee = (int) Math.ceil(khoanThuDto.getSoTien() * canHo.getDienTich());
+                    System.out.println("   📐 Phí theo diện tích: " + khoanThuDto.getSoTien() + " x " + canHo.getDienTich() + "m² = " + areaFee + " VND");
+                    return areaFee;
+                    
+                case "Phương tiện":
+                    // Tính phí theo phương tiện thực tế
+                    return calculateVehicleFeeFromDatabase(khoanThuDto, canHo);
+                    
+                default:
+                    // Các loại phí khác dùng số tiền cơ bản
+                    int baseFee = khoanThuDto.getSoTien();
+                    System.out.println("   💰 Phí cơ bản: " + baseFee + " VND");
+                    return baseFee;
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi tính toán phí cho căn hộ " + canHo.getMaCanHo() + ": " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Tính phí phương tiện dựa trên dữ liệu thực tế từ database
+     */
+    private Integer calculateVehicleFeeFromDatabase(KhoanThuDto khoanThuDto, CanHo canHo) {
+        try {
+            System.out.println("   🚗 Kiểm tra điều kiện phí phương tiện cho căn hộ: " + canHo.getMaCanHo());
+            
+            // ĐIỀU KIỆN 1: Căn hộ phải đang có người ở
+            if (!"Đang sử dụng".equals(canHo.getTrangThaiSuDung())) {
+                System.out.println("   ❌ Căn hộ " + canHo.getMaCanHo() + " không đang sử dụng (Trạng thái: " + canHo.getTrangThaiSuDung() + ") -> Bỏ qua");
+                return 0;
+            }
+            
+            // ĐIỀU KIỆN 2: Lấy danh sách phương tiện từ database
+            CanHo apartmentWithVehicles = canHoRepository.findAllWithPhuongTien().stream()
+                    .filter(c -> c.getMaCanHo().equals(canHo.getMaCanHo()))
+                    .findFirst()
+                    .orElse(canHo);
+            
+            List<io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien> phuongTienList = 
+                apartmentWithVehicles.getPhuongTienList();
+            
+            if (phuongTienList == null || phuongTienList.isEmpty()) {
+                System.out.println("   ❌ Căn hộ " + canHo.getMaCanHo() + " không có phương tiện nào -> Bỏ qua (Phí = 0)");
+                return 0;
+            }
+            
+            System.out.println("   ✅ Căn hộ " + canHo.getMaCanHo() + " đủ điều kiện:");
+            System.out.println("     • Trạng thái: " + canHo.getTrangThaiSuDung());
+            System.out.println("     • Số phương tiện: " + phuongTienList.size() + " chiếc");
+            
+            // Đếm từng loại xe
+            long countXeDap = phuongTienList.stream()
+                    .filter(pt -> "Xe đạp".equals(pt.getLoaiPhuongTien()))
+                    .count();
+            
+            long countXeMay = phuongTienList.stream()
+                    .filter(pt -> "Xe máy".equals(pt.getLoaiPhuongTien()))
+                    .count();
+            
+            long countOto = phuongTienList.stream()
+                    .filter(pt -> "Ô tô".equals(pt.getLoaiPhuongTien()))
+                    .count();
+            
+            System.out.println("   📊 Chi tiết phương tiện:");
+            System.out.println("     • Xe đạp: " + countXeDap + " chiếc");
+            System.out.println("     • Xe máy: " + countXeMay + " chiếc"); 
+            System.out.println("     • Ô tô: " + countOto + " chiếc");
+            
+            // Kiểm tra có ít nhất 1 phương tiện
+            if (countXeDap == 0 && countXeMay == 0 && countOto == 0) {
+                System.out.println("   ❌ Không có phương tiện hợp lệ -> Bỏ qua (Phí = 0)");
+                return 0;
+            }
+            
+            // Lấy bảng giá từ khoản thu và tính phí
+            int totalVehicleFee = 0;
+            
+            if (khoanThuDto.getPhiGuiXeList() != null && !khoanThuDto.getPhiGuiXeList().isEmpty()) {
+                // Tính phí xe đạp
+                int phiXeDap = khoanThuDto.getPhiGuiXeList().stream()
+                        .filter(phi -> "Xe đạp".equals(phi.getLoaiXe()))
+                        .findFirst()
+                        .map(phi -> phi.getSoTien())
+                        .orElse(0);
+                int tienXeDap = (int)(countXeDap * phiXeDap);
+                
+                // Tính phí xe máy
+                int phiXeMay = khoanThuDto.getPhiGuiXeList().stream()
+                        .filter(phi -> "Xe máy".equals(phi.getLoaiXe()))
+                        .findFirst()
+                        .map(phi -> phi.getSoTien())
+                        .orElse(0);
+                int tienXeMay = (int)(countXeMay * phiXeMay);
+                
+                // Tính phí ô tô
+                int phiOto = khoanThuDto.getPhiGuiXeList().stream()
+                        .filter(phi -> "Ô tô".equals(phi.getLoaiXe()))
+                        .findFirst()
+                        .map(phi -> phi.getSoTien())
+                        .orElse(0);
+                int tienOto = (int)(countOto * phiOto);
+                
+                // Tổng phí
+                totalVehicleFee = tienXeDap + tienXeMay + tienOto;
+                
+                System.out.println("   💰 Chi tiết tính phí:");
+                System.out.println("     • Xe đạp: " + countXeDap + " x " + String.format("%,d", phiXeDap) + " = " + String.format("%,d", tienXeDap) + " VND");
+                System.out.println("     • Xe máy: " + countXeMay + " x " + String.format("%,d", phiXeMay) + " = " + String.format("%,d", tienXeMay) + " VND");
+                System.out.println("     • Ô tô: " + countOto + " x " + String.format("%,d", phiOto) + " = " + String.format("%,d", tienOto) + " VND");
+                System.out.println("     • 🎯 TỔNG PHÍ: " + String.format("%,d", totalVehicleFee) + " VND");
+                
+            } else {
+                System.out.println("   ⚠️ Không tìm thấy bảng giá phương tiện -> Sử dụng phí cơ bản");
+                totalVehicleFee = khoanThuDto.getSoTien();
+            }
+            
+            return totalVehicleFee;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi tính phí phương tiện cho căn hộ " + canHo.getMaCanHo() + ": " + e.getMessage());
+            e.printStackTrace();
+            
+            // Fallback: Trả về 0 nếu có lỗi để bỏ qua căn hộ này
+            System.out.println("   🔄 Fallback: Bỏ qua căn hộ do lỗi (Phí = 0)");
+            return 0;
+        }
+    }
+    
+    /**
+     * Calculate invoice amount based on fee type and apartment details
+     */
+    private Integer calculateInvoiceAmount(KhoanThuDto khoanThuDto, CanHo canHo) {
+        try {
+            String donViTinh = khoanThuDto.getDonViTinh();
+            System.out.println("💰 Calculating fee with unit: " + donViTinh + ", scope: " + khoanThuDto.getPhamVi());
+            
+            switch (donViTinh) {
+                case "Diện tích":
+                    if (khoanThuDto.getPhamVi().equals("Tất cả")) {
+                        int soTien = (int) Math.ceil(khoanThuDto.getSoTien() * canHo.getDienTich());
+                        System.out.println("   📐 Area-based calculation (All): " + khoanThuDto.getSoTien() + " x " + canHo.getDienTich() + " = " + soTien);
+                        return soTien;
+                    } else if (khoanThuDto.getPhamVi().equals("Căn hộ đang sử dụng")) {
+                        if (canHo.getTrangThaiSuDung().equals("Đang sử dụng")) {
+                            int soTien = (int) Math.ceil(khoanThuDto.getSoTien() * canHo.getDienTich());
+                            System.out.println("   📐 Area-based calculation (In-use): " + khoanThuDto.getSoTien() + " x " + canHo.getDienTich() + " = " + soTien);
+                            return soTien;
+                        } else {
+                            System.out.println("   ⏭️ Skipping apartment " + canHo.getMaCanHo() + " (not in use: " + canHo.getTrangThaiSuDung() + ")");
+                            return 0;
                         }
                     }
                     break;
+                    
                 case "Phương tiện":
-                    int countXeDap = (int)canHo.getPhuongTienList().stream()
-                                        .filter(phuongTien -> phuongTien.getLoaiPhuongTien().equals("Xe đạp"))
-                                        .count();
-                    int soTienXeDap = khoanThuDto.getPhiGuiXeList().stream()
-                                        .filter(phiGuiXe -> phiGuiXe.getLoaiXe().equals("Xe đạp"))
-                                        .findFirst()
-                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
-                                        .orElse(0); 
-                    int tienGuiXeDap = countXeDap * soTienXeDap;
-
-                    int countXeMay = (int)canHo.getPhuongTienList().stream()
-                                        .filter(phuongTien -> phuongTien.getLoaiPhuongTien().equals("Xe máy"))
-                                        .count();
-                    int soTienXeMay = khoanThuDto.getPhiGuiXeList().stream()
-                                        .filter(phiGuiXe -> phiGuiXe.getLoaiXe().equals("Xe máy"))
-                                        .findFirst()
-                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
-                                        .orElse(0);
-                    int tienGuiXeMay = countXeMay * soTienXeMay;
-
-                    int countOto = (int)canHo.getPhuongTienList().stream()
-                                        .filter(phuongTien -> phuongTien.getLoaiPhuongTien().equals("Ô tô"))
-                                        .count();
-                    int soTienOto = khoanThuDto.getPhiGuiXeList().stream()
-                                        .filter(phiGuiXe -> phiGuiXe.getLoaiXe().equals("Ô tô"))
-                                        .findFirst()
-                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
-                                        .orElse(0);
-                    int tienGuiOto = countOto * soTienOto;
-                    hoaDonDichVuDto.setSoTien(tienGuiXeDap + tienGuiXeMay + tienGuiOto);
-                    break;
+                    try {
+                        // Load vehicles for this apartment with explicit handling
+                        List<io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien> phuongTienList = canHo.getPhuongTienList();
+                        if (phuongTienList == null) {
+                            System.out.println("   🚗 No vehicles found for apartment " + canHo.getMaCanHo() + " (list is null)");
+                            return 0;
+                        }
+                        
+                        System.out.println("   🚗 Found " + phuongTienList.size() + " vehicles for apartment " + canHo.getMaCanHo());
+                        
+                        // Calculate fees for each vehicle type
+                        int totalVehicleFee = 0;
+                        
+                        // Count and calculate for Xe đạp
+                        int countXeDap = (int) phuongTienList.stream()
+                                .filter(phuongTien -> "Xe đạp".equals(phuongTien.getLoaiPhuongTien()))
+                                .count();
+                        int soTienXeDap = khoanThuDto.getPhiGuiXeList() != null ? 
+                                khoanThuDto.getPhiGuiXeList().stream()
+                                    .filter(phiGuiXe -> "Xe đạp".equals(phiGuiXe.getLoaiXe()))
+                                    .findFirst()
+                                    .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                    .orElse(0) : 0;
+                        int tienGuiXeDap = countXeDap * soTienXeDap;
+                        
+                        // Count and calculate for Xe máy  
+                        int countXeMay = (int) phuongTienList.stream()
+                                .filter(phuongTien -> "Xe máy".equals(phuongTien.getLoaiPhuongTien()))
+                                .count();
+                        int soTienXeMay = khoanThuDto.getPhiGuiXeList() != null ?
+                                khoanThuDto.getPhiGuiXeList().stream()
+                                    .filter(phiGuiXe -> "Xe máy".equals(phiGuiXe.getLoaiXe()))
+                                    .findFirst()
+                                    .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                    .orElse(0) : 0;
+                        int tienGuiXeMay = countXeMay * soTienXeMay;
+                        
+                        // Count and calculate for Ô tô
+                        int countOto = (int) phuongTienList.stream()
+                                .filter(phuongTien -> "Ô tô".equals(phuongTien.getLoaiPhuongTien()))
+                                .count();
+                        int soTienOto = khoanThuDto.getPhiGuiXeList() != null ?
+                                khoanThuDto.getPhiGuiXeList().stream()
+                                    .filter(phiGuiXe -> "Ô tô".equals(phiGuiXe.getLoaiXe()))
+                                    .findFirst()
+                                    .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                    .orElse(0) : 0;
+                        int tienGuiOto = countOto * soTienOto;
+                        
+                        totalVehicleFee = tienGuiXeDap + tienGuiXeMay + tienGuiOto;
+                        
+                        System.out.println("   🚗 Vehicle calculation details:");
+                        System.out.println("     - Xe đạp: " + countXeDap + " x " + soTienXeDap + " = " + tienGuiXeDap);
+                        System.out.println("     - Xe máy: " + countXeMay + " x " + soTienXeMay + " = " + tienGuiXeMay);
+                        System.out.println("     - Ô tô: " + countOto + " x " + soTienOto + " = " + tienGuiOto);
+                        System.out.println("     - Total: " + totalVehicleFee);
+                        
+                        return totalVehicleFee;
+                        
+                    } catch (org.hibernate.LazyInitializationException e) {
+                        System.err.println("   ❌ LazyInitializationException when accessing vehicles for " + canHo.getMaCanHo() + ": " + e.getMessage());
+                        // Fallback: try to get vehicles through repository
+                        try {
+                            CanHo reloadedCanHo = canHoRepository.findAllWithPhuongTien().stream()
+                                    .filter(c -> c.getMaCanHo().equals(canHo.getMaCanHo()))
+                                    .findFirst()
+                                    .orElse(null);
+                            if (reloadedCanHo != null && reloadedCanHo.getPhuongTienList() != null) {
+                                System.out.println("   🔄 Reloaded apartment with vehicles, trying calculation again...");
+                                return calculateVehicleFeeFromList(khoanThuDto, reloadedCanHo.getPhuongTienList());
+                            }
+                        } catch (Exception ex) {
+                            System.err.println("   ❌ Failed to reload apartment with vehicles: " + ex.getMessage());
+                        }
+                        
+                        // Final fallback - return base amount if vehicle calculation fails
+                        System.out.println("   ⚠️ Using base vehicle fee due to loading issues: " + khoanThuDto.getSoTien());
+                        return khoanThuDto.getSoTien();
+                    }
+                    
                 default:
-                    return new ResponseDto(false, "Đơn vị tính không hợp lệ");
+                    System.out.println("   ⚠️ Unknown fee unit: " + donViTinh + ", using base amount");
+                    return khoanThuDto.getSoTien();
             }
-            hoaDonList.add(hoaDonDichVuDto);
+            
+            return khoanThuDto.getSoTien(); // Default fallback
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error calculating invoice amount for apartment " + canHo.getMaCanHo() + ": " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
-        khoanThu.setTaoHoaDon(true);
-        khoanThuRepository.save(khoanThu);
-        return new ResponseDto(true, "Hóa đơn đã được thêm thành công");
+    }
+    
+    /**
+     * Helper method to calculate vehicle fees from a given vehicle list
+     */
+    private Integer calculateVehicleFeeFromList(KhoanThuDto khoanThuDto, List<io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien> phuongTienList) {
+        try {
+            if (phuongTienList == null || phuongTienList.isEmpty()) {
+                return 0;
+            }
+            
+            int totalVehicleFee = 0;
+            
+            // Count and calculate for each vehicle type
+            int countXeDap = (int) phuongTienList.stream()
+                    .filter(phuongTien -> "Xe đạp".equals(phuongTien.getLoaiPhuongTien()))
+                    .count();
+            int soTienXeDap = khoanThuDto.getPhiGuiXeList() != null ? 
+                    khoanThuDto.getPhiGuiXeList().stream()
+                        .filter(phiGuiXe -> "Xe đạp".equals(phiGuiXe.getLoaiXe()))
+                        .findFirst()
+                        .map(phiGuiXe -> phiGuiXe.getSoTien())
+                        .orElse(0) : 0;
+            
+            int countXeMay = (int) phuongTienList.stream()
+                    .filter(phuongTien -> "Xe máy".equals(phuongTien.getLoaiPhuongTien()))
+                    .count();
+            int soTienXeMay = khoanThuDto.getPhiGuiXeList() != null ?
+                    khoanThuDto.getPhiGuiXeList().stream()
+                        .filter(phiGuiXe -> "Xe máy".equals(phiGuiXe.getLoaiXe()))
+                        .findFirst()
+                        .map(phiGuiXe -> phiGuiXe.getSoTien())
+                        .orElse(0) : 0;
+            
+            int countOto = (int) phuongTienList.stream()
+                    .filter(phuongTien -> "Ô tô".equals(phuongTien.getLoaiPhuongTien()))
+                    .count();
+            int soTienOto = khoanThuDto.getPhiGuiXeList() != null ?
+                    khoanThuDto.getPhiGuiXeList().stream()
+                        .filter(phiGuiXe -> "Ô tô".equals(phiGuiXe.getLoaiXe()))
+                        .findFirst()
+                        .map(phiGuiXe -> phiGuiXe.getSoTien())
+                        .orElse(0) : 0;
+            
+            totalVehicleFee = (countXeDap * soTienXeDap) + (countXeMay * soTienXeMay) + (countOto * soTienOto);
+            
+            System.out.println("   🚗 Vehicle fee calculation from list: " + totalVehicleFee);
+            return totalVehicleFee;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error in calculateVehicleFeeFromList: " + e.getMessage());
+            return 0;
+        }
     }
     
     @Override

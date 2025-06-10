@@ -38,6 +38,9 @@ public class ThemKhoanThuController {
     private Button buttonLuu;
 
     @FXML
+    private Button buttonTaoHoaDon;
+
+    @FXML
     private Button button_close_up;
 
 
@@ -108,6 +111,9 @@ public class ThemKhoanThuController {
     
     @Autowired
     private org.springframework.context.ApplicationContext applicationContext;
+    
+    @Autowired
+    private io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService hoaDonService;
 
     // Fields for edit mode
     private boolean isEditMode = false;
@@ -160,6 +166,11 @@ public class ThemKhoanThuController {
         // Setup close button
         if (button_close_up != null) {
             button_close_up.setOnAction(this::handleClose);
+        }
+        
+        // Ẩn nút "Tạo hóa đơn" ban đầu (chỉ hiện trong chế độ edit)
+        if (buttonTaoHoaDon != null) {
+            buttonTaoHoaDon.setVisible(false);
         }
     }
     @FXML
@@ -256,21 +267,11 @@ public class ThemKhoanThuController {
     private void onBoPhanQuanLyChanged(ActionEvent event) {
         System.out.println("DEBUG: onBoPhanQuanLyChanged - Selected: " + comboBoxBoPhanQuanLy.getValue());
         
-        // Kiểm tra nếu "Bên thứ 3" được chọn
+                 // Kiểm tra nếu "Bên thứ 3" được chọn
         if ("Bên thứ 3".equals(comboBoxBoPhanQuanLy.getValue())) {
             System.out.println("DEBUG: Switching to 3rd party mode - disabling Ban quản lý controls");
             
-            // Hiển thị phần tên cơ quan
-            if (vBoxTenCoQuan != null) {
-                vBoxTenCoQuan.setVisible(true);
-                vBoxTenCoQuan.setDisable(false);
-                System.out.println("DEBUG: vBoxTenCoQuan enabled and visible");
-            }
-            // Enable trường nhập tên cơ quan
-            if (textFieldTenCoQuan != null) {
-                textFieldTenCoQuan.setDisable(false);
-                System.out.println("DEBUG: textFieldTenCoQuan enabled");
-            }
+            // Bỏ phần hiển thị tên cơ quan - không cần nữa
             
             // Ẩn và disable phần đơn vị tính và đơn giá (các nút của Ban quản lý)
             if (vBoxDonViTinhVaDonGia != null) {
@@ -289,18 +290,7 @@ public class ThemKhoanThuController {
         } else {
             System.out.println("DEBUG: Switching to Ban quản lý mode - enabling controls");
             
-            // Ẩn phần tên cơ quan
-            if (vBoxTenCoQuan != null) {
-                vBoxTenCoQuan.setVisible(false);
-                vBoxTenCoQuan.setDisable(true);
-                System.out.println("DEBUG: vBoxTenCoQuan hidden and disabled");
-            }
-            // Disable và clear trường nhập tên cơ quan
-            if (textFieldTenCoQuan != null) {
-                textFieldTenCoQuan.setDisable(true);
-                textFieldTenCoQuan.clear();
-                System.out.println("DEBUG: textFieldTenCoQuan cleared and disabled");
-            }
+            // Bỏ phần xử lý tên cơ quan - không cần nữa
             
             // Hiển thị và enable lại phần đơn vị tính và đơn giá
             if (vBoxDonViTinhVaDonGia != null) {
@@ -392,12 +382,8 @@ public class ThemKhoanThuController {
         khoanThuDto.setPhamVi(phamVi);
         khoanThuDto.setNgayTao(java.time.LocalDate.parse(ngayTao));
         khoanThuDto.setThoiHan(java.time.LocalDate.parse(thoiHanNop));
-        // Sử dụng tên cơ quan nếu có, nếu không thì dùng bộ phận quản lý
-        String ghiChu = boPhanQuanLy;
-        if ("Bên thứ 3".equals(boPhanQuanLy) && textFieldTenCoQuan != null && !textFieldTenCoQuan.getText().isEmpty()) {
-            ghiChu = textFieldTenCoQuan.getText();
-        }
-        khoanThuDto.setGhiChu(ghiChu);
+        // Chỉ sử dụng tên bộ phận quản lý (bỏ tên cơ quan)
+        khoanThuDto.setGhiChu(boPhanQuanLy);
 
         // Nếu đơn vị tính là "Phương tiện", tạo PhiGuiXeDto từ các text field
         if ("Phương tiện".equals(donViTinh)) {
@@ -585,15 +571,9 @@ public class ThemKhoanThuController {
             return true;
         }
 
-        // Nếu chọn "Bên thứ 3" thì chỉ cần kiểm tra tên cơ quan
+        // Nếu chọn "Bên thứ 3" thì không cần kiểm tra gì thêm (bỏ tên cơ quan)
         if ("Bên thứ 3".equals(comboBoxBoPhanQuanLy.getValue())) {
-            System.out.println("DEBUG: Validating for 'Bên thứ 3' mode");
-            String tenCoQuan = textFieldTenCoQuan.getText();
-            System.out.println("DEBUG: TenCoQuan: '" + tenCoQuan + "' (empty? " + tenCoQuan.isEmpty() + ", length: " + tenCoQuan.length() + ")");
-            if (tenCoQuan.isEmpty()) {
-                System.out.println("❌ MISSING: Tên cơ quan (required for Bên thứ 3)");
-                return true;
-            }
+            System.out.println("DEBUG: Validating for 'Bên thứ 3' mode - no additional validation needed");
             System.out.println("✅ All fields valid for 'Bên thứ 3' mode");
             return false;
         }
@@ -884,6 +864,19 @@ public class ThemKhoanThuController {
         isEditMode = true;
         originalMaKhoanThu = khoanThuData.getMaKhoanThu();
         
+        // Load currentKhoanThu từ service để có đầy đủ thông tin
+        if (khoanThuService != null) {
+            try {
+                List<KhoanThuDto> khoanThuList = khoanThuService.getAllKhoanThu();
+                currentKhoanThu = khoanThuList.stream()
+                    .filter(kt -> kt.getMaKhoanThu().equals(khoanThuData.getMaKhoanThu()))
+                    .findFirst()
+                    .orElse(null);
+            } catch (Exception e) {
+                System.err.println("Error loading KhoanThu data for edit mode: " + e.getMessage());
+            }
+        }
+        
         // Chuyển đổi UI để hiển thị chế độ chỉnh sửa
         if (labelTieuDe != null) {
             labelTieuDe.setText("Chi tiết khoản thu");
@@ -900,6 +893,13 @@ public class ThemKhoanThuController {
         }
         if (buttonLuu != null) {
             buttonLuu.setVisible(false);
+        }
+        
+        // Hiển thị nút "Tạo hóa đơn" nếu user có quyền Kế toán
+        if (buttonTaoHoaDon != null) {
+            boolean hasPermission = hasHoaDonPermission();
+            buttonTaoHoaDon.setVisible(hasPermission);
+            System.out.println("DEBUG: buttonTaoHoaDon visible = " + hasPermission + " (user has invoice permission)");
         }
         
         // Điền dữ liệu vào form
@@ -1568,6 +1568,308 @@ public class ThemKhoanThuController {
             return Integer.parseInt(text.trim());
         } catch (NumberFormatException e) {
             return 0;
+        }
+    }
+
+    /**
+     * Xử lý sự kiện click nút "Tạo hóa đơn"
+     */
+    @FXML
+    private void handleTaoHoaDon(ActionEvent event) {
+        try {
+            // Kiểm tra quyền (chỉ Kế toán mới được tạo hóa đơn)
+            if (!hasHoaDonPermission()) {
+                showErrorDialog("Lỗi quyền truy cập", 
+                    "Bạn không có quyền tạo hóa đơn.\n" +
+                    "Chỉ người dùng có vai trò 'Kế toán' mới được phép thực hiện thao tác này.");
+                return;
+            }
+
+            // Kiểm tra xem có phải chế độ edit không
+            if (!isEditMode || currentKhoanThu == null) {
+                showErrorDialog("Lỗi", "Chỉ có thể tạo hóa đơn từ khoản thu đã tồn tại.");
+                return;
+            }
+
+            // Hiển thị dialog xác nhận
+            if (showTaoHoaDonConfirmDialog()) {
+                // Tạo hóa đơn từ khoản thu hiện tại
+                try {
+                    if (hoaDonService != null) {
+                        System.out.println("🧾 Đang tạo hóa đơn cho khoản thu: " + currentKhoanThu.getTenKhoanThu());
+                        
+                        // Kiểm tra trạng thái tạo hóa đơn trước khi gọi service
+                        if (currentKhoanThu.isTaoHoaDon()) {
+                            showErrorDialog("❌ Không thể tạo hóa đơn", 
+                                "Hóa đơn cho khoản thu '" + currentKhoanThu.getTenKhoanThu() + "' đã được tạo trước đó.\n\n" +
+                                "💡 Lưu ý: Mỗi khoản thu chỉ có thể tạo hóa đơn một lần để tránh trùng lặp.\n\n" +
+                                "🔍 Bạn có thể kiểm tra trạng thái 'Đã tạo' trong cột 'Trạng thái hóa đơn' \n" +
+                                "của bảng khoản thu hoặc xem danh sách hóa đơn trong trang 'Lịch sử thu'.");
+                            return;
+                        }
+                        
+                        // Gọi service để tạo hóa đơn (chỉ cho khoản thu chưa tạo)
+                        io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                            hoaDonService.generateHoaDon(currentKhoanThu);
+                        
+                        if (response.isSuccess()) {
+                            // Tạo hóa đơn thành công
+                            showSuccessDialog("Tạo hóa đơn thành công! 🎉", 
+                                "✅ Đã tạo hóa đơn thành công cho khoản thu: " + currentKhoanThu.getTenKhoanThu() + "\n\n" +
+                                "📋 Chi tiết:\n" +
+                                "• Mã khoản thu: " + currentKhoanThu.getMaKhoanThu() + "\n" +
+                                "• Loại: " + (currentKhoanThu.isBatBuoc() ? "Bắt buộc" : "Tự nguyện") + "\n" +
+                                "• Đơn vị tính: " + currentKhoanThu.getDonViTinh() + "\n" +
+                                "• Phạm vi: " + currentKhoanThu.getPhamVi() + "\n\n" +
+                                "🏠 Hóa đơn đã được tạo cho tất cả căn hộ phù hợp.\n" +
+                                "🔄 Trạng thái khoản thu đã được cập nhật thành 'Đã tạo'.\n\n" +
+                                "💡 Kiểm tra trang 'Lịch sử thu' để xem danh sách hóa đơn mới được tạo.");
+                            
+                            System.out.println("✅ Tạo hóa đơn thành công!");
+                            
+                            // Đóng form hiện tại
+                            javafx.stage.Stage currentStage = (javafx.stage.Stage) buttonTaoHoaDon.getScene().getWindow();
+                            currentStage.close();
+                            
+                            // Refresh invoice data in Home_list và chuyển sang tab Lịch sử thu
+                            refreshInvoiceDataAndGoToHistoryTab();
+                            
+                            // Refresh fee data to update invoice status in fee table
+                            refreshKhoanThuTableAndGoToTab();
+                        } else {
+                            // Tạo hóa đơn thất bại
+                            String errorMessage = response.getMessage();
+                            System.err.println("❌ Tạo hóa đơn thất bại: " + errorMessage);
+                            
+                            showErrorDialog("Không thể tạo hóa đơn", 
+                                "Tạo hóa đơn thất bại:\n\n" + errorMessage + "\n\n" +
+                                "Các lý do có thể:\n" +
+                                "• Hóa đơn đã được tạo trước đó\n" +
+                                "• Đây là khoản thu tự nguyện\n" +
+                                "• Không đủ quyền hạn");
+                        }
+                    } else {
+                        showErrorDialog("Lỗi hệ thống", 
+                            "Dịch vụ tạo hóa đơn không khả dụng.\nVui lòng liên hệ quản trị viên.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("❌ Exception khi tạo hóa đơn: " + e.getMessage());
+                    e.printStackTrace();
+                    showErrorDialog("Lỗi tạo hóa đơn", 
+                        "Có lỗi xảy ra khi tạo hóa đơn:\n\n" + e.getMessage() + "\n\n" +
+                        "Vui lòng kiểm tra console để biết chi tiết.");
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error in handleTaoHoaDon: " + e.getMessage());
+            e.printStackTrace();
+            showErrorDialog("Lỗi", "Có lỗi xảy ra: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Kiểm tra quyền tạo hóa đơn (chỉ Kế toán)
+     */
+    private boolean hasHoaDonPermission() {
+        try {
+            ThongTinTaiKhoanDto currentUser = Session.getCurrentUser();
+            if (currentUser != null && currentUser.getVaiTro() != null) {
+                return "Kế toán".equals(currentUser.getVaiTro());
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Error checking invoice permission: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Hiển thị dialog xác nhận tạo hóa đơn
+     */
+    private boolean showTaoHoaDonConfirmDialog() {
+        try {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Xác nhận tạo hóa đơn");
+            alert.setHeaderText("Tạo hóa đơn cho khoản thu");
+            
+            String content = "Bạn có chắc chắn muốn tạo hóa đơn cho khoản thu:\n\n";
+            content += "📋 Tên: " + (currentKhoanThu != null ? currentKhoanThu.getTenKhoanThu() : "N/A") + "\n";
+            content += "🏷️ Mã: " + (currentKhoanThu != null ? currentKhoanThu.getMaKhoanThu() : "N/A") + "\n";
+            content += "💰 Số tiền: " + (currentKhoanThu != null ? String.format("%,d VNĐ", currentKhoanThu.getSoTien()) : "N/A") + "\n";
+            content += "📊 Trạng thái: " + (currentKhoanThu != null && currentKhoanThu.isTaoHoaDon() ? "Đã tạo" : "Chưa tạo") + "\n\n";
+            content += "🏠 Thao tác này sẽ tạo hóa đơn cho tất cả căn hộ phù hợp.\n";
+            content += "⚠️ Lưu ý: Mỗi khoản thu chỉ có thể tạo hóa đơn một lần!";
+            
+            alert.setContentText(content);
+            
+            java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+            return result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK;
+        } catch (Exception e) {
+            System.err.println("Error showing confirmation dialog: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Hiển thị dialog thành công
+     */
+    private void showSuccessDialog(String title, String message) {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    /**
+     * Hiển thị dialog lỗi
+     */
+    private void showErrorDialog(String title, String message) {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+    
+    /**
+     * Refresh invoice data in Home_list and go to History tab after creating invoices
+     */
+    private void refreshInvoiceDataAndGoToHistoryTab() {
+        try {
+            // Find the Home_list controller through the scene graph
+            javafx.scene.Node currentNode = buttonTaoHoaDon; // Use any FXML component as starting point
+            while (currentNode != null) {
+                javafx.scene.Scene scene = currentNode.getScene();
+                if (scene != null) {
+                    javafx.scene.Node rootNode = scene.getRoot();
+                    findAndRefreshHomeListInvoiceDataAndGoToHistoryTab(rootNode);
+                    System.out.println("🔄 Attempted to refresh invoice data and switch to History tab in Home_list");
+                    break;
+                }
+                if (currentNode.getParent() != null) {
+                    currentNode = currentNode.getParent();
+                } else {
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not refresh invoice data and switch tab in Home_list: " + e.getMessage());
+            // Not critical error, just log it
+        }
+    }
+    
+    /**
+     * Refresh invoice data in Home_list after creating invoices
+     */
+    private void refreshInvoiceDataInHomeList() {
+        try {
+            // Find the Home_list controller through the scene graph
+            javafx.scene.Node currentNode = buttonTaoHoaDon; // Use any FXML component as starting point
+            while (currentNode != null) {
+                javafx.scene.Scene scene = currentNode.getScene();
+                if (scene != null) {
+                    javafx.scene.Node rootNode = scene.getRoot();
+                    findAndRefreshHomeListInvoiceData(rootNode);
+                    System.out.println("🔄 Attempted to refresh invoice data in Home_list");
+                    break;
+                }
+                if (currentNode.getParent() != null) {
+                    currentNode = currentNode.getParent();
+                } else {
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Could not refresh invoice data in Home_list: " + e.getMessage());
+            // Not critical error, just log it
+        }
+    }
+    
+    /**
+     * Recursively find Home_list controller and refresh invoice data then go to History tab
+     */
+    private void findAndRefreshHomeListInvoiceDataAndGoToHistoryTab(javafx.scene.Node node) {
+        if (node == null) return;
+        
+        try {
+            // Check if this node has a Home_list controller
+            Object controller = null;
+            if (node instanceof javafx.scene.Parent) {
+                javafx.scene.Parent parent = (javafx.scene.Parent) node;
+                // Look for the controller in userData or properties
+                controller = parent.getProperties().get("controller");
+                if (controller == null) {
+                    controller = parent.getUserData();
+                }
+            }
+            
+            // If found Home_list controller, call refresh method and switch to History tab
+            if (controller instanceof io.github.ktpm.bluemoonmanagement.controller.Home_list) {
+                io.github.ktpm.bluemoonmanagement.controller.Home_list homeList = 
+                    (io.github.ktpm.bluemoonmanagement.controller.Home_list) controller;
+                    
+                // Refresh invoice data
+                homeList.refreshHoaDonData();
+                System.out.println("✅ Successfully refreshed invoice data in Home_list");
+                
+                // Switch to LichSuThu tab to show new invoices
+                homeList.show("LichSuThu");
+                System.out.println("🔄 Switched to 'Lịch sử thu' tab to display new invoices");
+                return;
+            }
+            
+            // Recursively search children
+            if (node instanceof javafx.scene.Parent) {
+                javafx.scene.Parent parent = (javafx.scene.Parent) node;
+                for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
+                    findAndRefreshHomeListInvoiceDataAndGoToHistoryTab(child);
+                }
+            }
+            
+        } catch (Exception e) {
+            // Silently continue searching if error occurs
+        }
+    }
+    
+    /**
+     * Recursively find Home_list controller and refresh invoice data
+     */
+    private void findAndRefreshHomeListInvoiceData(javafx.scene.Node node) {
+        if (node == null) return;
+        
+        try {
+            // Check if this node has a Home_list controller
+            Object controller = null;
+            if (node instanceof javafx.scene.Parent) {
+                javafx.scene.Parent parent = (javafx.scene.Parent) node;
+                // Look for the controller in userData or properties
+                controller = parent.getProperties().get("controller");
+                if (controller == null) {
+                    controller = parent.getUserData();
+                }
+            }
+            
+            // If found Home_list controller, call refresh method
+            if (controller instanceof io.github.ktpm.bluemoonmanagement.controller.Home_list) {
+                io.github.ktpm.bluemoonmanagement.controller.Home_list homeList = 
+                    (io.github.ktpm.bluemoonmanagement.controller.Home_list) controller;
+                homeList.refreshHoaDonData();
+                System.out.println("✅ Successfully refreshed invoice data in Home_list");
+                return;
+            }
+            
+            // Recursively search children
+            if (node instanceof javafx.scene.Parent) {
+                javafx.scene.Parent parent = (javafx.scene.Parent) node;
+                for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
+                    findAndRefreshHomeListInvoiceData(child);
+                }
+            }
+            
+        } catch (Exception e) {
+            // Silently continue searching if error occurs
         }
     }
 }

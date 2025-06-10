@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 public class HoaDonDto {
     private Integer maHoaDon;
     private String tenKhoanThu;
+    private String maCanHo;
+    private String loaiKhoanThu;
     private Integer soTien;
     private LocalDateTime ngayNop;
     private boolean daNop;
