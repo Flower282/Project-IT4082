@@ -487,6 +487,7 @@ public class Home_list implements Initializable {
         setupCanHoTable();
         setupCuDanTable();
         setupTaiKhoanTable();
+        setupKhoanThuTable(); // Setup fee table
         
         // Setup right-click refresh functionality with new method names
         setupRightClickRefresh();
@@ -1673,9 +1674,12 @@ public class Home_list implements Initializable {
                 }
             });
             
-            // Thêm tooltip hướng dẫn
+            // Thêm tooltip hướng dẫn cho bảng khoản thu
             javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
-                "Left double-click vào dòng cư dân để chỉnh sửa thông tin\nRight-click để refresh dữ liệu");
+                "Double-click để xem/chỉnh sửa khoản thu\n" +
+                "• Kế toán: Có thể chỉnh sửa và tạo hóa đơn\n" +
+                "• Vai trò khác: Chỉ có thể xem chi tiết\n" +
+                "Right-click để refresh dữ liệu");
             javafx.scene.control.Tooltip.install(typedTableView, tooltip);
             
             // Đảm bảo TableView có thể focus để nhận sự kiện phím
@@ -2509,22 +2513,43 @@ public class Home_list implements Initializable {
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<KhoanThuTableData> row = new javafx.scene.control.TableRow<>();
                 row.setOnMouseClicked(event -> {
+                    System.out.println("🖱️ Mouse clicked on KhoanThu table row");
+                    System.out.println("   - Button: " + event.getButton());
+                    System.out.println("   - Click count: " + event.getClickCount());
+                    System.out.println("   - Row empty: " + row.isEmpty());
+                    
                     if (!row.isEmpty() && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                         KhoanThuTableData rowData = row.getItem();
-                        if (event.getClickCount() == 1) {
-                            // Single click - kiểm tra quyền để quyết định hành động
-                            if (hasKhoanThuEditPermission()) {
+                        System.out.println("   - Row data: " + (rowData != null ? rowData.getTenKhoanThu() : "null"));
+                        
+                        if (event.getClickCount() == 2) {
+                            // Double click - kiểm tra quyền để quyết định hành động
+                            System.out.println("   - Double click detected");
+                            boolean hasEditPermission = hasKhoanThuEditPermission();
+                            System.out.println("   - Has edit permission: " + hasEditPermission);
+                            
+                            if (hasEditPermission) {
                                 // Kế toán: mở form chỉnh sửa
+                                System.out.println("   - Opening edit form");
                                 handleEditKhoanThu(rowData);
                             } else {
                                 // Các vị trí khác: chỉ xem chi tiết
+                                System.out.println("   - No permission - showing detail view");
                                 handleXemChiTietKhoanThu(rowData);
                             }
+                        } else if (event.getClickCount() == 1) {
+                            System.out.println("   - Single click - selecting row only");
                         }
                     }
                 });
                 return row;
             });
+            
+            System.out.println("DEBUG: setupKhoanThuTable completed successfully");
+        } else {
+            System.out.println("ERROR: setupKhoanThuTable failed - table or column is null");
+            System.out.println("DEBUG: tabelViewKhoanThu = " + (tabelViewKhoanThu != null ? "OK" : "NULL"));
+            System.out.println("DEBUG: tableColumnMaKhoanThu = " + (tableColumnMaKhoanThu != null ? "OK" : "NULL"));
         }
     }
     
@@ -2714,9 +2739,13 @@ public class Home_list implements Initializable {
      * Load Khoản Thu data
      */
     private void loadKhoanThuData() {
+        System.out.println("=== DEBUG: loadKhoanThuData() called ===");
+        System.out.println("DEBUG: khoanThuService = " + (khoanThuService != null ? "OK" : "NULL"));
+        
         try {
             if (khoanThuService != null) {
                 List<KhoanThuDto> khoanThuDtoList = khoanThuService.getAllKhoanThu();
+                System.out.println("DEBUG: Got " + (khoanThuDtoList != null ? khoanThuDtoList.size() : 0) + " fees from service");
                 khoanThuList = FXCollections.observableArrayList();
 
                 if (khoanThuDtoList != null) {
@@ -2742,8 +2771,14 @@ public class Home_list implements Initializable {
                 }
 
                 filteredKhoanThuList = FXCollections.observableArrayList(khoanThuList);
-                ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
+                if (tabelViewKhoanThu != null) {
+                    ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
+                    System.out.println("DEBUG: Set " + filteredKhoanThuList.size() + " fees to table view");
+                } else {
+                    System.err.println("ERROR: tabelViewKhoanThu is null!");
+                }
                 updateKhoanThuKetQuaLabel();
+                System.out.println("=== DEBUG: loadKhoanThuData() completed with " + khoanThuList.size() + " fees ===");
             } else {
                 System.err.println("KhoanThuService is not available, cannot load data.");
                 // Load sample data if service is not available
