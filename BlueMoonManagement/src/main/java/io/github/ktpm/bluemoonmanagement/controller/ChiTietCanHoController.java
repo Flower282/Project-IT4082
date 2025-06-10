@@ -1632,6 +1632,15 @@ public class ChiTietCanHoController implements Initializable {
                 if (currentCanHo != null) {
                     loadData(currentCanHo.getMaCanHo(), true); // Force reload from service
                     System.out.println("🔄 Refreshed data after payment");
+                    
+                    // Refresh Home_list's invoice table
+                    if (applicationContext != null) {
+                        Home_list homeList = applicationContext.getBean(Home_list.class);
+                        if (homeList != null) {
+                            homeList.refreshHoaDonData();
+                            System.out.println("🔄 Refreshed Home_list invoice table");
+                        }
+                    }
                 }
             } else {
                 showError("Lỗi thu phí", response.getMessage());
