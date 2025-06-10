@@ -42,6 +42,8 @@
     -fx-cursor: hand;
 }
 
+
+
 .menu-button {
     /* Chữ đen đậm, không nền */
     -fx-background-color: transparent;
@@ -67,6 +69,15 @@
 
 .menu-button .menu-icon {
     -fx-fill: #333333;
+}
+
+.menu-button:focused {
+    -fx-text-fill: #FFFFFF;
+    -fx-background-color: #4472C4;
+}
+
+.menu-button:focused .menu-icon {
+    -fx-fill: #FFFFFF;
 }
 
 .menu-button:hover .menu-icon {
