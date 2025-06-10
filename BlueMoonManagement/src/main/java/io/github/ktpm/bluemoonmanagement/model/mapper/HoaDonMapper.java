@@ -11,6 +11,8 @@ import io.github.ktpm.bluemoonmanagement.model.entity.HoaDon;
 @Mapper(componentModel = "spring")
 public interface HoaDonMapper {
     @Mapping(target = "tenKhoanThu", source = "hoaDon.khoanThu.tenKhoanThu")
+    @Mapping(target = "maCanHo", source = "hoaDon.canHo.maCanHo")
+    @Mapping(target = "loaiKhoanThu", expression = "java(hoaDon.getKhoanThu().isBatBuoc() ? \"Bắt buộc\" : \"Tự nguyện\")")
     HoaDonDto toHoaDonDto(HoaDon hoaDon);
 
     @Mapping(target = "maHoaDon", ignore = true)

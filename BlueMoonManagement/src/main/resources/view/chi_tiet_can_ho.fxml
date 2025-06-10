@@ -17,7 +17,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox fx:controller="io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController" alignment="TOP_CENTER" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1">
+<VBox alignment="TOP_CENTER" spacing="10.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.ChiTietCanHoController">
    <children>
       <AnchorPane>
          <children>
@@ -415,6 +415,7 @@
                                        <children>
                                           <TextField fx:id="textFieldTenKhoanThu" prefWidth="135.0" promptText="Nhập tên khoản thu" styleClass="text-field-normal" HBox.hgrow="ALWAYS" />
                                           <ComboBox fx:id="comboBoxLoaiKhoanThu" maxWidth="1.7976931348623157E308" promptText="Loại khoản thu" HBox.hgrow="ALWAYS" />
+                                          <ComboBox fx:id="comboBoxTrangThaiThanhToan" maxWidth="1.7976931348623157E308" promptText="Trạng thái thanh toán" HBox.hgrow="ALWAYS" />
                                           <Button fx:id="buttonTimKiemThuPhi" mnemonicParsing="false" onAction="#handleTimKiemThuPhi" text="Tìm kiếm">
                                              <styleClass>
                                                 <String fx:value="action-button" />
@@ -435,7 +436,7 @@
                                           <TableColumn fx:id="tableColumnMaHoaDon" minWidth="-1.0" prefWidth="107.99999886751175" text="Mã hóa đơn" />
                                           <TableColumn fx:id="tableColumnTenKhoanThu" minWidth="-1.0" prefWidth="152.00003051757812" text="Tên khoản thu" />
                                           <TableColumn fx:id="tableColumnSoTien" prefWidth="96.79998779296875" text="Số tiền" />
-                                          <TableColumn fx:id="tableColumnHanThu" prefWidth="120.0" text="Hạn thu" />
+                                          <TableColumn fx:id="tableColumnHanThu" prefWidth="120.0" text="Ngày nộp" />
                                           <TableColumn fx:id="tableColumnThaoTacThuPhi" minWidth="-1.0" prefWidth="83.19998168945312" text="Thao tác" />
                                        </columns>
                                     </TableView>

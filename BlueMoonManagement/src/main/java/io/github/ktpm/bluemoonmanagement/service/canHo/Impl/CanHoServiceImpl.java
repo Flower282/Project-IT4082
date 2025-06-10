@@ -396,8 +396,8 @@ public class CanHoServiceImpl implements CanHoService {
 
     @Override
     public ResponseDto importFromExcel(MultipartFile file) {
-        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
-            return new ResponseDto(false, "Bạn không có quyền thêm hóa đơn tự nguyện. Chỉ Kế toán mới được phép.");
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền nhập Excel căn hộ. Chỉ Tổ phó mới được phép.");
         }
         try {
             File tempFile = File.createTempFile("canho_temp", ".xlsx");
@@ -405,20 +405,122 @@ public class CanHoServiceImpl implements CanHoService {
                 fos.write(file.getBytes());
             }
             Function<Row, CanHoDto> rowMapper = row -> {
-                CanHoDto canHoDto = new CanHoDto();
-                canHoDto.setMaCanHo(row.getCell(0).getStringCellValue());
-                canHoDto.setToaNha(row.getCell(1).getStringCellValue());
-                canHoDto.setTang(row.getCell(2).getStringCellValue());
-                canHoDto.setSoNha(row.getCell(3).getStringCellValue());
-                canHoDto.setDienTich(row.getCell(4).getNumericCellValue());
-                canHoDto.setChuHo(null);
-                canHoDto.setDaBanChua(row.getCell(6).getBooleanCellValue());
-                canHoDto.setTrangThaiKiThuat(row.getCell(7).getStringCellValue());
-                canHoDto.setTrangThaiSuDung(row.getCell(8).getStringCellValue());
-                return canHoDto;
+                try {
+                    // Skip header row (row index 0)
+                    if (row.getRowNum() == 0) {
+                        System.out.println("DEBUG: Skipping header row");
+                        return null;
+                    }
+                    
+                    System.out.println("DEBUG: Processing row " + row.getRowNum());
+                    CanHoDto canHoDto = new CanHoDto();
+                    
+                    // Đọc mã căn hộ (column 0)
+                    String maCanHo = "";
+                    if (row.getCell(0) != null) {
+                        try {
+                            maCanHo = row.getCell(0).getStringCellValue();
+                        } catch (Exception e) {
+                            maCanHo = String.valueOf((int) row.getCell(0).getNumericCellValue());
+                        }
+                    }
+                    canHoDto.setMaCanHo(maCanHo);
+                    System.out.println("DEBUG: Mã căn hộ: " + maCanHo);
+                    
+                    // Đọc tòa nhà (column 1)  
+                    String toaNha = "";
+                    if (row.getCell(1) != null) {
+                        try {
+                            toaNha = row.getCell(1).getStringCellValue();
+                        } catch (Exception e) {
+                            toaNha = String.valueOf((int) row.getCell(1).getNumericCellValue());
+                        }
+                    }
+                    canHoDto.setToaNha(toaNha);
+                    
+                    // Đọc tầng (column 2)
+                    String tang = "";
+                    if (row.getCell(2) != null) {
+                        try {
+                            tang = row.getCell(2).getStringCellValue();
+                        } catch (Exception e) {
+                            tang = String.valueOf((int) row.getCell(2).getNumericCellValue());
+                        }
+                    }
+                    canHoDto.setTang(tang);
+                    
+                    // Đọc số nhà (column 3)
+                    String soNha = "";
+                    if (row.getCell(3) != null) {
+                        try {
+                            soNha = row.getCell(3).getStringCellValue();
+                        } catch (Exception e) {
+                            soNha = String.valueOf((int) row.getCell(3).getNumericCellValue());
+                        }
+                    }
+                    canHoDto.setSoNha(soNha);
+                    
+                    // Đọc diện tích (column 4)
+                    double dienTich = 0.0;
+                    if (row.getCell(4) != null) {
+                        try {
+                            dienTich = row.getCell(4).getNumericCellValue();
+                        } catch (Exception e) {
+                            // Thử đọc như string và parse
+                            String dienTichStr = row.getCell(4).getStringCellValue();
+                            dienTich = Double.parseDouble(dienTichStr);
+                        }
+                    }
+                    canHoDto.setDienTich(dienTich);
+                    
+                    canHoDto.setChuHo(null);
+                    
+                    // Xử lý đã bán chưa (column 5) 
+                    boolean daBanChua = false;
+                    if (row.getCell(5) != null) {
+                        try {
+                            daBanChua = row.getCell(5).getBooleanCellValue();
+                        } catch (Exception e) {
+                            // Thử đọc như string và parse
+                            String boolStr = row.getCell(5).getStringCellValue().toLowerCase();
+                            daBanChua = "true".equals(boolStr) || "có".equals(boolStr) || "1".equals(boolStr);
+                        }
+                    }
+                    canHoDto.setDaBanChua(daBanChua);
+                    
+                    // Đọc trạng thái kỹ thuật (column 6)
+                    String trangThaiKiThuat = "";
+                    if (row.getCell(6) != null) {
+                        try {
+                            trangThaiKiThuat = row.getCell(6).getStringCellValue();
+                        } catch (Exception e) {
+                            trangThaiKiThuat = String.valueOf(row.getCell(6).getNumericCellValue());
+                        }
+                    }
+                    canHoDto.setTrangThaiKiThuat(trangThaiKiThuat);
+                    
+                    // Đọc trạng thái sử dụng (column 7)
+                    String trangThaiSuDung = "";
+                    if (row.getCell(7) != null) {
+                        try {
+                            trangThaiSuDung = row.getCell(7).getStringCellValue();
+                        } catch (Exception e) {
+                            trangThaiSuDung = String.valueOf(row.getCell(7).getNumericCellValue());
+                        }
+                    }
+                    canHoDto.setTrangThaiSuDung(trangThaiSuDung);
+                    
+                    System.out.println("DEBUG: Successfully parsed row " + row.getRowNum() + " - " + maCanHo);
+                    return canHoDto;
+                } catch (Exception e) {
+                    System.err.println("ERROR: Lỗi khi đọc dòng Excel căn hộ row " + row.getRowNum() + ": " + e.getMessage());
+                    e.printStackTrace();
+                    return null;
+                }
             };
             List<CanHoDto> canHoDtoList = XlxsFileUtil.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
             List<CanHo> canHoList = canHoDtoList.stream()
+                    .filter(dto -> dto != null) // Lọc bỏ các dòng lỗi (null)
                     .map(canHoMapper::fromCanHoDto)
                     .collect(Collectors.toList());
             canHoRepository.saveAll(canHoList);
@@ -430,21 +532,21 @@ public class CanHoServiceImpl implements CanHoService {
     }
     @Override
     public ResponseDto exportToExcel(String filePath) {
-        if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
-            return new ResponseDto(false, "Bạn không có quyền xuất căn hộ. Chỉ Kế toán mới được phép.");
+        if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
+            return new ResponseDto(false, "Bạn không có quyền xuất căn hộ. Chỉ Tổ phó mới được phép.");
         }
         List<CanHoDto> canHoDtoList = getAllCanHo();
         String[] headers = {"Mã căn hộ", "Tòa nhà", "Tầng", "Số nhà", "Diện tích", "Đã bán/chưa", "Trạng thái kỹ thuật", "Trạng thái sử dụng"};
         try {
             XlsxExportUtil.exportToExcel(filePath, headers, canHoDtoList, (row, canHoDto) -> {
-                row.createCell(0).setCellValue(canHoDto.getMaCanHo());
-                row.createCell(1).setCellValue(canHoDto.getToaNha());
-                row.createCell(2).setCellValue(canHoDto.getTang());
-                row.createCell(3).setCellValue(canHoDto.getSoNha());
+                row.createCell(0).setCellValue(canHoDto.getMaCanHo() != null ? canHoDto.getMaCanHo() : "");
+                row.createCell(1).setCellValue(canHoDto.getToaNha() != null ? canHoDto.getToaNha() : "");
+                row.createCell(2).setCellValue(canHoDto.getTang() != null ? canHoDto.getTang() : "");
+                row.createCell(3).setCellValue(canHoDto.getSoNha() != null ? canHoDto.getSoNha() : "");
                 row.createCell(4).setCellValue(canHoDto.getDienTich());
                 row.createCell(5).setCellValue(canHoDto.isDaBanChua());
-                row.createCell(6).setCellValue(canHoDto.getTrangThaiKiThuat());
-                row.createCell(7).setCellValue(canHoDto.getTrangThaiSuDung());
+                row.createCell(6).setCellValue(canHoDto.getTrangThaiKiThuat() != null ? canHoDto.getTrangThaiKiThuat() : "");
+                row.createCell(7).setCellValue(canHoDto.getTrangThaiSuDung() != null ? canHoDto.getTrangThaiSuDung() : "");
             });
             return new ResponseDto(true, "Xuất căn hộ thành công");
         } catch (Exception e) {

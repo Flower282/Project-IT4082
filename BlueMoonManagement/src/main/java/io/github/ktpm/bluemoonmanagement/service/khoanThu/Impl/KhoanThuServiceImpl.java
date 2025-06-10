@@ -2,7 +2,7 @@ package io.github.ktpm.bluemoonmanagement.service.khoanThu.Impl;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -62,7 +62,7 @@ public class KhoanThuServiceImpl implements KhoanThuService {
             return new ResponseDto(false, "Bạn không có quyền thêm khoản thu. Chỉ Kế toán mới được phép.");
         }
         
-        // Tạo mã khoản thu tự động theo định dạng mới: TN/BB-YYMM-XX
+        // Tạo mã khoản thu tự động theo định dạng cũ: TN/BB-YYYYMM-XXX (13 ký tự)
         String maKhoanThu = generateMaKhoanThu(khoanThuDto);
         
         // DEBUG: In ra thông tin chi tiết
@@ -163,8 +163,6 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         boolean batBuoc = khoanThuDto.isBatBuoc();
         String loaiKhoanThu = batBuoc ? "BB" : "TN";
 
-
-
         // Phần 2: Thời điểm tạo yyMM (năm + tháng)
         LocalDateTime now = LocalDateTime.now();
         String thoiDiemTao = now.format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
@@ -174,7 +172,6 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         maBuilder.append(loaiKhoanThu)
                 .append(thoiDiemTao);
         return maBuilder.toString();
-
     }
 
     @Override
@@ -319,15 +316,23 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         String[] headers = {"Mã khoản thu", "Tên khoản thu", "Bắt buộc", "Đơn vị tính", "Số tiền", "Phạm vi", "Ngày tạo", "Thời hạn", "Ghi chú"};
         try {
             XlsxExportUtil.exportToExcel(filePath, headers, khoanThuList, (row, khoanThu) -> {
-                row.createCell(0).setCellValue(khoanThu.getMaKhoanThu());
-                row.createCell(1).setCellValue(khoanThu.getTenKhoanThu());
+                row.createCell(0).setCellValue(khoanThu.getMaKhoanThu() != null ? khoanThu.getMaKhoanThu() : "");
+                row.createCell(1).setCellValue(khoanThu.getTenKhoanThu() != null ? khoanThu.getTenKhoanThu() : "");
                 row.createCell(2).setCellValue(khoanThu.isBatBuoc());
-                row.createCell(3).setCellValue(khoanThu.getDonViTinh());
+                row.createCell(3).setCellValue(khoanThu.getDonViTinh() != null ? khoanThu.getDonViTinh() : "");
                 row.createCell(4).setCellValue(khoanThu.getSoTien());
-                row.createCell(5).setCellValue(khoanThu.getPhamVi());
-                row.createCell(6).setCellValue(java.sql.Date.valueOf(khoanThu.getNgayTao()));
-                row.createCell(7).setCellValue(java.sql.Date.valueOf(khoanThu.getThoiHan()));
-                row.createCell(8).setCellValue(khoanThu.getGhiChu());
+                row.createCell(5).setCellValue(khoanThu.getPhamVi() != null ? khoanThu.getPhamVi() : "");
+                if (khoanThu.getNgayTao() != null) {
+                    row.createCell(6).setCellValue(java.sql.Date.valueOf(khoanThu.getNgayTao()));
+                } else {
+                    row.createCell(6).setCellValue("");
+                }
+                if (khoanThu.getThoiHan() != null) {
+                    row.createCell(7).setCellValue(java.sql.Date.valueOf(khoanThu.getThoiHan()));
+                } else {
+                    row.createCell(7).setCellValue("");
+                }
+                row.createCell(8).setCellValue(khoanThu.getGhiChu() != null ? khoanThu.getGhiChu() : "");
             });
             return new ResponseDto(true, "Xuất file thành công");
         } catch (Exception e) {

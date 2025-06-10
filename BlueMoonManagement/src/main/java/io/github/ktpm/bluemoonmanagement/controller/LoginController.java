@@ -106,7 +106,7 @@ public class LoginController implements Initializable {
                 Parent mainView = fxViewLoader.loadView("/view/khung.fxml");
                 Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
                 stage.setScene(new Scene(mainView));
-                stage.setTitle("Trang chính");
+                stage.setTitle("Application");
                 stage.show();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -125,7 +125,7 @@ public class LoginController implements Initializable {
             Parent mainView = fxViewLoader.loadView("/view/dang_nhap_otp.fxml");
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(mainView));
-            stage.setTitle("Trang chính");
+            stage.setTitle("Application");
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();

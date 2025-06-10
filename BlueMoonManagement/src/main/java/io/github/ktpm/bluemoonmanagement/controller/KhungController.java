@@ -164,6 +164,12 @@ public class KhungController implements Initializable{
     void gotoLichSuThu(ActionEvent event) {
         centerController.show("LichSuThu");
         updateScreenLabel("Hóa đơn");
+        
+        // Auto-refresh invoice data when switching to History tab
+        if (centerController != null) {
+            System.out.println("🔄 Auto-refreshing invoice data when switching to History tab...");
+            centerController.refreshHoaDonData();
+        }
     }
 
     @FXML

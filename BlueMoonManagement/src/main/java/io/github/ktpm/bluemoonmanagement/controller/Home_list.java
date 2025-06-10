@@ -19,6 +19,7 @@ import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import io.github.ktpm.bluemoonmanagement.util.FxView;
 import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
+import io.github.ktpm.bluemoonmanagement.util.FileMultipartUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -59,6 +60,8 @@ public class Home_list implements Initializable {
 
     @FXML
     private Button buttonNhapExcelTaiKhoan;
+
+
 
     @FXML
     private Button buttonSeeAllCanHo;
@@ -397,8 +400,7 @@ public class Home_list implements Initializable {
     @FXML
     private TextField textFieldMaDinhDanh;
 
-    @FXML
-    private TextField textFieldMaHoaDon;
+
 
     @FXML
     private TextField textFieldMaKhoanThu;
@@ -445,6 +447,9 @@ public class Home_list implements Initializable {
     @Autowired
     private io.github.ktpm.bluemoonmanagement.service.khoanThu.KhoanThuService khoanThuService;
 
+    @Autowired
+    private io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService hoaDonService;
+
     private List<Node> allPanes;
     private KhungController parentController;
 
@@ -459,6 +464,9 @@ public class Home_list implements Initializable {
     
     private ObservableList<KhoanThuTableData> khoanThuList;
     private ObservableList<KhoanThuTableData> filteredKhoanThuList;
+    
+    private ObservableList<HoaDonTableData> hoaDonList;
+    private ObservableList<HoaDonTableData> filteredHoaDonList;
 
     // Pagination variables
     private int currentPageCuDan = 1;
@@ -483,10 +491,12 @@ public class Home_list implements Initializable {
         // Setup ComboBoxes
         setupComboBoxes();
         
-        // Setup tables
+        // Setup tables (order matters to avoid conflicts)
         setupCanHoTable();
         setupCuDanTable();
         setupTaiKhoanTable();
+        setupKhoanThuTable(); // Setup fee table first
+        setupHoaDonTable(); // Setup invoice table after fee table
         
         // Setup right-click refresh functionality with new method names
         setupRightClickRefresh();
@@ -495,6 +505,12 @@ public class Home_list implements Initializable {
         loadData();
         loadCuDanData();
         loadTaiKhoanData();
+        loadKhoanThuData(); // Load fee data as well
+        loadHoaDonData(); // Load invoice data as well
+        
+        // Cập nhật tổng số liệu sau khi load data
+        updateTotalStatistics();
+        
         // Show default tab
         show("TrangChu");
         
@@ -558,6 +574,16 @@ public class Home_list implements Initializable {
             trangThaiHoaDonCombo.setValue("Tất cả");
         }
         
+        // Thiết lập ComboBox loại khoản thu cho trang lịch sử thu
+        if (comboBoxLoaiKhoanThu1 != null) {
+            @SuppressWarnings("unchecked")
+            ComboBox<String> loaiKhoanThu1Combo = (ComboBox<String>) comboBoxLoaiKhoanThu1;
+            loaiKhoanThu1Combo.setItems(javafx.collections.FXCollections.observableArrayList(
+                "Tất cả", "Bắt buộc", "Tự nguyện"
+            ));
+            loaiKhoanThu1Combo.setValue("Tất cả");
+        }
+        
         // Thiết lập ComboBox trạng thái tài khoản
         if (comboBoxTrangThaiTaiKhoan != null) {
             @SuppressWarnings("unchecked")
@@ -579,11 +605,22 @@ public class Home_list implements Initializable {
         }
 
         switch (key) {
-            case "TrangChu" -> gridPaneTrangChu.setVisible(true);
+            case "TrangChu" -> {
+                gridPaneTrangChu.setVisible(true);
+                // Refresh data khi quay về trang chủ
+                System.out.println("🔄 Refreshing data when returning to homepage...");
+                refreshAllDataForHomepage();
+            }
             case "CanHo" -> scrollPaneCanHo.setVisible(true);
             case "CuDan" -> scrollPaneCuDan.setVisible(true);
             case "KhoanThu" -> scrollPaneKhoanThu.setVisible(true);
-            case "LichSuThu" -> scrollPaneLichSuThu.setVisible(true);
+            case "LichSuThu" -> {
+                scrollPaneLichSuThu.setVisible(true);
+                // Auto-refresh invoice data when entering tab
+                System.out.println("🔄 Auto-refreshing invoice data on tab switch...");
+                refreshHoaDonData();
+                setupHoaDonTable(); // Ensure table is properly setup
+            }
             case "TaiKhoan" -> scrollPaneTaiKhoan.setVisible(true);
             case "HoSo" -> scrollPaneCanHo1.setVisible(true);
         }
@@ -644,6 +681,19 @@ public class Home_list implements Initializable {
         System.out.println("🔄 Auto-refreshing account data on tab switch...");
         refreshTaiKhoanData();
         setupTaiKhoanTable();
+    }
+    
+    @FXML
+    void gotoLichSuThu(ActionEvent event) {
+        show("LichSuThu");
+        if (parentController != null) {
+            parentController.updateScreenLabel("Lịch sử thu");
+        }
+        
+        // Auto-refresh invoice data when entering tab
+        System.out.println("🔄 Auto-refreshing invoice data on tab switch...");
+        refreshHoaDonData();
+        setupHoaDonTable();
     }
     @FXML
     private void gotothemcanho(ActionEvent event) {
@@ -1043,6 +1093,29 @@ public class Home_list implements Initializable {
                 System.err.println("ERROR: Cannot get PhuongTienService from ApplicationContext in Home_list: " + e.getMessage());
             }
             
+            // Inject HoaDonService từ ApplicationContext
+            try {
+                if (applicationContext != null && hoaDonService != null) {
+                    // Pass the already autowired HoaDonService directly
+                    // Since HoaDonService is already @Autowired in Home_list, just pass it
+                    // But first, let's get it from ApplicationContext to ensure it's fresh
+                    io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService freshHoaDonService = 
+                        applicationContext.getBean(io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService.class);
+                    System.out.println("DEBUG: Got fresh HoaDonService from ApplicationContext in Home_list");
+                    
+                    // Note: Since ChiTietCanHoController already has @Autowired HoaDonService,
+                    // we just need to ensure ApplicationContext is set so ensureServicesAvailable() can work
+                    System.out.println("DEBUG: HoaDonService will be available via ApplicationContext in ChiTietCanHoController");
+                } else {
+                    System.err.println("ERROR: ApplicationContext or HoaDonService is null in Home_list");
+                    System.err.println("  - ApplicationContext: " + (applicationContext != null ? "OK" : "NULL"));
+                    System.err.println("  - HoaDonService: " + (hoaDonService != null ? "OK" : "NULL"));
+                }
+            } catch (Exception e) {
+                System.err.println("ERROR: Cannot get HoaDonService from ApplicationContext in Home_list: " + e.getMessage());
+                e.printStackTrace();
+            }
+            
             // Set data sau khi đã inject services
             System.out.println("DEBUG: Setting CanHo data to controller");
             controller.setCanHoData(chiTiet);
@@ -1302,6 +1375,45 @@ public class Home_list implements Initializable {
         public void setNgayTao(String ngayTao) { this.ngayTao = ngayTao; }
         public void setThoiHan(String thoiHan) { this.thoiHan = thoiHan; }
         public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
+    }
+    
+    public static class HoaDonTableData {
+        private String maHoaDon;
+        private String maCanHo;
+        private String tenKhoanThu;
+        private String loaiKhoanThu;
+        private String soTien;
+        private String ngayNop;
+        private String trangThaiThanhToan;
+        
+        public HoaDonTableData(String maHoaDon, String maCanHo, String tenKhoanThu, 
+                              String loaiKhoanThu, String soTien, String ngayNop, String trangThaiThanhToan) {
+            this.maHoaDon = maHoaDon;
+            this.maCanHo = maCanHo;
+            this.tenKhoanThu = tenKhoanThu;
+            this.loaiKhoanThu = loaiKhoanThu;
+            this.soTien = soTien;
+            this.ngayNop = ngayNop;
+            this.trangThaiThanhToan = trangThaiThanhToan;
+        }
+        
+        // Getters
+        public String getMaHoaDon() { return maHoaDon; }
+        public String getMaCanHo() { return maCanHo; }
+        public String getTenKhoanThu() { return tenKhoanThu; }
+        public String getLoaiKhoanThu() { return loaiKhoanThu; }
+        public String getSoTien() { return soTien; }
+        public String getNgayNop() { return ngayNop; }
+        public String getTrangThaiThanhToan() { return trangThaiThanhToan; }
+        
+        // Setters
+        public void setMaHoaDon(String maHoaDon) { this.maHoaDon = maHoaDon; }
+        public void setMaCanHo(String maCanHo) { this.maCanHo = maCanHo; }
+        public void setTenKhoanThu(String tenKhoanThu) { this.tenKhoanThu = tenKhoanThu; }
+        public void setLoaiKhoanThu(String loaiKhoanThu) { this.loaiKhoanThu = loaiKhoanThu; }
+        public void setSoTien(String soTien) { this.soTien = soTien; }
+        public void setNgayNop(String ngayNop) { this.ngayNop = ngayNop; }
+        public void setTrangThaiThanhToan(String trangThaiThanhToan) { this.trangThaiThanhToan = trangThaiThanhToan; }
     }
 
     public void setupTaiKhoanTable() {
@@ -1663,9 +1775,12 @@ public class Home_list implements Initializable {
                 }
             });
             
-            // Thêm tooltip hướng dẫn
+            // Thêm tooltip hướng dẫn cho bảng khoản thu
             javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
-                "Left double-click vào dòng cư dân để chỉnh sửa thông tin\nRight-click để refresh dữ liệu");
+                "Double-click để xem/chỉnh sửa khoản thu\n" +
+                "• Kế toán: Có thể chỉnh sửa và tạo hóa đơn\n" +
+                "• Vai trò khác: Chỉ có thể xem chi tiết\n" +
+                "Right-click để refresh dữ liệu");
             javafx.scene.control.Tooltip.install(typedTableView, tooltip);
             
             // Đảm bảo TableView có thể focus để nhận sự kiện phím
@@ -2137,28 +2252,58 @@ public class Home_list implements Initializable {
     @FXML
     private void handleTimKiemThuPhi() {
         String maCanHo = textFieldMaCanHoThuPhi != null ? textFieldMaCanHoThuPhi.getText().trim() : "";
-        String maHoaDon = textFieldMaHoaDon != null ? textFieldMaHoaDon.getText().trim() : "";
+
         String tenKhoanThu = textFieldTenKhoanThu1 != null ? textFieldTenKhoanThu1.getText().trim() : "";
         String loaiKhoanThu = comboBoxLoaiKhoanThu1 != null && comboBoxLoaiKhoanThu1.getValue() != null ? 
                              comboBoxLoaiKhoanThu1.getValue().toString() : "";
         String trangThaiHoaDon = comboBoxTrangThaiHoaDon != null && comboBoxTrangThaiHoaDon.getValue() != null ? 
                                 comboBoxTrangThaiHoaDon.getValue().toString() : "";
         
-        System.out.println("🔍 Payment history search initiated:");
-        System.out.println("  - MaCanHo: " + maCanHo);
-        System.out.println("  - MaHoaDon: " + maHoaDon);
-        System.out.println("  - TenKhoanThu: " + tenKhoanThu);
-        System.out.println("  - LoaiKhoanThu: " + loaiKhoanThu);
-        System.out.println("  - TrangThaiHoaDon: " + trangThaiHoaDon);
+        // Nếu tất cả các điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
+        if (maCanHo.isEmpty() && tenKhoanThu.isEmpty() &&
+            ("Tất cả".equals(loaiKhoanThu) || loaiKhoanThu.isEmpty()) &&
+            ("Tất cả".equals(trangThaiHoaDon) || trangThaiHoaDon.isEmpty())) {
+            
+            filteredHoaDonList = FXCollections.observableArrayList(hoaDonList);
+            if (tabelViewThuPhi != null) {
+                ((TableView<HoaDonTableData>) tabelViewThuPhi).setItems(filteredHoaDonList);
+            }
+            updateHoaDonKetQuaLabel();
+            return;
+        }
         
-        // Hiện tại trang thu phí chưa có dữ liệu, chỉ log thông tin tìm kiếm
-        showInfo("Tìm kiếm thu phí", "Chức năng tìm kiếm thu phí đang được phát triển.\n" +
-                "Tiêu chí tìm kiếm:\n" +
-                "- Mã căn hộ: " + (maCanHo.isEmpty() ? "Tất cả" : maCanHo) + "\n" +
-                "- Mã hóa đơn: " + (maHoaDon.isEmpty() ? "Tất cả" : maHoaDon) + "\n" +
-                "- Tên khoản thu: " + (tenKhoanThu.isEmpty() ? "Tất cả" : tenKhoanThu) + "\n" +
-                "- Loại khoản thu: " + (loaiKhoanThu.isEmpty() ? "Tất cả" : loaiKhoanThu) + "\n" +
-                "- Trạng thái hóa đơn: " + (trangThaiHoaDon.isEmpty() ? "Tất cả" : trangThaiHoaDon));
+        // Lọc dữ liệu dựa trên các tiêu chí tìm kiếm
+        if (hoaDonList != null) {
+            ObservableList<HoaDonTableData> searchResults = hoaDonList.stream()
+                .filter(hoaDon -> {
+                    boolean matchesMaCanHo = maCanHo.isEmpty() || 
+                        hoaDon.getMaCanHo().toLowerCase().contains(maCanHo.toLowerCase());
+                    boolean matchesTenKhoanThu = tenKhoanThu.isEmpty() || 
+                        hoaDon.getTenKhoanThu().toLowerCase().contains(tenKhoanThu.toLowerCase());
+                    boolean matchesLoaiKhoanThu = "Tất cả".equals(loaiKhoanThu) || loaiKhoanThu.isEmpty() ||
+                        hoaDon.getLoaiKhoanThu().equals(loaiKhoanThu);
+                    boolean matchesTrangThaiHoaDon = "Tất cả".equals(trangThaiHoaDon) || trangThaiHoaDon.isEmpty() ||
+                        hoaDon.getTrangThaiThanhToan().equals(trangThaiHoaDon);
+                    
+                    return matchesMaCanHo && matchesTenKhoanThu && 
+                           matchesLoaiKhoanThu && matchesTrangThaiHoaDon;
+                })
+                .collect(FXCollections::observableArrayList, 
+                        ObservableList::add, 
+                        ObservableList::addAll);
+            
+            filteredHoaDonList = searchResults;
+            if (tabelViewThuPhi != null) {
+                ((TableView<HoaDonTableData>) tabelViewThuPhi).setItems(filteredHoaDonList);
+            }
+            updateHoaDonKetQuaLabel();
+            
+            System.out.println("🔍 Invoice search completed:");
+            System.out.println("  - Search criteria: MaCanHo=" + maCanHo + 
+                             ", TenKhoanThu=" + tenKhoanThu + ", LoaiKhoanThu=" + loaiKhoanThu + 
+                             ", TrangThaiHoaDon=" + trangThaiHoaDon);
+            System.out.println("  - Results: " + searchResults.size() + "/" + hoaDonList.size());
+        }
     }
     
     /**
@@ -2216,9 +2361,6 @@ public class Home_list implements Initializable {
         // Thu phí search listeners
         if (textFieldMaCanHoThuPhi != null) {
             textFieldMaCanHoThuPhi.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());
-        }
-        if (textFieldMaHoaDon != null) {
-            textFieldMaHoaDon.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());
         }
         if (textFieldTenKhoanThu1 != null) {
             textFieldTenKhoanThu1.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());
@@ -2440,8 +2582,8 @@ public class Home_list implements Initializable {
             ((TableColumn<KhoanThuTableData, String>) tableColumnTenKhoanThu).setCellValueFactory(new PropertyValueFactory<>("tenKhoanThu"));
             ((TableColumn<KhoanThuTableData, String>) tableColumnLoaiKhoanThu).setCellValueFactory(new PropertyValueFactory<>("loaiKhoanThu"));
             
-            // Setup cột "Số tiền" với nút "Xem thêm" cho khoản thu phương tiện
-            if (tableColumnSoTien != null) {
+            // Setup cột "Số tiền" với nút "Xem thêm" cho khoản thu phương tiện (CHỈ cho bảng khoản thu)
+            if (tableColumnSoTien != null && typedTableView == tabelViewKhoanThu) {
                 TableColumn<KhoanThuTableData, String> soTienColumn = (TableColumn<KhoanThuTableData, String>) tableColumnSoTien;
                 soTienColumn.setCellFactory(column -> new javafx.scene.control.TableCell<KhoanThuTableData, String>() {
                     private final javafx.scene.control.Button btnXemThem = new javafx.scene.control.Button("Xem thêm");
@@ -2449,8 +2591,13 @@ public class Home_list implements Initializable {
                     {
                         btnXemThem.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 12px; -fx-padding: 5 10;");
                         btnXemThem.setOnAction(event -> {
-                            KhoanThuTableData rowData = getTableView().getItems().get(getIndex());
-                            handleXemChiTietPhiXe(rowData);
+                            if (getIndex() >= 0 && getIndex() < getTableView().getItems().size()) {
+                                Object item = getTableView().getItems().get(getIndex());
+                                if (item instanceof KhoanThuTableData) {
+                                    KhoanThuTableData rowData = (KhoanThuTableData) item;
+                                    handleXemChiTietPhiXe(rowData);
+                                }
+                            }
                         });
                     }
                     
@@ -2461,15 +2608,22 @@ public class Home_list implements Initializable {
                             setGraphic(null);
                             setText(null);
                         } else {
-                            KhoanThuTableData rowData = getTableView().getItems().get(getIndex());
-                            if ("Phương tiện".equals(rowData.getDonViTinh())) {
-                                // Hiển thị nút "Xem thêm" cho khoản thu phương tiện
-                                setGraphic(btnXemThem);
-                                setText(null);
+                            Object tableItem = getTableView().getItems().get(getIndex());
+                            if (tableItem instanceof KhoanThuTableData) {
+                                KhoanThuTableData rowData = (KhoanThuTableData) tableItem;
+                                if ("Phương tiện".equals(rowData.getDonViTinh())) {
+                                    // Hiển thị nút "Xem thêm" cho khoản thu phương tiện
+                                    setGraphic(btnXemThem);
+                                    setText(null);
+                                } else {
+                                    // Hiển thị số tiền bình thường cho khoản thu khác
+                                    setGraphic(null);
+                                    setText(rowData.getSoTien());
+                                }
                             } else {
-                                // Hiển thị số tiền bình thường cho khoản thu khác
+                                // For non-KhoanThuTableData (like HoaDonTableData), just show the text
                                 setGraphic(null);
-                                setText(rowData.getSoTien());
+                                setText(item);
                             }
                         }
                     }
@@ -2488,9 +2642,28 @@ public class Home_list implements Initializable {
                 ((TableColumn<KhoanThuTableData, String>) tableColumnNgayTao1).setCellValueFactory(new PropertyValueFactory<>("thoiHan"));
             }
             
-            // "Trạng thái hóa đơn" -> tạm thời hiển thị "Chưa tạo" (vì không có trong DTO)
+            // "Trạng thái hóa đơn" -> hiển thị dựa trên dữ liệu từ database
             if (tableColumnTrangThaiHoaDon != null) {
                 ((TableColumn<KhoanThuTableData, String>) tableColumnTrangThaiHoaDon).setCellValueFactory(cellData -> {
+                    KhoanThuTableData khoanThu = cellData.getValue();
+                    if (khoanThu != null && khoanThuService != null) {
+                        try {
+                            // Lấy thông tin chi tiết khoản thu từ service để check trạng thái tạo hóa đơn
+                            List<io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto> khoanThuList = khoanThuService.getAllKhoanThu();
+                            io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto khoanThuDto = khoanThuList.stream()
+                                .filter(kt -> kt.getMaKhoanThu().equals(khoanThu.getMaKhoanThu()))
+                                .findFirst()
+                                .orElse(null);
+                            
+                            if (khoanThuDto != null) {
+                                return new javafx.beans.property.SimpleStringProperty(
+                                    khoanThuDto.isTaoHoaDon() ? "Đã tạo" : "Chưa tạo"
+                                );
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error checking invoice status: " + e.getMessage());
+                        }
+                    }
                     return new javafx.beans.property.SimpleStringProperty("Chưa tạo");
                 });
             }
@@ -2499,22 +2672,43 @@ public class Home_list implements Initializable {
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<KhoanThuTableData> row = new javafx.scene.control.TableRow<>();
                 row.setOnMouseClicked(event -> {
+                    System.out.println("🖱️ Mouse clicked on KhoanThu table row");
+                    System.out.println("   - Button: " + event.getButton());
+                    System.out.println("   - Click count: " + event.getClickCount());
+                    System.out.println("   - Row empty: " + row.isEmpty());
+                    
                     if (!row.isEmpty() && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                         KhoanThuTableData rowData = row.getItem();
-                        if (event.getClickCount() == 1) {
-                            // Single click - kiểm tra quyền để quyết định hành động
-                            if (hasKhoanThuEditPermission()) {
+                        System.out.println("   - Row data: " + (rowData != null ? rowData.getTenKhoanThu() : "null"));
+                        
+                        if (event.getClickCount() == 2) {
+                            // Double click - kiểm tra quyền để quyết định hành động
+                            System.out.println("   - Double click detected");
+                            boolean hasEditPermission = hasKhoanThuEditPermission();
+                            System.out.println("   - Has edit permission: " + hasEditPermission);
+                            
+                            if (hasEditPermission) {
                                 // Kế toán: mở form chỉnh sửa
+                                System.out.println("   - Opening edit form");
                                 handleEditKhoanThu(rowData);
                             } else {
                                 // Các vị trí khác: chỉ xem chi tiết
+                                System.out.println("   - No permission - showing detail view");
                                 handleXemChiTietKhoanThu(rowData);
                             }
+                        } else if (event.getClickCount() == 1) {
+                            System.out.println("   - Single click - selecting row only");
                         }
                     }
                 });
                 return row;
             });
+            
+            System.out.println("DEBUG: setupKhoanThuTable completed successfully");
+        } else {
+            System.out.println("ERROR: setupKhoanThuTable failed - table or column is null");
+            System.out.println("DEBUG: tabelViewKhoanThu = " + (tabelViewKhoanThu != null ? "OK" : "NULL"));
+            System.out.println("DEBUG: tableColumnMaKhoanThu = " + (tableColumnMaKhoanThu != null ? "OK" : "NULL"));
         }
     }
     
@@ -2704,9 +2898,13 @@ public class Home_list implements Initializable {
      * Load Khoản Thu data
      */
     private void loadKhoanThuData() {
+        System.out.println("=== DEBUG: loadKhoanThuData() called ===");
+        System.out.println("DEBUG: khoanThuService = " + (khoanThuService != null ? "OK" : "NULL"));
+        
         try {
             if (khoanThuService != null) {
                 List<KhoanThuDto> khoanThuDtoList = khoanThuService.getAllKhoanThu();
+                System.out.println("DEBUG: Got " + (khoanThuDtoList != null ? khoanThuDtoList.size() : 0) + " fees from service");
                 khoanThuList = FXCollections.observableArrayList();
 
                 if (khoanThuDtoList != null) {
@@ -2732,8 +2930,14 @@ public class Home_list implements Initializable {
                 }
 
                 filteredKhoanThuList = FXCollections.observableArrayList(khoanThuList);
-                ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
+                if (tabelViewKhoanThu != null) {
+                    ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
+                    System.out.println("DEBUG: Set " + filteredKhoanThuList.size() + " fees to table view");
+                } else {
+                    System.err.println("ERROR: tabelViewKhoanThu is null!");
+                }
                 updateKhoanThuKetQuaLabel();
+                System.out.println("=== DEBUG: loadKhoanThuData() completed with " + khoanThuList.size() + " fees ===");
             } else {
                 System.err.println("KhoanThuService is not available, cannot load data.");
                 // Load sample data if service is not available
@@ -2814,4 +3018,619 @@ public class Home_list implements Initializable {
         });
     }
 
+    // Ensure updateTotalStatistics method is defined
+    private void updateTotalStatistics() {
+        System.out.println("📊 Updating total statistics...");
+        
+        try {
+            // Tính tổng số căn hộ từ ArrayList (hiển thị 0 nếu database rỗng)
+            int totalApartments = (canHoList != null && !canHoList.isEmpty()) ? canHoList.size() : 0;
+            
+            // Tính tổng số cư dân từ ArrayList (hiển thị 0 nếu database rỗng)
+            int totalResidents = (cuDanList != null && !cuDanList.isEmpty()) ? cuDanList.size() : 0;
+            
+            // Tính tổng số khoản thu từ ArrayList (hiển thị 0 nếu database rỗng)
+            int totalFees = (khoanThuList != null && !khoanThuList.isEmpty()) ? khoanThuList.size() : 0;
+            
+            // Cập nhật labelCanHoNumber = tổng số căn hộ
+            if (labelCanHoNumber != null) {
+                labelCanHoNumber.setText(String.valueOf(totalApartments));
+                System.out.println("🏠 Updated labelCanHoNumber with total apartments: " + totalApartments);
+            }
+            
+            // Cập nhật labelCuDanNumber = tổng số cư dân
+            if (labelCuDanNumber != null) {
+                labelCuDanNumber.setText(String.valueOf(totalResidents));
+                System.out.println("👥 Updated labelCuDanNumber with total residents: " + totalResidents);
+            }
+            
+            // Cập nhật labelCuDanNumber1 = tổng số khoản thu
+            if (labelCuDanNumber1 != null) {
+                labelCuDanNumber1.setText(String.valueOf(totalFees));
+                System.out.println("💰 Updated labelCuDanNumber1 with total fees: " + totalFees);
+            }
+            
+            System.out.println("✅ Total statistics updated successfully");
+            
+            // Hiển thị thông báo nếu database trống
+            if (totalApartments == 0 && totalResidents == 0 && totalFees == 0) {
+                System.out.println("⚠️ Database appears to be empty - all counts are 0");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error updating statistics: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Trong trường hợp lỗi, vẫn hiển thị 0 cho 3 label chính
+            if (labelCanHoNumber != null) labelCanHoNumber.setText("0");
+            if (labelCuDanNumber != null) labelCuDanNumber.setText("0");
+            if (labelCuDanNumber1 != null) labelCuDanNumber1.setText("0");
+        }
+    }
+
+    /**
+     * Setup table for HoaDon (Invoice)
+     */
+    public void setupHoaDonTable() {
+        if (tabelViewThuPhi != null && tableColumnMaHoaDon != null) {
+            // Cast table view to correct type
+            TableView<HoaDonTableData> typedTableView = (TableView<HoaDonTableData>) tabelViewThuPhi;
+
+            // Setup cell value factories
+            ((TableColumn<HoaDonTableData, String>) tableColumnMaHoaDon).setCellValueFactory(new PropertyValueFactory<>("maHoaDon"));
+            
+            // Ẩn cột mã hóa đơn
+            tableColumnMaHoaDon.setVisible(false);
+            
+            ((TableColumn<HoaDonTableData, String>) tableColumnMaCanHoThuPhi).setCellValueFactory(new PropertyValueFactory<>("maCanHo"));
+            ((TableColumn<HoaDonTableData, String>) tableColumnTenKhoanThuThuPhi).setCellValueFactory(new PropertyValueFactory<>("tenKhoanThu"));
+            ((TableColumn<HoaDonTableData, String>) tableColumnLoaiKhoanThuThuPhi).setCellValueFactory(new PropertyValueFactory<>("loaiKhoanThu"));
+            ((TableColumn<HoaDonTableData, String>) tableColumnNgayNop).setCellValueFactory(new PropertyValueFactory<>("ngayNop"));
+            
+            // Setup "Số tiền" column specifically for invoice table
+            if (tableColumnSoTien != null && typedTableView == tabelViewThuPhi) {
+                ((TableColumn<HoaDonTableData, String>) tableColumnSoTien).setCellValueFactory(new PropertyValueFactory<>("soTien"));
+            }
+            
+            // Setup action column with payment status
+            if (tableColumnThaoTacLichSuThu != null) {
+                ((TableColumn<HoaDonTableData, String>) tableColumnThaoTacLichSuThu).setCellValueFactory(new PropertyValueFactory<>("trangThaiThanhToan"));
+            }
+            
+            // Thiết lập chiều rộng các cột để chia đều toàn bộ bảng
+            double tableWidth = 970; // Chiều rộng tổng của bảng
+            
+            // Chia đều cho 5 cột hiển thị (loại trừ cột mã hóa đơn đã ẩn)
+            if (tableColumnMaCanHoThuPhi != null) {
+                tableColumnMaCanHoThuPhi.setPrefWidth(tableWidth * 0.15); // 15% - Mã căn hộ
+                tableColumnMaCanHoThuPhi.setMinWidth(120);
+                tableColumnMaCanHoThuPhi.setMaxWidth(150);
+            }
+            
+            if (tableColumnTenKhoanThuThuPhi != null) {
+                tableColumnTenKhoanThuThuPhi.setPrefWidth(tableWidth * 0.25); // 25% - Tên khoản thu (dài nhất)
+                tableColumnTenKhoanThuThuPhi.setMinWidth(200);
+                tableColumnTenKhoanThuThuPhi.setMaxWidth(300);
+            }
+            
+            if (tableColumnLoaiKhoanThuThuPhi != null) {
+                tableColumnLoaiKhoanThuThuPhi.setPrefWidth(tableWidth * 0.15); // 15% - Loại khoản thu
+                tableColumnLoaiKhoanThuThuPhi.setMinWidth(120);
+                tableColumnLoaiKhoanThuThuPhi.setMaxWidth(150);
+            }
+            
+            if (tableColumnSoTien != null && typedTableView == tabelViewThuPhi) {
+                tableColumnSoTien.setPrefWidth(tableWidth * 0.15); // 15% - Số tiền
+                tableColumnSoTien.setMinWidth(120);
+                tableColumnSoTien.setMaxWidth(150);
+            }
+            
+            if (tableColumnNgayNop != null) {
+                tableColumnNgayNop.setPrefWidth(tableWidth * 0.15); // 15% - Ngày nộp
+                tableColumnNgayNop.setMinWidth(120);
+                tableColumnNgayNop.setMaxWidth(150);
+            }
+            
+            if (tableColumnThaoTacLichSuThu != null) {
+                tableColumnThaoTacLichSuThu.setPrefWidth(tableWidth * 0.15); // 15% - Trạng thái thanh toán
+                tableColumnThaoTacLichSuThu.setMinWidth(120);
+                tableColumnThaoTacLichSuThu.setMaxWidth(150);
+            }
+            
+            System.out.println("HoaDon table setup completed with invoice ID column hidden and column widths set");
+        } else {
+            System.out.println("WARNING: tabelViewThuPhi or tableColumnMaHoaDon is null");
+        }
+    }
+    
+    /**
+     * Load HoaDon data from service
+     */
+    private void loadHoaDonData() {
+        System.out.println("=== DEBUG: loadHoaDonData() called ===");
+        System.out.println("DEBUG: hoaDonService = " + (hoaDonService != null ? "OK" : "NULL"));
+        
+        try {
+            if (hoaDonService != null) {
+                List<io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto> hoaDonDtoList = hoaDonService.getAllHoaDon();
+                System.out.println("DEBUG: Got " + (hoaDonDtoList != null ? hoaDonDtoList.size() : 0) + " invoices from service");
+                hoaDonList = FXCollections.observableArrayList();
+
+                if (hoaDonDtoList != null) {
+                    for (io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto dto : hoaDonDtoList) {
+                        String ngayNop = dto.getNgayNop() != null ? dto.getNgayNop().toString() : "Chưa nộp";
+                        String soTien = String.format("%,d VNĐ", dto.getSoTien());
+                        String trangThaiThanhToan = dto.isDaNop() ? "Đã thanh toán" : "Chưa thanh toán";
+                        
+                        HoaDonTableData tableData = new HoaDonTableData(
+                            String.valueOf(dto.getMaHoaDon()),
+                            dto.getMaCanHo() != null ? dto.getMaCanHo() : "",
+                            dto.getTenKhoanThu(),
+                            dto.getLoaiKhoanThu() != null ? dto.getLoaiKhoanThu() : "",
+                            soTien,
+                            ngayNop,
+                            trangThaiThanhToan
+                        );
+                        hoaDonList.add(tableData);
+                    }
+                }
+
+                filteredHoaDonList = FXCollections.observableArrayList(hoaDonList);
+                if (tabelViewThuPhi != null) {
+                    ((TableView<HoaDonTableData>) tabelViewThuPhi).setItems(filteredHoaDonList);
+                    System.out.println("DEBUG: Set " + filteredHoaDonList.size() + " invoices to table view");
+                } else {
+                    System.err.println("ERROR: tabelViewThuPhi is null!");
+                }
+                updateHoaDonKetQuaLabel();
+                System.out.println("=== DEBUG: loadHoaDonData() completed with " + hoaDonList.size() + " invoices ===");
+            } else {
+                System.err.println("HoaDonService is not available, cannot load data.");
+                // Load sample data if service is not available
+                loadSampleHoaDonData();
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading HoaDon data: " + e.getMessage());
+            e.printStackTrace();
+            // Load sample data on error
+            loadSampleHoaDonData();
+        }
+    }
+    
+    /**
+     * Load sample hóa đơn data for testing
+     */
+    private void loadSampleHoaDonData() {
+        hoaDonList = FXCollections.observableArrayList();
+        
+        // Add sample data
+        hoaDonList.add(new HoaDonTableData("HD001", "A101", "Phí quản lý", "Bắt buộc", "150,000 VNĐ", "2024-01-15", "Đã thanh toán"));
+        hoaDonList.add(new HoaDonTableData("HD002", "A102", "Phí điện", "Bắt buộc", "85,000 VNĐ", "Chưa nộp", "Chưa thanh toán"));
+        hoaDonList.add(new HoaDonTableData("HD003", "A103", "Phí gửi xe", "Tự nguyện", "100,000 VNĐ", "2024-01-10", "Đã thanh toán"));
+        
+        filteredHoaDonList = FXCollections.observableArrayList(hoaDonList);
+        if (tabelViewThuPhi != null) {
+            ((TableView<HoaDonTableData>) tabelViewThuPhi).setItems(filteredHoaDonList);
+        }
+        updateHoaDonKetQuaLabel();
+    }
+    
+    /**
+     * Update hóa đơn result label
+     */
+    private void updateHoaDonKetQuaLabel() {
+        if (labelHienThiKetQua1 != null && filteredHoaDonList != null) {
+            labelHienThiKetQua1.setText("Hiển thị " + filteredHoaDonList.size() + " hóa đơn");
+        }
+    }
+    
+    /**
+     * Public method to refresh invoice data - can be called from other controllers
+     */
+    public void refreshHoaDonData() {
+        loadHoaDonData();
+        System.out.println("✅ Invoice data refreshed");
+    }
+
+    /**
+     * Refresh all data for homepage
+     */
+    private void refreshAllDataForHomepage() {
+        try {
+            // Refresh all data
+            loadData();           // Load apartment data
+            loadCuDanData();      // Load resident data  
+            loadTaiKhoanData();   // Load account data
+            loadKhoanThuData();   // Load fee data
+            loadHoaDonData();     // Load invoice data
+            
+            // Update total statistics after loading data
+            updateTotalStatistics();
+            
+            System.out.println("✅ Homepage data refreshed successfully");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error refreshing homepage data: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    // ============= EXCEL EXPORT FUNCTIONS =============
+    
+    /**
+     * Xuất Excel căn hộ
+     */
+    @FXML
+    private void handleXuatExcelCanHo(javafx.event.ActionEvent event) {
+        try {
+            if (canHoService != null) {
+                // Chọn đường dẫn lưu file
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Lưu file Excel căn hộ");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+                );
+                fileChooser.setInitialFileName("DanhSachCanHo.xlsx");
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonXuatExcelCanHo.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showSaveDialog(stage);
+                
+                if (selectedFile != null) {
+                    io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                        canHoService.exportToExcel(selectedFile.getAbsolutePath());
+                    
+                    if (response.isSuccess()) {
+                        showSuccess("Xuất Excel thành công", 
+                            "Đã xuất danh sách căn hộ ra file: " + selectedFile.getName());
+                    } else {
+                        showError("Lỗi xuất Excel", "Lỗi: " + response.getMessage());
+                    }
+                }
+            } else {
+                showError("Lỗi", "Service căn hộ không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Xuất Excel cư dân
+     */
+    @FXML
+    private void handleXuatExcelCuDan(javafx.event.ActionEvent event) {
+        try {
+            if (cuDanService != null) {
+                // Chọn đường dẫn lưu file
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Lưu file Excel cư dân");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+                );
+                fileChooser.setInitialFileName("DanhSachCuDan.xlsx");
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonXuatExcelCuDan.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showSaveDialog(stage);
+                
+                if (selectedFile != null) {
+                    io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                        cuDanService.exportToExcel(selectedFile.getAbsolutePath());
+                    
+                    if (response.isSuccess()) {
+                        showSuccess("Xuất Excel thành công", 
+                            "Đã xuất danh sách cư dân ra file: " + selectedFile.getName());
+                    } else {
+                        showError("Lỗi xuất Excel", "Lỗi: " + response.getMessage());
+                    }
+                }
+            } else {
+                showError("Lỗi", "Service cư dân không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Xuất Excel khoản thu
+     */
+    @FXML
+    private void handleXuatExcelKhoanThu(javafx.event.ActionEvent event) {
+        try {
+            if (khoanThuService != null) {
+                // Chọn đường dẫn lưu file
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Lưu file Excel khoản thu");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+                );
+                fileChooser.setInitialFileName("DanhSachKhoanThu.xlsx");
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonXuatExcelKhoanThu.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showSaveDialog(stage);
+                
+                if (selectedFile != null) {
+                    io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                        khoanThuService.exportToExcel(selectedFile.getAbsolutePath());
+                    
+                    if (response.isSuccess()) {
+                        showSuccess("Xuất Excel thành công", 
+                            "Đã xuất danh sách khoản thu ra file: " + selectedFile.getName());
+                    } else {
+                        showError("Lỗi xuất Excel", "Lỗi: " + response.getMessage());
+                    }
+                }
+            } else {
+                showError("Lỗi", "Service khoản thu không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Xuất Excel tài khoản - sử dụng custom export vì TaiKhoanService chưa có sẵn
+     */
+    @FXML
+    private void handleXuatExcelTaiKhoan(javafx.event.ActionEvent event) {
+        try {
+            if (taiKhoanService != null) {
+                // Chọn đường dẫn lưu file
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Lưu file Excel tài khoản");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+                );
+                fileChooser.setInitialFileName("DanhSachTaiKhoan.xlsx");
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonXuatExcelTaiKhoan.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showSaveDialog(stage);
+                
+                if (selectedFile != null) {
+                    // Lấy dữ liệu tài khoản
+                    List<io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto> taiKhoanList = 
+                        taiKhoanService.layDanhSachTaiKhoan();
+                    
+                    // Định nghĩa headers
+                    String[] headers = {"Email", "Họ và Tên", "Vai Trò", "Ngày Tạo", "Ngày Cập Nhật"};
+                    
+                    // Xuất Excel bằng utility
+                    io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil.exportToExcel(
+                        selectedFile.getAbsolutePath(), 
+                        headers, 
+                        taiKhoanList, 
+                        (row, taiKhoan) -> {
+                            row.createCell(0).setCellValue(taiKhoan.getEmail());
+                            row.createCell(1).setCellValue(taiKhoan.getHoTen());
+                            row.createCell(2).setCellValue(taiKhoan.getVaiTro());
+                            row.createCell(3).setCellValue(taiKhoan.getNgayTao() != null ? taiKhoan.getNgayTao().toString() : "");
+                            row.createCell(4).setCellValue(taiKhoan.getNgayCapNhat() != null ? taiKhoan.getNgayCapNhat().toString() : "");
+                        }
+                    );
+                    
+                    showSuccess("Xuất Excel thành công", 
+                        "Đã xuất danh sách tài khoản ra file: " + selectedFile.getName());
+                }
+            } else {
+                showError("Lỗi", "Service tài khoản không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Xuất Excel hóa đơn (thu phí) - sử dụng custom export
+     */
+    @FXML
+    private void handleXuatExcelThuPhi(javafx.event.ActionEvent event) {
+        try {
+            if (hoaDonService != null) {
+                // Chọn đường dẫn lưu file
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Lưu file Excel hóa đơn");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+                );
+                fileChooser.setInitialFileName("DanhSachHoaDon.xlsx");
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonXuatExcelThuPhi.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showSaveDialog(stage);
+                
+                if (selectedFile != null) {
+                    // Lấy dữ liệu hóa đơn
+                    List<io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto> hoaDonList = 
+                        hoaDonService.getAllHoaDon();
+                    
+                    // Định nghĩa headers
+                    String[] headers = {"Mã Hóa Đơn", "Mã Căn Hộ", "Tên Khoản Thu", "Loại Khoản Thu", "Số Tiền", "Ngày Nộp", "Trạng Thái"};
+                    
+                    // Xuất Excel bằng utility
+                    io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil.exportToExcel(
+                        selectedFile.getAbsolutePath(), 
+                        headers, 
+                        hoaDonList, 
+                        (row, hoaDon) -> {
+                            row.createCell(0).setCellValue(String.valueOf(hoaDon.getMaHoaDon()));
+                            row.createCell(1).setCellValue(hoaDon.getMaCanHo() != null ? hoaDon.getMaCanHo() : "");
+                            row.createCell(2).setCellValue(hoaDon.getTenKhoanThu());
+                            row.createCell(3).setCellValue(hoaDon.getLoaiKhoanThu() != null ? hoaDon.getLoaiKhoanThu() : "");
+                            row.createCell(4).setCellValue(hoaDon.getSoTien());
+                            row.createCell(5).setCellValue(hoaDon.getNgayNop() != null ? hoaDon.getNgayNop().toString() : "Chưa nộp");
+                            row.createCell(6).setCellValue(hoaDon.isDaNop() ? "Đã thanh toán" : "Chưa thanh toán");
+                        }
+                    );
+                    
+                    showSuccess("Xuất Excel thành công", 
+                        "Đã xuất danh sách hóa đơn ra file: " + selectedFile.getName());
+                }
+            } else {
+                showError("Lỗi", "Service hóa đơn không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Nhập Excel căn hộ
+     */
+    @FXML
+    private void handleNhapExcelCanHo(javafx.event.ActionEvent event) {
+        try {
+            if (canHoService == null) {
+                showError("Lỗi", "Service căn hộ không khả dụng");
+                return;
+            }
+            
+            // Chọn file Excel để import
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Chọn file Excel căn hộ");
+            fileChooser.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx", "*.xls")
+            );
+            
+            javafx.stage.Stage stage = (javafx.stage.Stage) buttonNhapExcelCanHo.getScene().getWindow();
+            java.io.File selectedFile = fileChooser.showOpenDialog(stage);
+            
+            if (selectedFile != null) {
+                // Convert File thành MultipartFile
+                org.springframework.web.multipart.MultipartFile multipartFile = 
+                    FileMultipartUtil.convertFileToMultipartFile(selectedFile);
+                
+                // Gọi service để import
+                io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                    canHoService.importFromExcel(multipartFile);
+                
+                if (response.isSuccess()) {
+                    showSuccess("Nhập Excel thành công", 
+                        "Đã nhập " + selectedFile.getName() + " thành công!\n" + response.getMessage());
+                    refreshApartmentData(); // Refresh dữ liệu sau khi import
+                } else {
+                    showError("Lỗi nhập Excel", "Lỗi: " + response.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            showError("Lỗi nhập Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Nhập Excel cư dân
+     */
+    @FXML
+    private void handleNhapExcelCuDan(javafx.event.ActionEvent event) {
+        try {
+            if (cuDanService == null) {
+                showError("Lỗi", "Service cư dân không khả dụng");
+                return;
+            }
+            
+            // Chọn file Excel để import
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Chọn file Excel cư dân");
+            fileChooser.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx", "*.xls")
+            );
+            
+            javafx.stage.Stage stage = (javafx.stage.Stage) buttonNhapExcelCuDan.getScene().getWindow();
+            java.io.File selectedFile = fileChooser.showOpenDialog(stage);
+            
+            if (selectedFile != null) {
+                // Convert File thành MultipartFile
+                org.springframework.web.multipart.MultipartFile multipartFile = 
+                    FileMultipartUtil.convertFileToMultipartFile(selectedFile);
+                
+                // Gọi service để import
+                io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                    cuDanService.importFromExcel(multipartFile);
+                
+                if (response.isSuccess()) {
+                    showSuccess("Nhập Excel thành công", 
+                        "Đã nhập " + selectedFile.getName() + " thành công!\n" + response.getMessage());
+                    refreshCuDanData(); // Refresh dữ liệu sau khi import
+                } else {
+                    showError("Lỗi nhập Excel", "Lỗi: " + response.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            showError("Lỗi nhập Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+
+    
+    /**
+     * Nhập Excel tài khoản
+     */
+    @FXML
+    @SuppressWarnings("unchecked")
+    private void handleNhapExcelTaiKhoan(javafx.event.ActionEvent event) {
+        try {
+            if (taiKhoanService == null) {
+                showError("Lỗi", "Service tài khoản không khả dụng");
+                return;
+            }
+            
+            // Chọn file Excel để import
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Chọn file Excel tài khoản");
+            fileChooser.getExtensionFilters().add(
+                new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx", "*.xls")
+            );
+            
+            javafx.stage.Stage stage = (javafx.stage.Stage) buttonNhapExcelTaiKhoan.getScene().getWindow();
+            java.io.File selectedFile = fileChooser.showOpenDialog(stage);
+            
+            if (selectedFile != null) {
+                // Kiểm tra xem service có method importFromExcel không
+                try {
+                    // Thử gọi method importFromExcel nếu có
+                    java.lang.reflect.Method importMethod = taiKhoanService.getClass()
+                        .getMethod("importFromExcel", org.springframework.web.multipart.MultipartFile.class);
+                    
+                    // Convert File thành MultipartFile
+                    org.springframework.web.multipart.MultipartFile multipartFile = 
+                        FileMultipartUtil.convertFileToMultipartFile(selectedFile);
+                    
+                    // Gọi method import với proper exception handling
+                    Object result = importMethod.invoke(taiKhoanService, multipartFile);
+                    
+                    if (result instanceof io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto) {
+                        io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                            (io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto) result;
+                        
+                        if (response.isSuccess()) {
+                            showSuccess("Nhập Excel thành công", 
+                                "Đã nhập " + selectedFile.getName() + " thành công!\n" + response.getMessage());
+                            refreshTaiKhoanData(); // Refresh dữ liệu sau khi import
+                        } else {
+                            showError("Lỗi nhập Excel", "Lỗi: " + response.getMessage());
+                        }
+                    } else {
+                        showError("Lỗi nhập Excel", "Phản hồi từ service không đúng định dạng");
+                    }
+                    
+                } catch (NoSuchMethodException e) {
+                    // Method chưa được implement
+                    showInfo("Chức năng chưa hỗ trợ", 
+                        "Chức năng nhập Excel tài khoản chưa được implement trong service.\nFile đã chọn: " + selectedFile.getName());
+                } catch (java.lang.reflect.InvocationTargetException e) {
+                    showError("Lỗi nhập Excel", "Lỗi khi gọi service: " + e.getCause().getMessage());
+                } catch (IllegalAccessException e) {
+                    showError("Lỗi nhập Excel", "Không thể truy cập method service: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            showError("Lỗi nhập Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }
