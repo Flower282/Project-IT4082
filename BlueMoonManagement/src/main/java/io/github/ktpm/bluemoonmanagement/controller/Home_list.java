@@ -1091,6 +1091,29 @@ public class Home_list implements Initializable {
                 System.err.println("ERROR: Cannot get PhuongTienService from ApplicationContext in Home_list: " + e.getMessage());
             }
             
+            // Inject HoaDonService từ ApplicationContext
+            try {
+                if (applicationContext != null && hoaDonService != null) {
+                    // Pass the already autowired HoaDonService directly
+                    // Since HoaDonService is already @Autowired in Home_list, just pass it
+                    // But first, let's get it from ApplicationContext to ensure it's fresh
+                    io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService freshHoaDonService = 
+                        applicationContext.getBean(io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService.class);
+                    System.out.println("DEBUG: Got fresh HoaDonService from ApplicationContext in Home_list");
+                    
+                    // Note: Since ChiTietCanHoController already has @Autowired HoaDonService,
+                    // we just need to ensure ApplicationContext is set so ensureServicesAvailable() can work
+                    System.out.println("DEBUG: HoaDonService will be available via ApplicationContext in ChiTietCanHoController");
+                } else {
+                    System.err.println("ERROR: ApplicationContext or HoaDonService is null in Home_list");
+                    System.err.println("  - ApplicationContext: " + (applicationContext != null ? "OK" : "NULL"));
+                    System.err.println("  - HoaDonService: " + (hoaDonService != null ? "OK" : "NULL"));
+                }
+            } catch (Exception e) {
+                System.err.println("ERROR: Cannot get HoaDonService from ApplicationContext in Home_list: " + e.getMessage());
+                e.printStackTrace();
+            }
+            
             // Set data sau khi đã inject services
             System.out.println("DEBUG: Setting CanHo data to controller");
             controller.setCanHoData(chiTiet);
@@ -3231,6 +3254,228 @@ public class Home_list implements Initializable {
             
         } catch (Exception e) {
             System.err.println("❌ Error refreshing homepage data: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    // ============= EXCEL EXPORT FUNCTIONS =============
+    
+    /**
+     * Xuất Excel căn hộ
+     */
+    @FXML
+    private void handleXuatExcelCanHo(javafx.event.ActionEvent event) {
+        try {
+            if (canHoService != null) {
+                // Chọn đường dẫn lưu file
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Lưu file Excel căn hộ");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+                );
+                fileChooser.setInitialFileName("DanhSachCanHo.xlsx");
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonXuatExcelCanHo.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showSaveDialog(stage);
+                
+                if (selectedFile != null) {
+                    io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                        canHoService.exportToExcel(selectedFile.getAbsolutePath());
+                    
+                    if (response.isSuccess()) {
+                        showSuccess("Xuất Excel thành công", 
+                            "Đã xuất danh sách căn hộ ra file: " + selectedFile.getName());
+                    } else {
+                        showError("Lỗi xuất Excel", "Lỗi: " + response.getMessage());
+                    }
+                }
+            } else {
+                showError("Lỗi", "Service căn hộ không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Xuất Excel cư dân
+     */
+    @FXML
+    private void handleXuatExcelCuDan(javafx.event.ActionEvent event) {
+        try {
+            if (cuDanService != null) {
+                // Chọn đường dẫn lưu file
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Lưu file Excel cư dân");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+                );
+                fileChooser.setInitialFileName("DanhSachCuDan.xlsx");
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonXuatExcelCuDan.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showSaveDialog(stage);
+                
+                if (selectedFile != null) {
+                    io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                        cuDanService.exportToExcel(selectedFile.getAbsolutePath());
+                    
+                    if (response.isSuccess()) {
+                        showSuccess("Xuất Excel thành công", 
+                            "Đã xuất danh sách cư dân ra file: " + selectedFile.getName());
+                    } else {
+                        showError("Lỗi xuất Excel", "Lỗi: " + response.getMessage());
+                    }
+                }
+            } else {
+                showError("Lỗi", "Service cư dân không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Xuất Excel khoản thu
+     */
+    @FXML
+    private void handleXuatExcelKhoanThu(javafx.event.ActionEvent event) {
+        try {
+            if (khoanThuService != null) {
+                // Chọn đường dẫn lưu file
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Lưu file Excel khoản thu");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+                );
+                fileChooser.setInitialFileName("DanhSachKhoanThu.xlsx");
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonXuatExcelKhoanThu.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showSaveDialog(stage);
+                
+                if (selectedFile != null) {
+                    io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                        khoanThuService.exportToExcel(selectedFile.getAbsolutePath());
+                    
+                    if (response.isSuccess()) {
+                        showSuccess("Xuất Excel thành công", 
+                            "Đã xuất danh sách khoản thu ra file: " + selectedFile.getName());
+                    } else {
+                        showError("Lỗi xuất Excel", "Lỗi: " + response.getMessage());
+                    }
+                }
+            } else {
+                showError("Lỗi", "Service khoản thu không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Xuất Excel tài khoản - sử dụng custom export vì TaiKhoanService chưa có sẵn
+     */
+    @FXML
+    private void handleXuatExcelTaiKhoan(javafx.event.ActionEvent event) {
+        try {
+            if (taiKhoanService != null) {
+                // Chọn đường dẫn lưu file
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Lưu file Excel tài khoản");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+                );
+                fileChooser.setInitialFileName("DanhSachTaiKhoan.xlsx");
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonXuatExcelTaiKhoan.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showSaveDialog(stage);
+                
+                if (selectedFile != null) {
+                    // Lấy dữ liệu tài khoản
+                    List<io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto> taiKhoanList = 
+                        taiKhoanService.layDanhSachTaiKhoan();
+                    
+                    // Định nghĩa headers
+                    String[] headers = {"Email", "Họ và Tên", "Vai Trò", "Ngày Tạo", "Ngày Cập Nhật"};
+                    
+                    // Xuất Excel bằng utility
+                    io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil.exportToExcel(
+                        selectedFile.getAbsolutePath(), 
+                        headers, 
+                        taiKhoanList, 
+                        (row, taiKhoan) -> {
+                            row.createCell(0).setCellValue(taiKhoan.getEmail());
+                            row.createCell(1).setCellValue(taiKhoan.getHoTen());
+                            row.createCell(2).setCellValue(taiKhoan.getVaiTro());
+                            row.createCell(3).setCellValue(taiKhoan.getNgayTao() != null ? taiKhoan.getNgayTao().toString() : "");
+                            row.createCell(4).setCellValue(taiKhoan.getNgayCapNhat() != null ? taiKhoan.getNgayCapNhat().toString() : "");
+                        }
+                    );
+                    
+                    showSuccess("Xuất Excel thành công", 
+                        "Đã xuất danh sách tài khoản ra file: " + selectedFile.getName());
+                }
+            } else {
+                showError("Lỗi", "Service tài khoản không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Xuất Excel hóa đơn (thu phí) - sử dụng custom export
+     */
+    @FXML
+    private void handleXuatExcelThuPhi(javafx.event.ActionEvent event) {
+        try {
+            if (hoaDonService != null) {
+                // Chọn đường dẫn lưu file
+                javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+                fileChooser.setTitle("Lưu file Excel hóa đơn");
+                fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("Excel Files", "*.xlsx")
+                );
+                fileChooser.setInitialFileName("DanhSachHoaDon.xlsx");
+                
+                javafx.stage.Stage stage = (javafx.stage.Stage) buttonXuatExcelThuPhi.getScene().getWindow();
+                java.io.File selectedFile = fileChooser.showSaveDialog(stage);
+                
+                if (selectedFile != null) {
+                    // Lấy dữ liệu hóa đơn
+                    List<io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto> hoaDonList = 
+                        hoaDonService.getAllHoaDon();
+                    
+                    // Định nghĩa headers
+                    String[] headers = {"Mã Hóa Đơn", "Mã Căn Hộ", "Tên Khoản Thu", "Loại Khoản Thu", "Số Tiền", "Ngày Nộp", "Trạng Thái"};
+                    
+                    // Xuất Excel bằng utility
+                    io.github.ktpm.bluemoonmanagement.util.XlsxExportUtil.exportToExcel(
+                        selectedFile.getAbsolutePath(), 
+                        headers, 
+                        hoaDonList, 
+                        (row, hoaDon) -> {
+                            row.createCell(0).setCellValue(String.valueOf(hoaDon.getMaHoaDon()));
+                            row.createCell(1).setCellValue(hoaDon.getMaCanHo() != null ? hoaDon.getMaCanHo() : "");
+                            row.createCell(2).setCellValue(hoaDon.getTenKhoanThu());
+                            row.createCell(3).setCellValue(hoaDon.getLoaiKhoanThu() != null ? hoaDon.getLoaiKhoanThu() : "");
+                            row.createCell(4).setCellValue(hoaDon.getSoTien());
+                            row.createCell(5).setCellValue(hoaDon.getNgayNop() != null ? hoaDon.getNgayNop().toString() : "Chưa nộp");
+                            row.createCell(6).setCellValue(hoaDon.isDaNop() ? "Đã thanh toán" : "Chưa thanh toán");
+                        }
+                    );
+                    
+                    showSuccess("Xuất Excel thành công", 
+                        "Đã xuất danh sách hóa đơn ra file: " + selectedFile.getName());
+                }
+            } else {
+                showError("Lỗi", "Service hóa đơn không khả dụng");
+            }
+        } catch (Exception e) {
+            showError("Lỗi xuất Excel", "Chi tiết: " + e.getMessage());
             e.printStackTrace();
         }
     }

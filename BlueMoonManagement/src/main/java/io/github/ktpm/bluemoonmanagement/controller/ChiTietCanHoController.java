@@ -36,6 +36,9 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import io.github.ktpm.bluemoonmanagement.controller.Home_list.KhoanThuTableData;
+import io.github.ktpm.bluemoonmanagement.controller.ThongBaoController;
+import io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService;
 
 /**
  * Controller cho trang chi tiết căn hộ
@@ -121,6 +124,7 @@ public class ChiTietCanHoController implements Initializable {
     @FXML private TableColumn<HoaDonDto, String> tableColumnThaoTacThuPhi;
     @FXML private TextField textFieldTenKhoanThu;
     @FXML private ComboBox<String> comboBoxLoaiKhoanThu;
+    @FXML private ComboBox<String> comboBoxTrangThaiThanhToan; // Thêm ComboBox trạng thái thanh toán
     @FXML private Button buttonTimKiemThuPhi;
     @FXML private Label labelTongSoTien;
     @FXML private Button buttonThuToanBo;
@@ -148,6 +152,9 @@ public class ChiTietCanHoController implements Initializable {
 
     @Autowired
     private ApplicationContext applicationContext;
+
+    @Autowired
+    private HoaDonService hoaDonService;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -195,6 +202,9 @@ public class ChiTietCanHoController implements Initializable {
         
         // Setup permissions for buttons
         setupButtonPermissions();
+        
+        // Setup search listeners for auto-search on input change
+        setupSearchListeners();
         
         // Default to first tab
         showThongTinTab();
@@ -393,7 +403,38 @@ public class ChiTietCanHoController implements Initializable {
             tableColumnHanThu.setCellValueFactory(cellData -> 
                 new javafx.beans.property.SimpleStringProperty(
                     cellData.getValue().getNgayNop() != null ? 
-                    cellData.getValue().getNgayNop().toString() : ""));
+                    cellData.getValue().getNgayNop().toString() : "Chưa nộp"));
+        }
+        
+        // Setup cột thao tác thu phí - chỉ hiển thị trạng thái
+        if (tableColumnThaoTacThuPhi != null) {
+            tableColumnThaoTacThuPhi.setCellValueFactory(cellData -> {
+                HoaDonDto hoaDon = cellData.getValue();
+                String trangThai = hoaDon.isDaNop() ? "Đã nộp" : "Chưa nộp";
+                return new javafx.beans.property.SimpleStringProperty(trangThai);
+            });
+            
+            // Thiết lập màu sắc cho text dựa trên trạng thái
+            tableColumnThaoTacThuPhi.setCellFactory(column -> new javafx.scene.control.TableCell<HoaDonDto, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setStyle("");
+                    } else {
+                        setText(item);
+                        setAlignment(javafx.geometry.Pos.CENTER);
+                        
+                        // Thiết lập màu sắc dựa trên trạng thái
+                        if ("Đã nộp".equals(item)) {
+                            setStyle("-fx-text-fill: #4CAF50; -fx-font-weight: bold;"); // Màu xanh
+                        } else {
+                            setStyle("-fx-text-fill: #F44336; -fx-font-weight: bold;"); // Màu đỏ
+                        }
+                    }
+                }
+            });
         }
 
         // Setup search functionality for Cư dân tab
@@ -595,6 +636,34 @@ public class ChiTietCanHoController implements Initializable {
             comboBoxLoaiKhoanThu.setItems(FXCollections.observableArrayList("Tất cả"));
             comboBoxLoaiKhoanThu.setValue("Tất cả");
         }
+        
+        // Setup ComboBox trạng thái thanh toán
+        if (comboBoxTrangThaiThanhToan != null) {
+            comboBoxTrangThaiThanhToan.setItems(FXCollections.observableArrayList("Tất cả", "Đã nộp", "Chưa nộp"));
+            comboBoxTrangThaiThanhToan.setValue("Tất cả");
+        }
+    }
+
+    /**
+     * Setup search listeners for auto-search on input change
+     */
+    private void setupSearchListeners() {
+        // Listener cho textFieldTenKhoanThu
+        if (textFieldTenKhoanThu != null) {
+            textFieldTenKhoanThu.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());
+        }
+        
+        // Listener cho comboBoxLoaiKhoanThu
+        if (comboBoxLoaiKhoanThu != null) {
+            comboBoxLoaiKhoanThu.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemThuPhi());
+        }
+        
+        // Listener cho comboBoxTrangThaiThanhToan
+        if (comboBoxTrangThaiThanhToan != null) {
+            comboBoxTrangThaiThanhToan.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemThuPhi());
+        }
+        
+        System.out.println("✅ Search listeners setup completed for thu phi tab");
     }
 
     /**
@@ -620,7 +689,7 @@ public class ChiTietCanHoController implements Initializable {
             boolean isToTruong = "Tổ trưởng".equals(userRole);
             boolean isKeToan = "Kế toán".equals(userRole);
             boolean isToPho = "Tổ phó".equals(userRole);
-            boolean shouldDisableButtons = isToTruong || isKeToan || isToPho; // Disable cho tất cả vai trò có logic riêng
+            boolean shouldDisableButtons = isToTruong || isKeToan || isToPho ; // Tất cả vai trò đều có logic riêng
             
             System.out.println("DEBUG: isToTruong = " + isToTruong);
             System.out.println("DEBUG: isKeToan = " + isKeToan);
@@ -693,26 +762,30 @@ public class ChiTietCanHoController implements Initializable {
             System.out.println("DEBUG: ❌ buttonThemPhuongTien is NULL!");
         }
         
-        // Phần khoản thu - chỉ Kế toán được phép
-        if (!isKeToan) {
-            // Disable nút thu toàn bộ và xem lịch sử cho tất cả trừ Kế toán
+        // Phần khoản thu - chỉ Kế toán được phép thu phí
+        
+        // Nút thu toàn bộ - chỉ Kế toán được phép
         if (buttonThuToanBo != null) {
-            buttonThuToanBo.setDisable(true);
-            buttonThuToanBo.setOpacity(0.5);
-                System.out.println("DEBUG: ✅ Disabled buttonThuToanBo for " + userRole);
+            if (!isKeToan) {
+                buttonThuToanBo.setDisable(true);
+                buttonThuToanBo.setOpacity(0.5);
+                System.out.println("DEBUG: ✅ Disabled buttonThuToanBo for " + userRole + " (only Kế toán allowed)");
+            } else {
+                buttonThuToanBo.setDisable(false);
+                buttonThuToanBo.setOpacity(1.0);
+                System.out.println("DEBUG: ✅ Enabled buttonThuToanBo for Kế toán");
+            }
         } else {
             System.out.println("DEBUG: ❌ buttonThuToanBo is NULL!");
         }
         
+        // Nút xem lịch sử - tất cả vai trò đều được phép
         if (buttonXemLichSu != null) {
-            buttonXemLichSu.setDisable(true);
-            buttonXemLichSu.setOpacity(0.5);
-                System.out.println("DEBUG: ✅ Disabled buttonXemLichSu for " + userRole);
+            buttonXemLichSu.setDisable(false);
+            buttonXemLichSu.setOpacity(1.0);
+            System.out.println("DEBUG: ✅ Enabled buttonXemLichSu for all roles");
         } else {
             System.out.println("DEBUG: ❌ buttonXemLichSu is NULL!");
-            }
-        } else {
-            System.out.println("DEBUG: ✅ Chỉ Kế toán được phép thao tác với khoản thu - buttons enabled");
         }
         
         // Note: Nút tìm kiếm (buttonTimKiemCuDan, buttonTimKiemPhuongTien, buttonTimKiemThuPhi) 
@@ -1455,8 +1528,9 @@ public class ChiTietCanHoController implements Initializable {
     private void handleTimKiemThuPhi() {
         String tenKhoanThu = textFieldTenKhoanThu != null ? textFieldTenKhoanThu.getText().trim() : "";
         String loaiKhoanThu = comboBoxLoaiKhoanThu != null ? comboBoxLoaiKhoanThu.getValue() : "";
+        String trangThaiThanhToan = comboBoxTrangThaiThanhToan != null ? comboBoxTrangThaiThanhToan.getValue() : "";
         
-        if (tenKhoanThu.isEmpty() && "Tất cả".equals(loaiKhoanThu)) {
+        if (tenKhoanThu.isEmpty() && "Tất cả".equals(loaiKhoanThu) && "Tất cả".equals(trangThaiThanhToan)) {
             setTableData(); // Reset to full list
             return;
         }
@@ -1469,7 +1543,18 @@ public class ChiTietCanHoController implements Initializable {
                         hd.getTenKhoanThu().toLowerCase().contains(tenKhoanThu.toLowerCase());
                     boolean matchesLoai = "Tất cả".equals(loaiKhoanThu) || 
                         hd.getTenKhoanThu().contains(loaiKhoanThu);
-                    return matchesTen && matchesLoai;
+                    
+                    // Thêm logic lọc theo trạng thái thanh toán
+                    boolean matchesTrangThai = true;
+                    if (!"Tất cả".equals(trangThaiThanhToan) && trangThaiThanhToan != null) {
+                        if ("Đã nộp".equals(trangThaiThanhToan)) {
+                            matchesTrangThai = hd.isDaNop();
+                        } else if ("Chưa nộp".equals(trangThaiThanhToan)) {
+                            matchesTrangThai = !hd.isDaNop();
+                        }
+                    }
+                    
+                    return matchesTen && matchesLoai && matchesTrangThai;
                 })
                 .collect(FXCollections::observableArrayList, 
                         ObservableList::add, 
@@ -1478,6 +1563,13 @@ public class ChiTietCanHoController implements Initializable {
             if (tableViewThuPhi != null) {
                 tableViewThuPhi.setItems(filteredList);
             }
+            
+            // Cập nhật tổng số tiền sau khi lọc
+            updateTongSoTien();
+            
+            System.out.println("🔍 Thu phí search completed:");
+            System.out.println("  - Search criteria: TenKhoanThu=" + tenKhoanThu + ", LoaiKhoanThu=" + loaiKhoanThu + ", TrangThaiThanhToan=" + trangThaiThanhToan);
+            System.out.println("  - Results: " + filteredList.size() + "/" + hoaDonList.size());
         }
     }
 
@@ -1487,8 +1579,8 @@ public class ChiTietCanHoController implements Initializable {
         // Kiểm tra quyền
         try {
             String userRole = getCurrentUserRole();
-            if ("Tổ trưởng".equals(userRole)) {
-                showError("Không có quyền", "Bạn không có quyền thực hiện thu toàn bộ. Chỉ có Tổ phó mới có thể thực hiện.");
+            if (!"Kế toán".equals(userRole)) {
+                showError("Không có quyền", "Bạn không có quyền thực hiện thu toàn bộ. Chỉ có Kế toán mới có thể thực hiện.");
                 return;
             }
         } catch (Exception e) {
@@ -1515,28 +1607,54 @@ public class ChiTietCanHoController implements Initializable {
             return;
         }
         
-        boolean confirm = ThongBaoController.showConfirmation("Xác nhận thu phí", String.format("Tổng số tiền: %,d VNĐ\nBạn có chắc chắn muốn thu toàn bộ?", tongTien));
-
-        if (confirm) {
-            // Implement thu phí logic here
-            showSuccess("Thành công", "Đã thu toàn bộ phí thành công");
-            // Reload data after payment
-            if (currentCanHo != null) {
-                loadDataFromService(currentCanHo.getMaCanHo());
+        // Thu toàn bộ phí trực tiếp mà không cần xác nhận
+        try {
+            System.out.println("💰 Đang thực hiện thu toàn bộ phí với tổng số tiền: " + String.format("%,d VNĐ", tongTien));
+            
+            // Kiểm tra hoaDonService có sẵn sàng không
+            if (hoaDonService == null) {
+                showError("Lỗi hệ thống", "Service hóa đơn không khả dụng");
+                return;
             }
+            
+            // Gọi service thực hiện thu phí
+            io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                hoaDonService.thuToanBoPhiCanHo(currentCanHo.getMaCanHo(), 
+                    new java.util.ArrayList<>(hoaDonList));
+            
+            if (response.isSuccess()) {
+                // Hiển thị thông báo thành công bằng ThongBaoController
+                ThongBaoController.showSuccess("Thu phí thành công! 🎉", response.getMessage());
+                
+                System.out.println("✅ Thu toàn bộ phí thành công!");
+                
+                // Reload data after payment để cập nhật trạng thái
+                if (currentCanHo != null) {
+                    loadData(currentCanHo.getMaCanHo(), true); // Force reload from service
+                    System.out.println("🔄 Refreshed data after payment");
+                }
+            } else {
+                showError("Lỗi thu phí", response.getMessage());
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error during payment: " + e.getMessage());
+            e.printStackTrace();
+            showError("Lỗi thu phí", "Có lỗi xảy ra khi thu phí: " + e.getMessage());
         }
     }
     
 
     @FXML
     private void handleXemLichSu() {
-        // Kiểm tra quyền
+        // Kiểm tra quyền - Tổ trưởng, Tổ phó đều xem được
         try {
             String userRole = getCurrentUserRole();
-            if ("Tổ trưởng".equals(userRole)) {
-                showError("Không có quyền", "Bạn không có quyền xem lịch sử thu phí. Chỉ có Tổ phó mới có thể xem.");
+            if (userRole == null || userRole.trim().isEmpty()) {
+                showError("Không có quyền", "Không thể xác định vai trò người dùng.");
                 return;
             }
+            // Tất cả các vai trò đều có thể xem lịch sử (bỏ giới hạn quyền)
         } catch (Exception e) {
             System.err.println("ERROR: Cannot check user permission: " + e.getMessage());
         }
@@ -1547,6 +1665,54 @@ public class ChiTietCanHoController implements Initializable {
         }
         
         showInfo("Lịch sử thu phí", "Chức năng xem lịch sử thu phí cho căn hộ " + currentCanHo.getMaCanHo());
+    }
+    
+    /**
+     * Xử lý xem lịch sử cho một hóa đơn cụ thể
+     */
+    private void handleXemLichSuHoaDon(HoaDonDto hoaDon) {
+        try {
+            // Kiểm tra quyền - Tổ trưởng, Tổ phó,  đều xem được
+            String userRole = getCurrentUserRole();
+            if (userRole == null || userRole.trim().isEmpty()) {
+                showError("Không có quyền", "Không thể xác định vai trò người dùng.");
+                return;
+            }
+            
+            // Tất cả các vai trò đều có thể xem lịch sử (bỏ giới hạn quyền)
+            
+            if (hoaDon == null) {
+                showError("Lỗi", "Không có thông tin hóa đơn");
+                return;
+            }
+            
+            // Tạo nội dung chi tiết hóa đơn
+            StringBuilder lichSu = new StringBuilder();
+            lichSu.append("📋 CHI TIẾT HÓA ĐƠN\n");
+            lichSu.append("=".repeat(30)).append("\n");
+            lichSu.append("🏷️ Mã hóa đơn: ").append(hoaDon.getMaHoaDon()).append("\n");
+            lichSu.append("🏠 Mã căn hộ: ").append(currentCanHo != null ? currentCanHo.getMaCanHo() : "N/A").append("\n");
+            lichSu.append("📄 Tên khoản thu: ").append(hoaDon.getTenKhoanThu()).append("\n");
+            lichSu.append("💰 Số tiền: ").append(String.format("%,d VNĐ", hoaDon.getSoTien())).append("\n");
+            lichSu.append("📅 Ngày nộp: ").append(
+                hoaDon.getNgayNop() != null ? hoaDon.getNgayNop().toString() : "Chưa nộp"
+            ).append("\n");
+            lichSu.append("✅ Trạng thái: ").append(
+                hoaDon.isDaNop() ? "Đã thanh toán" : "Chưa thanh toán"
+            ).append("\n\n");
+            
+            if (hoaDon.isDaNop()) {
+                lichSu.append("🎉 Hóa đơn này đã được thanh toán thành công!");
+            } else {
+                lichSu.append("⏳ Hóa đơn này chưa được thanh toán.");
+            }
+            
+            showInfo("Lịch sử hóa đơn", lichSu.toString());
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Cannot show invoice history: " + e.getMessage());
+            showError("Lỗi", "Không thể xem lịch sử hóa đơn: " + e.getMessage());
+        }
     }
 
     @FXML
@@ -1936,8 +2102,16 @@ public class ChiTietCanHoController implements Initializable {
                 cacheDataService = applicationContext.getBean(CacheDataService.class);
                 System.out.println("DEBUG: Got CacheDataService from ApplicationContext");
             }
+            
+            // Thêm HoaDonService injection
+            if (hoaDonService == null) {
+                hoaDonService = applicationContext.getBean(io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService.class);
+                System.out.println("DEBUG: Got HoaDonService from ApplicationContext");
+            }
+            
         } catch (Exception e) {
             System.err.println("ERROR: Cannot get services from ApplicationContext: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -2071,6 +2245,6 @@ public class ChiTietCanHoController implements Initializable {
             }
         });
         
-        System.out.println("=== END DEBUG: Initiated close for " + controllersToClose.size() + " windows for deleted apartment " + maCanHo + " ===");
-    }
+              System.out.println("=== END DEBUG: Initiated close for " + controllersToClose.size() + " windows for deleted apartment " + maCanHo + " ===");
+  }
 } 

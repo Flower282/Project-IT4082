@@ -538,38 +538,38 @@ public class HoaDonServiceImpl implements HoaDonService {
                         // Count and calculate for Xe đạp
                         int countXeDap = (int) phuongTienList.stream()
                                 .filter(phuongTien -> "Xe đạp".equals(phuongTien.getLoaiPhuongTien()))
-                                .count();
+                                        .count();
                         int soTienXeDap = khoanThuDto.getPhiGuiXeList() != null ? 
                                 khoanThuDto.getPhiGuiXeList().stream()
                                     .filter(phiGuiXe -> "Xe đạp".equals(phiGuiXe.getLoaiXe()))
-                                    .findFirst()
-                                    .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                        .findFirst()
+                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
                                     .orElse(0) : 0;
-                        int tienGuiXeDap = countXeDap * soTienXeDap;
-                        
+                    int tienGuiXeDap = countXeDap * soTienXeDap;
+
                         // Count and calculate for Xe máy  
                         int countXeMay = (int) phuongTienList.stream()
                                 .filter(phuongTien -> "Xe máy".equals(phuongTien.getLoaiPhuongTien()))
-                                .count();
+                                        .count();
                         int soTienXeMay = khoanThuDto.getPhiGuiXeList() != null ?
                                 khoanThuDto.getPhiGuiXeList().stream()
                                     .filter(phiGuiXe -> "Xe máy".equals(phiGuiXe.getLoaiXe()))
-                                    .findFirst()
-                                    .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                        .findFirst()
+                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
                                     .orElse(0) : 0;
-                        int tienGuiXeMay = countXeMay * soTienXeMay;
-                        
+                    int tienGuiXeMay = countXeMay * soTienXeMay;
+
                         // Count and calculate for Ô tô
                         int countOto = (int) phuongTienList.stream()
                                 .filter(phuongTien -> "Ô tô".equals(phuongTien.getLoaiPhuongTien()))
-                                .count();
+                                        .count();
                         int soTienOto = khoanThuDto.getPhiGuiXeList() != null ?
                                 khoanThuDto.getPhiGuiXeList().stream()
                                     .filter(phiGuiXe -> "Ô tô".equals(phiGuiXe.getLoaiXe()))
-                                    .findFirst()
-                                    .map(phiGuiXe -> phiGuiXe.getSoTien())
+                                        .findFirst()
+                                        .map(phiGuiXe -> phiGuiXe.getSoTien())
                                     .orElse(0) : 0;
-                        int tienGuiOto = countOto * soTienOto;
+                    int tienGuiOto = countOto * soTienOto;
                         
                         totalVehicleFee = tienGuiXeDap + tienGuiXeMay + tienGuiOto;
                         
@@ -725,6 +725,119 @@ public class HoaDonServiceImpl implements HoaDonService {
             return new ResponseDto(true, "Đã import thành công " + hoaDonList.size() + " hóa đơn từ file Excel.");
         } catch (Exception e) {
             return new ResponseDto(false, "Import hóa đơn từ Excel thất bại: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public ResponseDto updateTrangThaiThanhToan(Integer maHoaDon, boolean daNop) {
+        try {
+            System.out.println("💰 Updating payment status for invoice: " + maHoaDon + " to " + (daNop ? "PAID" : "UNPAID"));
+            
+            // Tìm hóa đơn trong database
+            HoaDon hoaDon = hoaDonRepository.findById(maHoaDon).orElse(null);
+            if (hoaDon == null) {
+                System.err.println("❌ Invoice not found: " + maHoaDon);
+                return new ResponseDto(false, "Không tìm thấy hóa đơn với mã: " + maHoaDon);
+            }
+            
+            // Cập nhật trạng thái thanh toán
+            hoaDon.setDaNop(daNop);
+            
+            // Cập nhật ngày nộp nếu đã thanh toán
+            if (daNop) {
+                hoaDon.setNgayNop(LocalDateTime.now());
+                System.out.println("✅ Set payment date to: " + hoaDon.getNgayNop());
+            } else {
+                hoaDon.setNgayNop(null);
+                System.out.println("🔄 Cleared payment date");
+            }
+            
+            // Lưu vào database
+            hoaDonRepository.save(hoaDon);
+            
+            String statusMessage = daNop ? "đã thanh toán" : "chưa thanh toán";
+            System.out.println("✅ Successfully updated invoice " + maHoaDon + " to " + statusMessage);
+            
+            return new ResponseDto(true, "Cập nhật trạng thái hóa đơn thành công: " + statusMessage);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error updating payment status: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseDto(false, "Lỗi khi cập nhật trạng thái thanh toán: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public ResponseDto thuToanBoPhiCanHo(String maCanHo, List<HoaDonDto> hoaDonList) {
+        try {
+            System.out.println("💰 Starting bulk payment for apartment: " + maCanHo);
+            System.out.println("   📋 Processing " + hoaDonList.size() + " invoices");
+            
+            // Kiểm tra quyền
+            if (Session.getCurrentUser() == null) {
+                return new ResponseDto(false, "Vui lòng đăng nhập để thực hiện thao tác này");
+            }
+            
+            String userRole = Session.getCurrentUser().getVaiTro();
+            if (!"Kế toán".equals(userRole)) {
+                return new ResponseDto(false, "Bạn không có quyền thu phí. Chỉ Kế toán mới có thể thực hiện");
+            }
+            
+            if (hoaDonList == null || hoaDonList.isEmpty()) {
+                return new ResponseDto(false, "Không có hóa đơn nào để thu");
+            }
+            
+            int successCount = 0;
+            int totalAmount = 0;
+            List<String> errors = new ArrayList<>();
+            
+            // Xử lý từng hóa đơn
+            for (HoaDonDto hoaDonDto : hoaDonList) {
+                try {
+                    // Chỉ xử lý hóa đơn chưa thanh toán
+                    if (!hoaDonDto.isDaNop()) {
+                        ResponseDto result = updateTrangThaiThanhToan(hoaDonDto.getMaHoaDon(), true);
+                        if (result.isSuccess()) {
+                            successCount++;
+                            totalAmount += hoaDonDto.getSoTien() != null ? hoaDonDto.getSoTien() : 0;
+                            System.out.println("   ✅ Processed invoice: " + hoaDonDto.getMaHoaDon() + " - " + hoaDonDto.getTenKhoanThu());
+                        } else {
+                            errors.add("Hóa đơn " + hoaDonDto.getMaHoaDon() + ": " + result.getMessage());
+                            System.err.println("   ❌ Failed to process invoice: " + hoaDonDto.getMaHoaDon());
+                        }
+                    } else {
+                        System.out.println("   ⏭️ Skipping already paid invoice: " + hoaDonDto.getMaHoaDon());
+                    }
+                } catch (Exception e) {
+                    errors.add("Hóa đơn " + hoaDonDto.getMaHoaDon() + ": " + e.getMessage());
+                    System.err.println("   ❌ Exception processing invoice " + hoaDonDto.getMaHoaDon() + ": " + e.getMessage());
+                }
+            }
+            
+            // Tạo thông báo kết quả
+            StringBuilder message = new StringBuilder();
+            message.append("Thu phí thành công cho căn hộ ").append(maCanHo).append("\n");
+            message.append("📊 Tổng kết:\n");
+            message.append("  • Đã thu: ").append(successCount).append(" hóa đơn\n");
+            message.append("  • Tổng tiền: ").append(String.format("%,d", totalAmount)).append(" VNĐ\n");
+            
+            if (!errors.isEmpty()) {
+                message.append("  • Lỗi: ").append(errors.size()).append(" hóa đơn\n");
+                message.append("\n❌ Chi tiết lỗi:\n");
+                for (String error : errors) {
+                    message.append("  - ").append(error).append("\n");
+                }
+            }
+            
+            boolean isSuccess = successCount > 0;
+            System.out.println("🏁 Bulk payment completed: " + successCount + "/" + hoaDonList.size() + " success");
+            
+            return new ResponseDto(isSuccess, message.toString().trim());
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error in bulk payment: " + e.getMessage());
+            e.printStackTrace();
+            return new ResponseDto(false, "Lỗi khi thu toàn bộ phí: " + e.getMessage());
         }
     }
 }

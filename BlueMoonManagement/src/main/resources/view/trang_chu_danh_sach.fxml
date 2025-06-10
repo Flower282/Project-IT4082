@@ -223,7 +223,7 @@
                               <String fx:value="button-green" />
                            </styleClass>
                         </Button>
-                        <Button fx:id="buttonXuatExcelCanHo" layoutX="52.0" layoutY="4.0" mnemonicParsing="false" text="Xuất excel" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <Button fx:id="buttonXuatExcelCanHo" layoutX="52.0" layoutY="4.0" mnemonicParsing="false" onAction="#handleXuatExcelCanHo" text="Xuất excel" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <graphic>
                               <Group>
                                  <children>
@@ -338,7 +338,7 @@
                               <String fx:value="button-green" />
                            </styleClass>
                         </Button>
-                        <Button fx:id="buttonXuatExcelCuDan" layoutX="618.0" mnemonicParsing="false" text="Xuất excel" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <Button fx:id="buttonXuatExcelCuDan" layoutX="618.0" mnemonicParsing="false" onAction="#handleXuatExcelCuDan" text="Xuất excel" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <graphic>
                               <Group>
                                  <children>
@@ -450,7 +450,7 @@
                               <String fx:value="button-green" />
                            </styleClass>
                         </Button>
-                        <Button fx:id="buttonXuatExcelKhoanThu" layoutX="52.0" layoutY="4.0" mnemonicParsing="false" text="Xuất excel" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <Button fx:id="buttonXuatExcelKhoanThu" layoutX="52.0" layoutY="4.0" mnemonicParsing="false" onAction="#handleXuatExcelKhoanThu" text="Xuất excel" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <graphic>
                               <Group>
                                  <children>
@@ -548,7 +548,7 @@
                               <String fx:value="button-green" />
                            </styleClass>
                         </Button>
-                        <Button fx:id="buttonXuatExcelTaiKhoan" layoutX="52.0" layoutY="4.0" mnemonicParsing="false" text="Xuất excel" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                        <Button fx:id="buttonXuatExcelTaiKhoan" layoutX="52.0" layoutY="4.0" mnemonicParsing="false" onAction="#handleXuatExcelTaiKhoan" text="Xuất excel" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <graphic>
                               <Group>
                                  <children>
@@ -644,7 +644,7 @@
                <children>
                   <AnchorPane prefWidth="970.0" AnchorPane.topAnchor="40.0">
                      <children>
-                        <Button fx:id="buttonXuatExcelThuPhi" mnemonicParsing="false" text="Xuất excel" AnchorPane.rightAnchor="0.0">
+                        <Button fx:id="buttonXuatExcelThuPhi" mnemonicParsing="false" onAction="#handleXuatExcelThuPhi" text="Xuất excel" AnchorPane.rightAnchor="0.0">
                            <graphic>
                               <Group>
                                  <children>

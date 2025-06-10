@@ -62,7 +62,7 @@ public class KhoanThuServiceImpl implements KhoanThuService {
             return new ResponseDto(false, "Bạn không có quyền thêm khoản thu. Chỉ Kế toán mới được phép.");
         }
         
-        // Tạo mã khoản thu tự động theo định dạng mới: TN/BB-YYMM-XX
+        // Tạo mã khoản thu tự động theo định dạng cũ: TN/BB-YYYYMM-XXX (13 ký tự)
         String maKhoanThu = generateMaKhoanThu(khoanThuDto);
         
         // DEBUG: In ra thông tin chi tiết
@@ -163,8 +163,6 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         boolean batBuoc = khoanThuDto.isBatBuoc();
         String loaiKhoanThu = batBuoc ? "BB" : "TN";
 
-
-
         // Phần 2: Thời điểm tạo yyMM (năm + tháng)
         LocalDateTime now = LocalDateTime.now();
         String thoiDiemTao = now.format(DateTimeFormatter.ofPattern("yyMMddHHmmss"));
@@ -174,7 +172,6 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         maBuilder.append(loaiKhoanThu)
                 .append(thoiDiemTao);
         return maBuilder.toString();
-
     }
 
     @Override

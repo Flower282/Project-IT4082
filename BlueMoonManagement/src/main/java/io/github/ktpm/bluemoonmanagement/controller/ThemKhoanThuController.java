@@ -121,6 +121,11 @@ public class ThemKhoanThuController {
     private KhoanThuDto currentKhoanThu;
 
     public void initialize() {
+        // QUAN TRỌNG: Reset trạng thái form về chế độ thêm mới
+        isEditMode = false;
+        originalMaKhoanThu = null;
+        currentKhoanThu = null;
+        
         // Khởi tạo các ComboBox với dữ liệu mẫu
         comboBoxLoaiKhoanThu.getItems().addAll("Bắt buộc", "Tự nguyện");
         comboBoxLoaiKhoanThu.setValue("Bắt buộc"); // Mặc định chọn "Bắt buộc"
@@ -172,7 +177,44 @@ public class ThemKhoanThuController {
         if (buttonTaoHoaDon != null) {
             buttonTaoHoaDon.setVisible(false);
         }
+        
+        // Thiết lập nút cho chế độ ADD
+        setupButtonsForAddMode();
     }
+    
+    /**
+     * Thiết lập nút cho chế độ ADD (thêm mới)
+     */
+    private void setupButtonsForAddMode() {
+        // Hiển thị nút "Thêm khoản thu"
+        if (buttonThemKhoanThu != null) {
+            buttonThemKhoanThu.setVisible(true);
+        }
+        
+        // Ẩn các nút của chế độ EDIT
+        if (buttonChinhSua != null) {
+            buttonChinhSua.setVisible(false);
+        }
+        if (buttonLuu != null) {
+            buttonLuu.setVisible(false);
+        }
+        if (buttonTaoHoaDon != null) {
+            buttonTaoHoaDon.setVisible(false);
+        }
+        
+        // Reset text error
+        if (textError != null) {
+            textError.setText("");
+        }
+        
+        // Đặt tiêu đề form
+        if (labelTieuDe != null) {
+            labelTieuDe.setText("Thêm khoản thu mới");
+        }
+        
+        System.out.println("✅ Form set to ADD mode - showing 'Thêm khoản thu' button, hiding edit buttons");
+    }
+    
     @FXML
     private void onDonViTinhChanged(ActionEvent event) {
         System.out.println("DEBUG: onDonViTinhChanged - Selected: " + comboBoxDonViTinh.getValue());
@@ -321,6 +363,12 @@ public class ThemKhoanThuController {
     }
     @FXML
     void ThemKhoanThuClicked(ActionEvent event) {
+        // DEBUG: Kiểm tra trạng thái form
+        System.out.println("=== DEBUG: ThemKhoanThuClicked() called ===");
+        System.out.println("DEBUG: isEditMode = " + isEditMode);
+        System.out.println("DEBUG: originalMaKhoanThu = " + originalMaKhoanThu);
+        System.out.println("DEBUG: currentKhoanThu = " + (currentKhoanThu != null ? "NOT NULL" : "NULL"));
+        
         // Kiểm tra quyền trước khi thực hiện
         if (!hasPermission()) {
             String action = isEditMode ? "chỉnh sửa" : "thêm";
@@ -331,10 +379,13 @@ public class ThemKhoanThuController {
         
         // Nếu ở chế độ edit, gọi method cập nhật
         if (isEditMode) {
+            System.out.println("DEBUG: In EDIT mode - calling handleUpdateKhoanThu()");
             handleUpdateKhoanThu();
             return;
         }
 
+        System.out.println("DEBUG: In ADD mode - proceeding with add logic");
+        
         if (isAnyFieldEmpty()) {
             textError.setText("Vui lòng điền đầy đủ thông tin!");
             textError.setStyle("-fx-fill: red;");
@@ -501,31 +552,11 @@ public class ThemKhoanThuController {
      */
     private boolean showConfirmationDialog() {
         try {
-            // Load FXML và controller xác nhận
-            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/view/xac_nhan.fxml"));
-            javafx.scene.layout.AnchorPane confirmView = loader.load();
-            XacNhanController confirmController = loader.getController();
+            String content = "Bạn có chắc chắn muốn chỉnh sửa khoản thu này?\n" +
+                           "Hành động này không thể hoàn tác.";
             
-            // Thiết lập nội dung
-            confirmController.setTitle("Xác nhận chỉnh sửa");
-            confirmController.setContent("Bạn có chắc chắn muốn chỉnh sửa khoản thu này?\n" +
-                                       "Hành động này không thể hoàn tác.");
-            
-            // Tạo Stage mới cho dialog
-            javafx.stage.Stage confirmStage = new javafx.stage.Stage();
-            confirmStage.setScene(new javafx.scene.Scene(confirmView));
-            confirmStage.setTitle("Xác nhận");
-            confirmStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-            
-            // Gán owner là cửa sổ hiện tại
-            javafx.stage.Stage currentStage = (javafx.stage.Stage) buttonThemKhoanThu.getScene().getWindow();
-            confirmStage.initOwner(currentStage);
-            
-            // Hiển thị dialog và chờ
-            confirmStage.showAndWait();
-            
-            // Trả về kết quả xác nhận
-            return confirmController.isConfirmed();
+            // Sử dụng ThongBaoController với giao diện xac_nhan.fxml
+            return ThongBaoController.showConfirmation("Xác nhận chỉnh sửa", content);
             
         } catch (Exception e) {
             System.err.println("Error showing confirmation dialog: " + e.getMessage());
@@ -852,7 +883,8 @@ public class ThemKhoanThuController {
                 return false;
             }
             String vaiTro = currentUser.getVaiTro();
-            return !"Tổ trưởng".equals(vaiTro);
+            // Chỉ Kế toán mới được phép thêm/sửa khoản thu
+            return "Kế toán".equals(vaiTro);
         } catch (Exception e) {
             System.err.println("Lỗi khi kiểm tra quyền: " + e.getMessage());
             return false;
@@ -1591,74 +1623,78 @@ public class ThemKhoanThuController {
                 return;
             }
 
-            // Hiển thị dialog xác nhận
-            if (showTaoHoaDonConfirmDialog()) {
-                // Tạo hóa đơn từ khoản thu hiện tại
-                try {
-                    if (hoaDonService != null) {
-                        System.out.println("🧾 Đang tạo hóa đơn cho khoản thu: " + currentKhoanThu.getTenKhoanThu());
-                        
-                        // Kiểm tra trạng thái tạo hóa đơn trước khi gọi service
-                        if (currentKhoanThu.isTaoHoaDon()) {
-                            showErrorDialog("❌ Không thể tạo hóa đơn", 
-                                "Hóa đơn cho khoản thu '" + currentKhoanThu.getTenKhoanThu() + "' đã được tạo trước đó.\n\n" +
-                                "💡 Lưu ý: Mỗi khoản thu chỉ có thể tạo hóa đơn một lần để tránh trùng lặp.\n\n" +
-                                "🔍 Bạn có thể kiểm tra trạng thái 'Đã tạo' trong cột 'Trạng thái hóa đơn' \n" +
-                                "của bảng khoản thu hoặc xem danh sách hóa đơn trong trang 'Lịch sử thu'.");
-                            return;
-                        }
-                        
-                        // Gọi service để tạo hóa đơn (chỉ cho khoản thu chưa tạo)
-                        io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
-                            hoaDonService.generateHoaDon(currentKhoanThu);
-                        
-                        if (response.isSuccess()) {
-                            // Tạo hóa đơn thành công
-                            showSuccessDialog("Tạo hóa đơn thành công! 🎉", 
-                                "✅ Đã tạo hóa đơn thành công cho khoản thu: " + currentKhoanThu.getTenKhoanThu() + "\n\n" +
-                                "📋 Chi tiết:\n" +
-                                "• Mã khoản thu: " + currentKhoanThu.getMaKhoanThu() + "\n" +
-                                "• Loại: " + (currentKhoanThu.isBatBuoc() ? "Bắt buộc" : "Tự nguyện") + "\n" +
-                                "• Đơn vị tính: " + currentKhoanThu.getDonViTinh() + "\n" +
-                                "• Phạm vi: " + currentKhoanThu.getPhamVi() + "\n\n" +
-                                "🏠 Hóa đơn đã được tạo cho tất cả căn hộ phù hợp.\n" +
-                                "🔄 Trạng thái khoản thu đã được cập nhật thành 'Đã tạo'.\n\n" +
-                                "💡 Kiểm tra trang 'Lịch sử thu' để xem danh sách hóa đơn mới được tạo.");
-                            
-                            System.out.println("✅ Tạo hóa đơn thành công!");
-                            
-                            // Đóng form hiện tại
-                            javafx.stage.Stage currentStage = (javafx.stage.Stage) buttonTaoHoaDon.getScene().getWindow();
-                            currentStage.close();
-                            
-                            // Refresh invoice data in Home_list và chuyển sang tab Lịch sử thu
-                            refreshInvoiceDataAndGoToHistoryTab();
-                            
-                            // Refresh fee data to update invoice status in fee table
-                            refreshKhoanThuTableAndGoToTab();
-                        } else {
-                            // Tạo hóa đơn thất bại
-                            String errorMessage = response.getMessage();
-                            System.err.println("❌ Tạo hóa đơn thất bại: " + errorMessage);
-                            
-                            showErrorDialog("Không thể tạo hóa đơn", 
-                                "Tạo hóa đơn thất bại:\n\n" + errorMessage + "\n\n" +
-                                "Các lý do có thể:\n" +
-                                "• Hóa đơn đã được tạo trước đó\n" +
-                                "• Đây là khoản thu tự nguyện\n" +
-                                "• Không đủ quyền hạn");
-                        }
-                    } else {
-                        showErrorDialog("Lỗi hệ thống", 
-                            "Dịch vụ tạo hóa đơn không khả dụng.\nVui lòng liên hệ quản trị viên.");
+            // Tạo hóa đơn trực tiếp mà không cần xác nhận
+            try {
+                if (hoaDonService != null) {
+                    System.out.println("🧾 Đang tạo hóa đơn cho khoản thu: " + currentKhoanThu.getTenKhoanThu());
+                    
+                    // Kiểm tra trạng thái tạo hóa đơn trước khi gọi service
+                    if (currentKhoanThu.isTaoHoaDon()) {
+                        showErrorDialog("❌ Không thể tạo hóa đơn", 
+                            "Hóa đơn cho khoản thu '" + currentKhoanThu.getTenKhoanThu() + "' đã được tạo trước đó.\n\n" +
+                            "💡 Lưu ý: Mỗi khoản thu chỉ có thể tạo hóa đơn một lần để tránh trùng lặp.\n\n" +
+                            "🔍 Bạn có thể kiểm tra trạng thái 'Đã tạo' trong cột 'Trạng thái hóa đơn' \n" +
+                            "của bảng khoản thu hoặc xem danh sách hóa đơn trong trang 'Lịch sử thu'.");
+                        return;
                     }
-                } catch (Exception e) {
-                    System.err.println("❌ Exception khi tạo hóa đơn: " + e.getMessage());
-                    e.printStackTrace();
-                    showErrorDialog("Lỗi tạo hóa đơn", 
-                        "Có lỗi xảy ra khi tạo hóa đơn:\n\n" + e.getMessage() + "\n\n" +
-                        "Vui lòng kiểm tra console để biết chi tiết.");
+                    
+                    // Gọi service để tạo hóa đơn (chỉ cho khoản thu chưa tạo)
+                    io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto response = 
+                        hoaDonService.generateHoaDon(currentKhoanThu);
+                    
+                    if (response.isSuccess()) {
+                        System.out.println("✅ Tạo hóa đơn thành công!");
+                        
+                        // Refresh dữ liệu trước khi hiển thị thông báo để đảm bảo cập nhật ngay lập tức
+                        
+                        // 1. Refresh invoice data in Home_list để cập nhật danh sách hóa đơn
+                        refreshInvoiceDataInHomeList();
+                        
+                        // 2. Refresh fee data để cập nhật trạng thái "Đã tạo hóa đơn" trong bảng khoản thu
+                        refreshKhoanThuTable();
+                        
+                        // 3. Refresh cache để đảm bảo dữ liệu được cập nhật toàn bộ hệ thống
+                        refreshCacheAndVehicleFees();
+                        
+                        // 4. Hiển thị thông báo thành công sau khi đã refresh
+                        ThongBaoController.showSuccess("Tạo hóa đơn thành công! 🎉", 
+                            "Đã tạo hóa đơn thành công cho khoản thu: " + currentKhoanThu.getTenKhoanThu());
+                        
+                        // 5. Đóng form hiện tại
+                        javafx.stage.Stage currentStage = (javafx.stage.Stage) buttonTaoHoaDon.getScene().getWindow();
+                        currentStage.close();
+                        
+                        // 6. Chuyển sang tab Lịch sử thu để hiển thị hóa đơn vừa tạo
+                        javafx.application.Platform.runLater(() -> {
+                            try {
+                                refreshInvoiceDataAndGoToHistoryTab();
+                                System.out.println("🔄 Switched to 'Lịch sử thu' tab to show new invoice");
+                            } catch (Exception e) {
+                                System.err.println("Could not switch to History tab: " + e.getMessage());
+                            }
+                        });
+                    } else {
+                        // Tạo hóa đơn thất bại
+                        String errorMessage = response.getMessage();
+                        System.err.println("❌ Tạo hóa đơn thất bại: " + errorMessage);
+                        
+                        showErrorDialog("Không thể tạo hóa đơn", 
+                            "Tạo hóa đơn thất bại:\n\n" + errorMessage + "\n\n" +
+                            "Các lý do có thể:\n" +
+                            "• Hóa đơn đã được tạo trước đó\n" +
+                            "• Đây là khoản thu tự nguyện\n" +
+                            "• Không đủ quyền hạn");
+                    }
+                } else {
+                    showErrorDialog("Lỗi hệ thống", 
+                        "Dịch vụ tạo hóa đơn không khả dụng.\nVui lòng liên hệ quản trị viên.");
                 }
+            } catch (Exception e) {
+                System.err.println("❌ Exception khi tạo hóa đơn: " + e.getMessage());
+                e.printStackTrace();
+                showErrorDialog("Lỗi tạo hóa đơn", 
+                    "Có lỗi xảy ra khi tạo hóa đơn:\n\n" + e.getMessage() + "\n\n" +
+                    "Vui lòng kiểm tra console để biết chi tiết.");
             }
 
         } catch (Exception e) {
@@ -1684,53 +1720,20 @@ public class ThemKhoanThuController {
         }
     }
 
-    /**
-     * Hiển thị dialog xác nhận tạo hóa đơn
-     */
-    private boolean showTaoHoaDonConfirmDialog() {
-        try {
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Xác nhận tạo hóa đơn");
-            alert.setHeaderText("Tạo hóa đơn cho khoản thu");
-            
-            String content = "Bạn có chắc chắn muốn tạo hóa đơn cho khoản thu:\n\n";
-            content += "📋 Tên: " + (currentKhoanThu != null ? currentKhoanThu.getTenKhoanThu() : "N/A") + "\n";
-            content += "🏷️ Mã: " + (currentKhoanThu != null ? currentKhoanThu.getMaKhoanThu() : "N/A") + "\n";
-            content += "💰 Số tiền: " + (currentKhoanThu != null ? String.format("%,d VNĐ", currentKhoanThu.getSoTien()) : "N/A") + "\n";
-            content += "📊 Trạng thái: " + (currentKhoanThu != null && currentKhoanThu.isTaoHoaDon() ? "Đã tạo" : "Chưa tạo") + "\n\n";
-            content += "🏠 Thao tác này sẽ tạo hóa đơn cho tất cả căn hộ phù hợp.\n";
-            content += "⚠️ Lưu ý: Mỗi khoản thu chỉ có thể tạo hóa đơn một lần!";
-            
-            alert.setContentText(content);
-            
-            java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
-            return result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK;
-        } catch (Exception e) {
-            System.err.println("Error showing confirmation dialog: " + e.getMessage());
-            return false;
-        }
-    }
+
 
     /**
      * Hiển thị dialog thành công
      */
     private void showSuccessDialog(String title, String message) {
-        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showSuccess(title, message);
     }
 
     /**
      * Hiển thị dialog lỗi
      */
     private void showErrorDialog(String title, String message) {
-        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        ThongBaoController.showError(title, message);
     }
     
     /**

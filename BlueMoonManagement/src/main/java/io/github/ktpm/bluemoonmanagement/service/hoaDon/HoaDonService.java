@@ -14,4 +14,14 @@ public interface HoaDonService {
     List<HoaDonDto> getAllHoaDon();
     ResponseDto addHoaDonTuNguyen(HoaDonTuNguyenDto hoaDonTuNguyenDto, KhoanThuTuNguyenDto khoanThuTuNguyenDto);
     ResponseDto importFromExcel(MultipartFile file);
+    
+    /**
+     * Cập nhật trạng thái thanh toán cho một hóa đơn cụ thể
+     */
+    ResponseDto updateTrangThaiThanhToan(Integer maHoaDon, boolean daNop);
+    
+    /**
+     * Thu toàn bộ khoản phí bắt buộc cho một căn hộ
+     */
+    ResponseDto thuToanBoPhiCanHo(String maCanHo, List<HoaDonDto> hoaDonList);
 }
