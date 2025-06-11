@@ -12,4 +12,8 @@ public interface KhoanThuService {
     ResponseDto deleteKhoanThu(String maKhoanThu);
     ResponseDto importFromExcel(MultipartFile file);
     ResponseDto exportToExcel(String filePath);
+    
+    // Methods for PieChart - query directly from database
+    long countKhoanThuByBatBuoc(boolean batBuoc);
+    long sumAmountByBatBuoc(boolean batBuoc);
 }

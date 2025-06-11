@@ -880,8 +880,8 @@ public class ThemKhoanThuController {
                 gotoKhoanThuMethod.setAccessible(true);
                 gotoKhoanThuMethod.invoke(homeListController, (javafx.event.ActionEvent) null);
                 
-                // Refresh fee data (now public method)
-                homeListController.refreshKhoanThuData();
+                // Refresh all data including charts
+                homeListController.refreshAllDataIncludingCharts();
                 
                 System.out.println("✅ Fee data refreshed successfully");
                 return;
@@ -1336,8 +1336,8 @@ public class ThemKhoanThuController {
                 gotoKhoanThuMethod.setAccessible(true);
                 gotoKhoanThuMethod.invoke(homeListController, (javafx.event.ActionEvent) null);
                 
-                // Then refresh fee data 
-                homeListController.refreshKhoanThuData();
+                // Then refresh all data including charts
+                homeListController.refreshAllDataIncludingCharts();
                 
                 System.out.println("✅ Fee data refreshed successfully and switched to KhoanThu tab");
                 return;
