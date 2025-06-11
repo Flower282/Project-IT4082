@@ -308,6 +308,19 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         }
     }
     @Override
+    public long countKhoanThuByBatBuoc(boolean batBuoc) {
+        System.out.println("📊 Querying count of fees with batBuoc = " + batBuoc);
+        return khoanThuRepository.countByBatBuoc(batBuoc);
+    }
+
+    @Override 
+    public long sumAmountByBatBuoc(boolean batBuoc) {
+        System.out.println("💰 Querying sum of amounts with batBuoc = " + batBuoc);
+        Long sum = khoanThuRepository.sumSoTienByBatBuoc(batBuoc);
+        return sum != null ? sum : 0L;
+    }
+
+    @Override
     public ResponseDto exportToExcel(String filePath) {
         if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
             return new ResponseDto(false, "Bạn không có quyền xuất khoản thu. Chỉ Kế toán mới được phép.");

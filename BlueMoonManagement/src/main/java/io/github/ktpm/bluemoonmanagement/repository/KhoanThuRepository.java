@@ -12,5 +12,12 @@ public interface KhoanThuRepository extends JpaRepository<KhoanThu, String>, Kho
 
     @Query("SELECT k FROM KhoanThu k LEFT JOIN FETCH k.phiGuiXeList")
     List<KhoanThu> findAllWithPhiGuiXe();
+    
+    // Query methods for PieChart - direct database access
+    @Query("SELECT COUNT(k) FROM KhoanThu k WHERE k.batBuoc = :batBuoc")
+    long countByBatBuoc(boolean batBuoc);
+    
+    @Query("SELECT SUM(k.soTien) FROM KhoanThu k WHERE k.batBuoc = :batBuoc")
+    Long sumSoTienByBatBuoc(boolean batBuoc);
 
 }
