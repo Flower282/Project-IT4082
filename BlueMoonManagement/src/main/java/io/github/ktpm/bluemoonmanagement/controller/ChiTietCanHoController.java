@@ -18,6 +18,7 @@ import io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.phuongTien.PhuongTienDto;
 import io.github.ktpm.bluemoonmanagement.service.cache.CacheDataService;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
+import io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService;
 import io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
 import javafx.collections.FXCollections;
@@ -36,9 +37,6 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import io.github.ktpm.bluemoonmanagement.controller.Home_list.KhoanThuTableData;
-import io.github.ktpm.bluemoonmanagement.controller.ThongBaoController;
-import io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService;
 
 /**
  * Controller cho trang chi tiết căn hộ
@@ -90,7 +88,7 @@ public class ChiTietCanHoController implements Initializable {
     @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnGioiTinhCuDan;
     @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnNgaySinhCuDan;
     @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnSoDienThoaiCuDan;
-    @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnEmailCuDan;
+    // @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnEmailCuDan; // Removed email column as requested
     @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnQuanHeChuHo;
     @FXML private TableColumn<CuDanTrongCanHoDto, String> tableColumnTrangThaiCuDan;
     @FXML private TableColumn<CuDanTrongCanHoDto, Void> tableColumnThaoTacCuDan;
@@ -205,119 +203,238 @@ public class ChiTietCanHoController implements Initializable {
      * Thiết lập các table
      */
     private void setupTables() {
-        // Setup table cư dân
-        if (tableColumnMaCanHoCuDan != null) {
-            tableColumnMaCanHoCuDan.setCellValueFactory(cellData -> {
-                // Lấy mã căn hộ từ currentCanHo cho mỗi dòng
-                String maCanHo = currentCanHo != null ? currentCanHo.getMaCanHo() : "";
-                return new javafx.beans.property.SimpleStringProperty(maCanHo);
-            });
-        }
+        // Setup table cư dân với null checks và error handling
+        setupCuDanTable();
+        setupPhuongTienTable();
+        setupThuPhiTable();
+    }
 
-        if (tableColumnMaDinhDanhCuDan != null) {
-            tableColumnMaDinhDanhCuDan.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getMaDinhDanh()));
-        }
-        
-        if (tableColumnHoVaTenCuDan != null) {
-            tableColumnHoVaTenCuDan.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getHoVaTen()));
-        }
-        
-        if (tableColumnGioiTinhCuDan != null) {
-            tableColumnGioiTinhCuDan.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(
-                    cellData.getValue().getGioiTinh() != null ? 
-                    cellData.getValue().getGioiTinh() : ""));
-        }
-        
-        if (tableColumnSoDienThoaiCuDan != null) {
-            tableColumnSoDienThoaiCuDan.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(
-                    cellData.getValue().getSoDienThoai() != null ? 
-                    cellData.getValue().getSoDienThoai() : ""));
-        }
-        
-        if (tableColumnEmailCuDan != null) {
-            tableColumnEmailCuDan.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(
-                    cellData.getValue().getEmail() != null ? 
-                    cellData.getValue().getEmail() : ""));
-        }
-        
-        if (tableColumnQuanHeChuHo != null) {
-            tableColumnQuanHeChuHo.setCellValueFactory(cellData -> {
-                // Determine relationship based on whether this person is the apartment owner
-                String relationship = "Cư dân";
-                if (currentCanHo != null && currentCanHo.getChuHo() != null) {
-                    if (cellData.getValue().getMaDinhDanh().equals(currentCanHo.getChuHo().getMaDinhDanh())) {
-                        relationship = "Chủ hộ";
+    /**
+     * Setup table cư dân riêng biệt để dễ debug
+     */
+    private void setupCuDanTable() {
+        try {
+            System.out.println("=== DEBUG: Setting up Cu Dan table ===");
+            
+            if (tableViewCuDan == null) {
+                System.err.println("ERROR: tableViewCuDan is NULL!");
+                return;
+            }
+
+            // Setup table cư dân
+            if(tableColumnMaCanHoCuDan != null){
+                tableColumnMaCanHoCuDan.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(
+                        currentCanHo != null ? currentCanHo.getMaCanHo() : ""));
+            } else {
+                System.err.println("WARNING: tableColumnMaCanHoCuDan is NULL!");
+            }
+
+            if (tableColumnMaDinhDanhCuDan != null) {
+                tableColumnMaDinhDanhCuDan.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(
+                        cellData.getValue().getMaDinhDanh() != null ? 
+                        cellData.getValue().getMaDinhDanh() : ""));
+            } else {
+                System.err.println("WARNING: tableColumnMaDinhDanhCuDan is NULL!");
+            }
+            
+            if (tableColumnHoVaTenCuDan != null) {
+                tableColumnHoVaTenCuDan.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(
+                        cellData.getValue().getHoVaTen() != null ? 
+                        cellData.getValue().getHoVaTen() : ""));
+            } else {
+                System.err.println("WARNING: tableColumnHoVaTenCuDan is NULL!");
+            }
+            
+            if (tableColumnGioiTinhCuDan != null) {
+                tableColumnGioiTinhCuDan.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(
+                        cellData.getValue().getGioiTinh() != null ? 
+                        cellData.getValue().getGioiTinh() : ""));
+            } else {
+                System.err.println("WARNING: tableColumnGioiTinhCuDan is NULL!");
+            }
+            
+            if (tableColumnSoDienThoaiCuDan != null) {
+                tableColumnSoDienThoaiCuDan.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(
+                        cellData.getValue().getSoDienThoai() != null ? 
+                        cellData.getValue().getSoDienThoai() : ""));
+            } else {
+                System.err.println("WARNING: tableColumnSoDienThoaiCuDan is NULL!");
+            }
+            
+            
+            
+            if (tableColumnQuanHeChuHo != null) {
+                tableColumnQuanHeChuHo.setCellValueFactory(cellData -> {
+                    // Determine relationship based on whether this person is the apartment owner
+                    String relationship = "Cư dân";
+                    if (currentCanHo != null && currentCanHo.getChuHo() != null 
+                        && cellData.getValue().getMaDinhDanh() != null) {
+                        if (cellData.getValue().getMaDinhDanh().equals(currentCanHo.getChuHo().getMaDinhDanh())) {
+                            relationship = "Chủ hộ";
+                        }
                     }
-                }
-                return new javafx.beans.property.SimpleStringProperty(relationship);
-            });
-        }
-        
-        if (tableColumnNgaySinhCuDan != null) {
-            tableColumnNgaySinhCuDan.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(
-                    cellData.getValue().getNgaySinh() != null ? 
-                    cellData.getValue().getNgaySinh().toString() : ""));
-        }
-        
-        if (tableColumnTrangThaiCuDan != null) {
-            tableColumnTrangThaiCuDan.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(
-                    cellData.getValue().getTrangThaiCuTru() != null ? 
-                    cellData.getValue().getTrangThaiCuTru() : ""));
-        }
+                    return new javafx.beans.property.SimpleStringProperty(relationship);
+                });
+            } else {
+                System.err.println("WARNING: tableColumnQuanHeChuHo is NULL!");
+            }
+            
+            if (tableColumnNgaySinhCuDan != null) {
+                tableColumnNgaySinhCuDan.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(
+                        cellData.getValue().getNgaySinh() != null ? 
+                        cellData.getValue().getNgaySinh().toString() : ""));
+            } else {
+                System.err.println("WARNING: tableColumnNgaySinhCuDan is NULL!");
+            }
+            
+            if (tableColumnTrangThaiCuDan != null) {
+                tableColumnTrangThaiCuDan.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(
+                        cellData.getValue().getTrangThaiCuTru() != null ? 
+                        cellData.getValue().getTrangThaiCuTru() : ""));
+            } else {
+                System.err.println("WARNING: tableColumnTrangThaiCuDan is NULL!");
+            }
 
-        // Thêm cột thao tác cho cư dân
-        if (tableColumnThaoTacCuDan != null) {
-            setupCuDanActions();
+            // Thêm cột thao tác cho cư dân
+            if (tableColumnThaoTacCuDan != null) {
+                setupCuDanActions();
+            } else {
+                System.err.println("WARNING: tableColumnThaoTacCuDan is NULL!");
+            }
+            
+ 
+            
+            System.out.println("✅ Successfully set up Cu Dan table columns");
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception in setupCuDanTable: " + e.getMessage());
+            e.printStackTrace();
         }
+    }
 
-        // Setup table phương tiện
-        if (tableColumnMaPhuongTien != null) {
-            tableColumnMaPhuongTien.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(String.valueOf(cellData.getValue().getSoThuTu())));
+    /**
+     * Thiết lập chiều rộng cột cho bảng cư dân để phù hợp với kích thước cửa sổ 720x450
+     */
+   
+
+    /**
+     * Setup table phương tiện
+     */
+    private void setupPhuongTienTable() {
+        try {
+            if (tableViewPhuongTien == null) {
+                System.err.println("WARNING: tableViewPhuongTien is NULL!");
+                return;
+            }
+
+            // Setup table phương tiện
+            if (tableColumnMaPhuongTien != null) {
+                tableColumnMaPhuongTien.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(String.valueOf(cellData.getValue().getSoThuTu())));
+            }
+            
+            if (tableColumnBienSoXe != null) {
+                tableColumnBienSoXe.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(cellData.getValue().getBienSo()));
+            }
+            
+            if (tableColumnLoaiPhuongTien != null) {
+                tableColumnLoaiPhuongTien.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(cellData.getValue().getLoaiPhuongTien()));
+            }
+            
+            if (tableColumnNgayDangKi != null) {
+                tableColumnNgayDangKi.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(
+                        cellData.getValue().getNgayDangKy() != null ? 
+                        cellData.getValue().getNgayDangKy().toString() : ""));
+            }
+
+            // Thêm cột thao tác cho phương tiện
+            if (tableColumnThaoTacPhuongTien != null) {
+                setupPhuongTienActions();
+            }
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception in setupPhuongTienTable: " + e.getMessage());
+            e.printStackTrace();
         }
-        if (tableColumnBienSoXe != null) {
-            tableColumnBienSoXe.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getBienSo()));
+    }
+
+    /**
+     * Setup table thu phí
+     */
+    private void setupThuPhiTable() {
+        try {
+            if (tableViewThuPhi == null) {
+                System.err.println("WARNING: tableViewThuPhi is NULL!");
+                return;
+            }
+
+            // Setup table thu phí/hóa đơn
+            if (tableColumnMaHoaDon != null) {
+                tableColumnMaHoaDon.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(String.valueOf(cellData.getValue().getMaHoaDon())));
+            }
+            
+            if (tableColumnTenKhoanThu != null) {
+                tableColumnTenKhoanThu.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(cellData.getValue().getTenKhoanThu()));
+            }
+            
+            if (tableColumnSoTien != null) {
+                tableColumnSoTien.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getSoTien()));
+            }
+            
+            if (tableColumnHanThu != null) {
+                tableColumnHanThu.setCellValueFactory(cellData -> 
+                    new javafx.beans.property.SimpleStringProperty(
+                        cellData.getValue().getNgayNop() != null ? 
+                        cellData.getValue().getNgayNop().toString() : "Chưa nộp"));
+            }
+
+            // Setup action column for thu phi
+            if (tableColumnThaoTacThuPhi != null) {
+                setupThuPhiActions();
+            }
+            
+        } catch (Exception e) {
+            System.err.println("ERROR: Exception in setupThuPhiTable: " + e.getMessage());
+            e.printStackTrace();
         }
-        if (tableColumnLoaiPhuongTien != null) {
-            tableColumnLoaiPhuongTien.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getLoaiPhuongTien()));
-        }
-        if (tableColumnNgayDangKi != null) {
-            tableColumnNgayDangKi.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(
-                    cellData.getValue().getNgayDangKy() != null ? 
-                    cellData.getValue().getNgayDangKy().toString() : ""));
-        }
-        
-        // Thiết lập cell factory cho cột thao tác
-        tableColumnThaoTacPhuongTien.setCellFactory(param -> new javafx.scene.control.TableCell<PhuongTienDto, Void>() {
+    }
+
+    /**
+     * Setup actions cho table phương tiện
+     */
+    private void setupPhuongTienActions() {
+        tableColumnThaoTacPhuongTien.setCellFactory(column -> new javafx.scene.control.TableCell<PhuongTienDto, Void>() {
+            private final javafx.scene.control.Button editButton = new javafx.scene.control.Button("Sửa");
             private final javafx.scene.control.Button deleteButton = new javafx.scene.control.Button("Xóa");
+            private final javafx.scene.layout.HBox pane = new javafx.scene.layout.HBox(editButton, deleteButton);
 
             {
-                deleteButton.getStyleClass().addAll("action-button", "button-red");
+                pane.setSpacing(5);
+                editButton.setOnAction(event -> {
+                    PhuongTienDto phuongTien = getTableView().getItems().get(getIndex());
+                    handleEditPhuongTien(phuongTien);
+                });
                 deleteButton.setOnAction(event -> {
                     PhuongTienDto phuongTien = getTableView().getItems().get(getIndex());
                     handleDeletePhuongTien(phuongTien);
                 });
                 
-                // Disable nút xóa cho tất cả trừ Tổ phó (chỉ Tổ phó được phép xóa phương tiện)
-                try {
-                    String userRole = getCurrentUserRole();
-                    if (!"Tổ phó".equals(userRole)) {
-                        deleteButton.setDisable(true);
-                        deleteButton.setOpacity(0.5);
-                    }
-                } catch (Exception e) {
-                    System.err.println("ERROR: Cannot setup delete button permission: " + e.getMessage());
-                }
+                // Style buttons
+                editButton.getStyleClass().addAll("action-button", "button-sky-blue");
+                deleteButton.getStyleClass().addAll("action-button", "button-red");
             }
 
             @Override
@@ -326,107 +443,45 @@ public class ChiTietCanHoController implements Initializable {
                 if (empty) {
                     setGraphic(null);
                 } else {
-                    setGraphic(deleteButton);
+                    setGraphic(pane);
                     setAlignment(javafx.geometry.Pos.CENTER);
                 }
             }
         });
+    }
 
-        // Setup table thu phí
-        if (tableColumnMaHoaDon != null) {
-            tableColumnMaHoaDon.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(String.valueOf(cellData.getValue().getMaHoaDon())));
-        }
-        if (tableColumnTenKhoanThu != null) {
-            tableColumnTenKhoanThu.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(cellData.getValue().getTenKhoanThu()));
-        }
-        if (tableColumnSoTien != null) {
-            tableColumnSoTien.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue().getSoTien()));
-        }
-        if (tableColumnHanThu != null) {
-            tableColumnHanThu.setCellValueFactory(cellData -> 
-                new javafx.beans.property.SimpleStringProperty(
-                    cellData.getValue().getNgayNop() != null ? 
-                    cellData.getValue().getNgayNop().toString() : "Chưa nộp"));
-        }
-        
+    /**
+     * Setup actions cho table thu phí
+     */
+    private void setupThuPhiActions() {
         // Setup cột thao tác thu phí - chỉ hiển thị trạng thái
-        if (tableColumnThaoTacThuPhi != null) {
-            tableColumnThaoTacThuPhi.setCellValueFactory(cellData -> {
-                HoaDonDto hoaDon = cellData.getValue();
-                String trangThai = hoaDon.isDaNop() ? "Đã nộp" : "Chưa nộp";
-                return new javafx.beans.property.SimpleStringProperty(trangThai);
-            });
-            
-            // Thiết lập màu sắc cho text dựa trên trạng thái
-            tableColumnThaoTacThuPhi.setCellFactory(column -> new javafx.scene.control.TableCell<HoaDonDto, String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                        setStyle("");
+        tableColumnThaoTacThuPhi.setCellValueFactory(cellData -> {
+            HoaDonDto hoaDon = cellData.getValue();
+            String trangThai = hoaDon.isDaNop() ? "Đã nộp" : "Chưa nộp";
+            return new javafx.beans.property.SimpleStringProperty(trangThai);
+        });
+        
+        // Thiết lập màu sắc cho text dựa trên trạng thái
+        tableColumnThaoTacThuPhi.setCellFactory(column -> new javafx.scene.control.TableCell<HoaDonDto, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+                    setAlignment(javafx.geometry.Pos.CENTER);
+                    
+                    // Thiết lập màu sắc dựa trên trạng thái
+                    if ("Đã nộp".equals(item)) {
+                        setStyle("-fx-text-fill: #4CAF50; -fx-font-weight: bold;"); // Màu xanh
                     } else {
-                        setText(item);
-                        setAlignment(javafx.geometry.Pos.CENTER);
-                        
-                        // Thiết lập màu sắc dựa trên trạng thái
-                        if ("Đã nộp".equals(item)) {
-                            setStyle("-fx-text-fill: #4CAF50; -fx-font-weight: bold;"); // Màu xanh
-                        } else {
-                            setStyle("-fx-text-fill: #F44336; -fx-font-weight: bold;"); // Màu đỏ
-                        }
+                        setStyle("-fx-text-fill: #F44336; -fx-font-weight: bold;"); // Màu đỏ
                     }
                 }
-            });
-        }
-
-        // Setup search functionality for Cư dân tab
-        if (textFieldTimKiemCuDan != null) {
-            textFieldTimKiemCuDan.textProperty().addListener((observable, oldValue, newValue) -> {
-                handleTimKiemCuDan();
-            });
-        }
-        
-        if (textFieldMaDinhDanh != null) {
-            textFieldMaDinhDanh.textProperty().addListener((observable, oldValue, newValue) -> {
-                handleTimKiemCuDan();
-            });
-        }
-        
-        // Setup search functionality for Phương tiện tab
-        if (textFieldMaSoXe != null) {
-            textFieldMaSoXe.textProperty().addListener((observable, oldValue, newValue) -> {
-                handleTimKiemPhuongTien();
-            });
-        }
-        
-        if (comboBoxLoaiPhuongTien != null) {
-            comboBoxLoaiPhuongTien.valueProperty().addListener((observable, oldValue, newValue) -> {
-                handleTimKiemPhuongTien();
-            });
-        }
-        
-        // Setup search functionality for Thu phí tab
-        if (textFieldTenKhoanThu != null) {
-            textFieldTenKhoanThu.textProperty().addListener((observable, oldValue, newValue) -> {
-                handleTimKiemThuPhi();
-            });
-        }
-        
-        if (comboBoxTrangThaiCuDan != null) {
-            comboBoxTrangThaiCuDan.valueProperty().addListener((observable, oldValue, newValue) -> {
-                handleTimKiemCuDan();
-            });
-        }
-        
-        if (comboBoxLoaiKhoanThu != null) {
-            comboBoxLoaiKhoanThu.valueProperty().addListener((observable, oldValue, newValue) -> {
-                handleTimKiemThuPhi();
-            });
-        }
+            }
+        });
     }
 
     /**
@@ -754,7 +809,9 @@ public class ChiTietCanHoController implements Initializable {
                 .distinct()
                 .forEach(vehicleTypes::add);
             comboBoxLoaiPhuongTien.setItems(vehicleTypes);
-            if (!vehicleTypes.contains(comboBoxLoaiPhuongTien.getValue())) {
+            // Ensure current value is safe before checking contains
+            String currentVehicleValue = comboBoxLoaiPhuongTien.getValue();
+            if (currentVehicleValue == null || !vehicleTypes.contains(currentVehicleValue)) {
                 comboBoxLoaiPhuongTien.setValue("Tất cả");
             }
         }
@@ -768,7 +825,9 @@ public class ChiTietCanHoController implements Initializable {
                 .distinct()
                 .forEach(feeTypes::add);
             comboBoxLoaiKhoanThu.setItems(feeTypes);
-            if (!feeTypes.contains(comboBoxLoaiKhoanThu.getValue())) {
+            // Ensure current value is safe before checking contains
+            String currentValue = comboBoxLoaiKhoanThu.getValue();
+            if (currentValue == null || !feeTypes.contains(currentValue)) {
                 comboBoxLoaiKhoanThu.setValue("Tất cả");
             }
         }
@@ -848,9 +907,14 @@ public class ChiTietCanHoController implements Initializable {
                     }
                     System.out.println("=== END DTO residents ===");
                     
-                    // Chỉ hiển thị cư dân có trạng thái "Cư trú"
+                    // Hiển thị tất cả cư dân có trạng thái khác "Đã chuyển đi"
+                    // Chấp nhận: "Cư trú", "Không cư trú", hoặc null
                     chiTiet.getCuDanList().stream()
-                        .filter(cuDan -> "Cư trú".equals(cuDan.getTrangThaiCuTru()))
+                        .filter(cuDan -> {
+                            String trangThai = cuDan.getTrangThaiCuTru();
+                            return trangThai == null || 
+                                   !"Đã chuyển đi".equals(trangThai);
+                        })
                         .forEach(cuDanList::add);
                     
                     System.out.println("=== DEBUG: UI loaded " + chiTiet.getCuDanList().size() + " total residents, " 
@@ -977,10 +1041,16 @@ public class ChiTietCanHoController implements Initializable {
                     tableViewCuDan.setItems(cuDanList);
                     tableViewCuDan.refresh(); // Force refresh
                     
-                    // Force column refresh
+                    // Force column refresh to ensure data is displayed
                     if (!tableViewCuDan.getColumns().isEmpty()) {
                         tableViewCuDan.getColumns().get(0).setVisible(false);
                         tableViewCuDan.getColumns().get(0).setVisible(true);
+                    }
+                    
+                    // Additional debugging for table columns
+                    System.out.println("DEBUG: Table columns count: " + tableViewCuDan.getColumns().size());
+                    for (int i = 0; i < tableViewCuDan.getColumns().size(); i++) {
+                        System.out.println("  Column " + i + ": " + tableViewCuDan.getColumns().get(i).getText());
                     }
                     
                     updateResultCount(); // Hiển thị số kết quả
@@ -1142,23 +1212,7 @@ public class ChiTietCanHoController implements Initializable {
         }
         
         // Debug table visibility and data
-        if (tableViewCuDan != null) {
-            System.out.println("tableViewCuDan visible: " + tableViewCuDan.isVisible());
-            System.out.println("tableViewCuDan items: " + tableViewCuDan.getItems().size());
-            System.out.println("cuDanList size: " + (cuDanList != null ? cuDanList.size() : "NULL"));
-            System.out.println("currentCanHo: " + (currentCanHo != null ? currentCanHo.getMaCanHo() : "NULL"));
-            
-            if (cuDanList != null && !cuDanList.isEmpty()) {
-                System.out.println("=== DEBUG: Current cuDanList contents after refresh ===");
-                for (CuDanTrongCanHoDto cuDan : cuDanList) {
-                    System.out.println("- " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ") - " + cuDan.getTrangThaiCuTru());
-                }
-                System.out.println("=== END cuDanList contents ===");
-            } else {
-                System.out.println("cuDanList is EMPTY or NULL after refresh!");
-            }
-        }
-        System.out.println("=== END DEBUG: Cu Dan tab ===");
+        
     }
 
     @FXML
@@ -1230,9 +1284,9 @@ public class ChiTietCanHoController implements Initializable {
             ObservableList<CuDanTrongCanHoDto> filteredList = cuDanList.stream()
                 .filter(cuDan -> {
                     boolean matchesHoTen = keywordHoTen.isEmpty() || 
-                        cuDan.getHoVaTen().toLowerCase().contains(keywordHoTen.toLowerCase());
+                        (cuDan.getHoVaTen() != null && cuDan.getHoVaTen().toLowerCase().contains(keywordHoTen.toLowerCase()));
                     boolean matchesMaDinhDanh = keywordMaDinhDanh.isEmpty() ||
-                        cuDan.getMaDinhDanh().toLowerCase().contains(keywordMaDinhDanh.toLowerCase());
+                        (cuDan.getMaDinhDanh() != null && cuDan.getMaDinhDanh().toLowerCase().contains(keywordMaDinhDanh.toLowerCase()));
                     boolean matchesTrangThai = "Tất cả".equals(trangThaiCuDan) || 
                         trangThaiCuDan == null || trangThaiCuDan.isEmpty() ||
                         (cuDan.getTrangThaiCuTru() != null && cuDan.getTrangThaiCuTru().equals(trangThaiCuDan));
@@ -1272,10 +1326,10 @@ public class ChiTietCanHoController implements Initializable {
             ObservableList<PhuongTienDto> filteredList = phuongTienList.stream()
                 .filter(pt -> {
                     boolean matchesBienSo = maSoXe.isEmpty() || 
-                        pt.getBienSo().toLowerCase().contains(maSoXe.toLowerCase());
+                        (pt.getBienSo() != null && pt.getBienSo().toLowerCase().contains(maSoXe.toLowerCase()));
                     boolean matchesLoai = "Tất cả".equals(loaiPhuongTien) || 
                         loaiPhuongTien == null || loaiPhuongTien.isEmpty() ||
-                        pt.getLoaiPhuongTien().equals(loaiPhuongTien);
+                        (pt.getLoaiPhuongTien() != null && pt.getLoaiPhuongTien().equals(loaiPhuongTien));
                     return matchesBienSo && matchesLoai;
                 })
                 .collect(FXCollections::observableArrayList, 
@@ -1475,9 +1529,17 @@ public class ChiTietCanHoController implements Initializable {
 
     @FXML
     private void handleTimKiemThuPhi() {
-        String tenKhoanThu = textFieldTenKhoanThu != null ? textFieldTenKhoanThu.getText().trim() : "";
-        String loaiKhoanThu = comboBoxLoaiKhoanThu != null ? comboBoxLoaiKhoanThu.getValue() : "";
-        String trangThaiThanhToan = comboBoxTrangThaiThanhToan != null ? comboBoxTrangThaiThanhToan.getValue() : "";
+        // Safeguard: Don't run search if data is not initialized yet
+        if (hoaDonList == null || currentCanHo == null) {
+            System.out.println("🔍 Thu phí search skipped - data not initialized yet");
+            return;
+        }
+        
+        final String tenKhoanThu = textFieldTenKhoanThu != null ? textFieldTenKhoanThu.getText().trim() : "";
+        final String loaiKhoanThu = comboBoxLoaiKhoanThu != null ? 
+            (comboBoxLoaiKhoanThu.getValue() != null ? comboBoxLoaiKhoanThu.getValue() : "Tất cả") : "Tất cả";
+        final String trangThaiThanhToan = comboBoxTrangThaiThanhToan != null ? 
+            (comboBoxTrangThaiThanhToan.getValue() != null ? comboBoxTrangThaiThanhToan.getValue() : "Tất cả") : "Tất cả";
         
         if (tenKhoanThu.isEmpty() && "Tất cả".equals(loaiKhoanThu) && "Tất cả".equals(trangThaiThanhToan)) {
             setTableData(); // Reset to full list
@@ -1489,9 +1551,9 @@ public class ChiTietCanHoController implements Initializable {
             ObservableList<HoaDonDto> filteredList = hoaDonList.stream()
                 .filter(hd -> {
                     boolean matchesTen = tenKhoanThu.isEmpty() || 
-                        hd.getTenKhoanThu().toLowerCase().contains(tenKhoanThu.toLowerCase());
+                        (hd.getTenKhoanThu() != null && hd.getTenKhoanThu().toLowerCase().contains(tenKhoanThu.toLowerCase()));
                     boolean matchesLoai = "Tất cả".equals(loaiKhoanThu) || 
-                        hd.getTenKhoanThu().contains(loaiKhoanThu);
+                        (hd.getTenKhoanThu() != null && hd.getTenKhoanThu().contains(loaiKhoanThu));
                     
                     // Thêm logic lọc theo trạng thái thanh toán
                     boolean matchesTrangThai = true;
@@ -1516,7 +1578,7 @@ public class ChiTietCanHoController implements Initializable {
             // Cập nhật tổng số tiền sau khi lọc
             updateTongSoTien();
             
-            System.out.println("🔍 Thu phí search completed:");
+            System.out.println(" Thu phí search completed:");
             System.out.println("  - Search criteria: TenKhoanThu=" + tenKhoanThu + ", LoaiKhoanThu=" + loaiKhoanThu + ", TrangThaiThanhToan=" + trangThaiThanhToan);
             System.out.println("  - Results: " + filteredList.size() + "/" + hoaDonList.size());
         }
@@ -1646,13 +1708,13 @@ public class ChiTietCanHoController implements Initializable {
             
             // Tạo nội dung chi tiết hóa đơn
             StringBuilder lichSu = new StringBuilder();
-            lichSu.append("📋 CHI TIẾT HÓA ĐƠN\n");
+            lichSu.append(" CHI TIẾT HÓA ĐƠN\n");
             lichSu.append("=".repeat(30)).append("\n");
-            lichSu.append("🏷️ Mã hóa đơn: ").append(hoaDon.getMaHoaDon()).append("\n");
-            lichSu.append("🏠 Mã căn hộ: ").append(currentCanHo != null ? currentCanHo.getMaCanHo() : "N/A").append("\n");
-            lichSu.append("📄 Tên khoản thu: ").append(hoaDon.getTenKhoanThu()).append("\n");
-            lichSu.append("💰 Số tiền: ").append(String.format("%,d VNĐ", hoaDon.getSoTien())).append("\n");
-            lichSu.append("📅 Ngày nộp: ").append(
+            lichSu.append(" Mã hóa đơn: ").append(hoaDon.getMaHoaDon()).append("\n");
+            lichSu.append(" Mã căn hộ: ").append(currentCanHo != null ? currentCanHo.getMaCanHo() : "N/A").append("\n");
+            lichSu.append(" Tên khoản thu: ").append(hoaDon.getTenKhoanThu()).append("\n");
+            lichSu.append(" Số tiền: ").append(String.format("%,d VNĐ", hoaDon.getSoTien())).append("\n");
+            lichSu.append(" Ngày nộp: ").append(
                 hoaDon.getNgayNop() != null ? hoaDon.getNgayNop().toString() : "Chưa nộp"
             ).append("\n");
             lichSu.append("✅ Trạng thái: ").append(

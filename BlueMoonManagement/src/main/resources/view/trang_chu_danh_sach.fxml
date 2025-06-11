@@ -270,11 +270,6 @@
                               </TableView>
                               <AnchorPane prefWidth="970.0">
                                  <children>
-                                    <Label fx:id="labelHienThiKetQua" layoutY="8.0" text="Hiển thị 0/0 kết quả" AnchorPane.leftAnchor="0.0">
-                                       <font>
-                                          <Font name="Arial" size="14.0" />
-                                       </font>
-                                    </Label>
                                     <Label fx:id="labelKetQuaHienThi" layoutX="662.0" layoutY="7.0" prefHeight="16.0" text="Số kết quả hiển thị" AnchorPane.rightAnchor="0.0">
                                        <font>
                                           <Font name="Arial" size="14.0" />
@@ -380,11 +375,6 @@
                               </TableView>
                               <AnchorPane prefWidth="970.0">
                                  <children>
-                                    <Label fx:id="labelHienThiKetQuaCuDan" layoutY="8.0" text="Hiển thị 0/0 kết quả" AnchorPane.leftAnchor="0.0">
-                                       <font>
-                                          <Font name="Arial" size="14.0" />
-                                       </font>
-                                    </Label>
                                     <Label fx:id="labelKetQuaHienThiCuDan" layoutX="768.0" layoutY="7.0" text="Số kết quả hiển thị" AnchorPane.rightAnchor="0.0">
                                        <font>
                                           <Font name="Arial" size="14.0" />
@@ -478,11 +468,6 @@
                               </TableView>
                               <AnchorPane prefWidth="970.0">
                                  <children>
-                                    <Label fx:id="labelHienThiKetQuaKhoanThu" layoutY="8.0" text="Hiển thị 0/0 kết quả" AnchorPane.leftAnchor="0.0">
-                                       <font>
-                                          <Font name="Arial" size="14.0" />
-                                       </font>
-                                    </Label>
                                     <Label fx:id="labelKetQuaHienThiKhoanThu" layoutX="768.0" layoutY="7.0" text="Số kết quả hiển thị" AnchorPane.rightAnchor="0.0">
                                        <font>
                                           <Font name="Arial" size="14.0" />
@@ -660,11 +645,6 @@
                               </TableView>
                               <AnchorPane prefWidth="970.0">
                                  <children>
-                                    <Label fx:id="labelHienThiKetQua1" layoutY="8.0" text="Hiển thị 0/0 kết quả" AnchorPane.leftAnchor="0.0">
-                                       <font>
-                                          <Font name="Arial" size="14.0" />
-                                       </font>
-                                    </Label>
                                     <Label layoutX="768.0" layoutY="7.0" text="Số kết quả hiển thị" AnchorPane.rightAnchor="0.0">
                                        <font>
                                           <Font name="Arial" size="14.0" />

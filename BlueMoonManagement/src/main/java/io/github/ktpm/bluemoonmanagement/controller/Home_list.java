@@ -18,9 +18,9 @@ import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
+import io.github.ktpm.bluemoonmanagement.util.FileMultipartUtil;
 import io.github.ktpm.bluemoonmanagement.util.FxView;
 import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
-import io.github.ktpm.bluemoonmanagement.util.FileMultipartUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -1126,7 +1126,7 @@ public class Home_list implements Initializable {
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             stage.setTitle("Chi tiết căn hộ - " + chiTiet.getMaCanHo());
-            stage.setScene(new javafx.scene.Scene(root, 1000, 700));
+            stage.setScene(new javafx.scene.Scene(root, 720, 450));
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(tabelViewCanHo.getScene().getWindow());
             System.out.println("DEBUG: About to show stage");
@@ -3232,7 +3232,7 @@ public class Home_list implements Initializable {
                 // Tạo dữ liệu cho PieChart từ database thực
                 for (java.util.Map.Entry<String, Integer> entry : feeTypeCount.entrySet()) {
                     javafx.scene.chart.PieChart.Data slice = new javafx.scene.chart.PieChart.Data(
-                        entry.getKey() + " (" + entry.getValue() + ")", 
+                        entry.getKey(), // Đã có label chi tiết rồi, không cần thêm nữa
                         entry.getValue()
                     );
                     pieChartKhoanThu.getData().add(slice);
@@ -3240,8 +3240,9 @@ public class Home_list implements Initializable {
                 
                 System.out.println("📊 PieChart data loaded from database: " + feeTypeCount.size() + " categories");
             } else {
-                // Nếu không có dữ liệu, hiển thị thông báo
-                javafx.scene.chart.PieChart.Data emptySlice = new javafx.scene.chart.PieChart.Data("Không có dữ liệu", 1);
+                // Nếu không có dữ liệu, hiển thị thông báo với style đẹp hơn
+                javafx.scene.chart.PieChart.Data emptySlice = new javafx.scene.chart.PieChart.Data(
+                    "Chưa có khoản thu nào", 1);
                 pieChartKhoanThu.getData().add(emptySlice);
                 
                 System.out.println("📊 No real data found in database for PieChart");
@@ -3253,26 +3254,37 @@ public class Home_list implements Initializable {
             pieChartKhoanThu.setLabelsVisible(false); // Ẩn label trên từng slice để gọn gàng hơn
             pieChartKhoanThu.setTitle("");
             
-            // Đổi màu thành các tone xanh cho PieChart
+            // Đổi màu cho PieChart - Ban quản lý (xanh) và Bên thứ 3 (cam)
             javafx.application.Platform.runLater(() -> {
                 try {
-                    String[] blueColors = {
-                        "#1976D2", // Xanh đậm
-                        "#2196F3", // Xanh vừa
-                        "#42A5F5", // Xanh nhạt
-                        "#64B5F6", // Xanh rất nhạt
-                        "#90CAF9"  // Xanh pastel
-                    };
-                    
                     int colorIndex = 0;
                     for (javafx.scene.chart.PieChart.Data data : pieChartKhoanThu.getData()) {
                         javafx.scene.Node node = data.getNode();
                         if (node != null) {
-                            String color = blueColors[colorIndex % blueColors.length];
+                            String color;
+                            String dataName = data.getName().toLowerCase();
+                            
+                            if (dataName.contains("ban quản lý")) {
+                                // Màu xanh cho Ban quản lý
+                                color = "#2196F3";
+                            } else if (dataName.contains("bên thứ 3")) {
+                                // Màu cam cho Bên thứ 3
+                                color = "#FF9800";
+                            } else if (dataName.contains("không có dữ liệu")) {
+                                // Màu xám cho trường hợp không có dữ liệu
+                                color = "#9E9E9E";
+                            } else {
+                                // Màu mặc định cho các trường hợp khác
+                                String[] defaultColors = {"#2196F3", "#FF9800", "#4CAF50", "#9C27B0"};
+                                color = defaultColors[colorIndex % defaultColors.length];
+                            }
+                            
                             node.setStyle("-fx-pie-color: " + color + ";");
                             colorIndex++;
                         }
                     }
+                    
+                    System.out.println("🎨 Applied custom colors to pie chart slices");
                 } catch (Exception e) {
                     System.err.println("Error setting pie chart colors: " + e.getMessage());
                 }
@@ -3953,7 +3965,7 @@ public class Home_list implements Initializable {
     }
 
     /**
-     * Lấy dữ liệu khoản thu thực từ database cho PieChart
+     * Lấy dữ liệu khoản thu thực từ database cho PieChart - Phân theo Ban quản lý và Bên thứ 3
      */
     private java.util.Map<String, Integer> getRealKhoanThuDataForPieChart() {
         try {
@@ -3966,15 +3978,42 @@ public class Home_list implements Initializable {
                     return null;
                 }
                 
-                // Đếm số lượng khoản thu theo loại
+                // Phân tích dữ liệu theo Ban quản lý vs Bên thứ 3
                 java.util.Map<String, Integer> feeTypeCount = new java.util.HashMap<>();
+                int totalBanQuanLy = 0;
+                int totalBenThu3 = 0;
+                long totalAmountBanQuanLy = 0;
+                long totalAmountBenThu3 = 0;
                 
                 for (KhoanThuDto dto : allKhoanThu) {
-                    String type = dto.isBatBuoc() ? "Bắt buộc" : "Tự nguyện";
-                    feeTypeCount.put(type, feeTypeCount.getOrDefault(type, 0) + 1);
+                    boolean isBanQuanLy = isKhoanThuBanQuanLy(dto.getTenKhoanThu());
+                    
+                    if (isBanQuanLy) {
+                        totalBanQuanLy++;
+                        totalAmountBanQuanLy += dto.getSoTien();
+                    } else {
+                        totalBenThu3++;
+                        totalAmountBenThu3 += dto.getSoTien();
+                    }
                 }
                 
-                System.out.println("📊 Real fee data retrieved: " + feeTypeCount);
+                // Tạo label có thông tin chi tiết
+                if (totalBanQuanLy > 0) {
+                    String labelBanQuanLy = String.format("Ban quản lý (%d khoản - %,d VNĐ)", 
+                        totalBanQuanLy, totalAmountBanQuanLy);
+                    feeTypeCount.put(labelBanQuanLy, totalBanQuanLy);
+                }
+                
+                if (totalBenThu3 > 0) {
+                    String labelBenThu3 = String.format("Bên thứ 3 (%d khoản - %,d VNĐ)", 
+                        totalBenThu3, totalAmountBenThu3);
+                    feeTypeCount.put(labelBenThu3, totalBenThu3);
+                }
+                
+                System.out.println("📊 Fee data by management type:");
+                System.out.println("  - Ban quản lý: " + totalBanQuanLy + " khoản, tổng " + String.format("%,d VNĐ", totalAmountBanQuanLy));
+                System.out.println("  - Bên thứ 3: " + totalBenThu3 + " khoản, tổng " + String.format("%,d VNĐ", totalAmountBenThu3));
+                
                 return feeTypeCount;
                 
             } else {
@@ -3986,5 +4025,57 @@ public class Home_list implements Initializable {
             e.printStackTrace();
             return null;
         }
+    }
+    
+    /**
+     * Phân biệt khoản thu thuộc về Ban quản lý hay Bên thứ 3 dựa trên tên
+     */
+    private boolean isKhoanThuBanQuanLy(String tenKhoanThu) {
+        if (tenKhoanThu == null || tenKhoanThu.trim().isEmpty()) {
+            return false;
+        }
+        
+        String ten = tenKhoanThu.toLowerCase().trim();
+        
+        // Các khoản thu thuộc Ban quản lý nội bộ
+        String[] banQuanLyKeywords = {
+            "quản lý", "ban quản lý", "bql", "quản trị",
+            "vận hành", "bảo trì", "sửa chữa",
+            "điện", "nước", "internet", "cáp", 
+            "thang máy", "thang bộ", "hành lang",
+            "sảnh", "lobby", "khu vực chung",
+            "bảo vệ", "an ninh", "camera",
+            "vệ sinh", "dọn dẹp", "rác thải",
+            "cảnh quan", "sân vườn", "cây xanh"
+        };
+        
+        // Các khoản thu thuộc Bên thứ 3/Dịch vụ ngoài
+        String[] benThu3Keywords = {
+            "đậu xe", "gửi xe", "phí xe", "bãi đỗ",
+            "cable", "truyền hình", "internet riêng",
+            "điện lạnh", "máy lạnh", "sửa chữa riêng",
+            "dịch vụ", "spa", "gym", "fitness",
+            "nhà hàng", "café", "shop", "cửa hàng",
+            "logistics", "chuyển phát", "giao hàng",
+            "bảo hiểm", "y tế", "chăm sóc sức khỏe"
+        };
+        
+        // Kiểm tra keywords của bên thứ 3 trước (ưu tiên cao hơn)
+        for (String keyword : benThu3Keywords) {
+            if (ten.contains(keyword)) {
+                return false; // Thuộc bên thứ 3
+            }
+        }
+        
+        // Kiểm tra keywords của ban quản lý
+        for (String keyword : banQuanLyKeywords) {
+            if (ten.contains(keyword)) {
+                return true; // Thuộc ban quản lý
+            }
+        }
+        
+        // Mặc định: nếu không xác định được thì coi là ban quản lý
+        // (vì đa số khoản thu cơ bản thường do ban quản lý phụ trách)
+        return true;
     }
 }
