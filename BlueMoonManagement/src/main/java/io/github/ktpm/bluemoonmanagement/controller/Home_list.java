@@ -615,7 +615,6 @@ public class Home_list implements Initializable {
             case "TrangChu" -> {
                 gridPaneTrangChu.setVisible(true);
                 // Refresh data khi quay về trang chủ
-                System.out.println("🔄 Refreshing data when returning to homepage...");
                 refreshAllDataForHomepage();
             }
             case "CanHo" -> scrollPaneCanHo.setVisible(true);
@@ -624,7 +623,6 @@ public class Home_list implements Initializable {
             case "LichSuThu" -> {
                 scrollPaneLichSuThu.setVisible(true);
                 // Auto-refresh invoice data when entering tab
-                System.out.println("🔄 Auto-refreshing invoice data on tab switch...");
                 refreshHoaDonData();
                 setupHoaDonTable(); // Ensure table is properly setup
             }
@@ -638,9 +636,8 @@ public class Home_list implements Initializable {
         if (parentController != null) {
             parentController.updateScreenLabel("Danh sách căn hộ");
         }
-        
+
         // Auto-refresh apartment data when entering tab
-        System.out.println("🔄 Auto-refreshing apartment data on tab switch...");
         refreshApartmentData();
         setupCanHoTable();
     }
@@ -657,9 +654,8 @@ public class Home_list implements Initializable {
         if (parentController != null) {
             parentController.updateScreenLabel("Danh sách cư dân");
         }
-        
+
         // Auto-refresh resident data when entering tab
-        System.out.println("🔄 Auto-refreshing resident data on tab switch...");
         refreshCuDanData();
         setupCuDanTable();
     }
@@ -670,9 +666,8 @@ public class Home_list implements Initializable {
         if (parentController != null) {
             parentController.updateScreenLabel("Danh sách khoản thu");
         }
-        
+
         // Auto-refresh fee data when entering tab
-        System.out.println("🔄 Auto-refreshing fee data on tab switch...");
         refreshKhoanThuData();
         setupKhoanThuTable();
     }
@@ -683,22 +678,20 @@ public class Home_list implements Initializable {
         if (parentController != null) {
             parentController.updateScreenLabel("Danh sách tài khoản");
         }
-        
+
         // Auto-refresh account data when entering tab
-        System.out.println("🔄 Auto-refreshing account data on tab switch...");
         refreshTaiKhoanData();
         setupTaiKhoanTable();
     }
-    
+
     @FXML
     void gotoLichSuThu(ActionEvent event) {
         show("LichSuThu");
         if (parentController != null) {
             parentController.updateScreenLabel("Lịch sử thu");
         }
-        
+
         // Auto-refresh invoice data when entering tab
-        System.out.println("🔄 Auto-refreshing invoice data on tab switch...");
         refreshHoaDonData();
         setupHoaDonTable();
     }
@@ -706,16 +699,16 @@ public class Home_list implements Initializable {
     private void gotothemcanho(ActionEvent event) {
         try {
             // Opening apartment form
-            
+
             // Sử dụng FXMLLoader thông thường cho JavaFX modal
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/view/them_can_ho.fxml"));
-            
+
             // Load view
             Parent root = loader.load();
-            
+
             // Get controller từ FXML
             ThemCanHoButton controller = loader.getController();
-            
+
             // Inject service và ApplicationContext sau khi load
             if (controller != null) {
                 if (canHoService != null) {
@@ -726,44 +719,44 @@ public class Home_list implements Initializable {
                     // ApplicationContext injected to form controller
                 }
             }
-            
+
             // Tạo modal dialog
             Stage dialogStage = new Stage();
-            
+
             // Thiết lập style để bỏ khung viền cửa sổ (undecorated)
             dialogStage.initStyle(javafx.stage.StageStyle.UNDECORATED);
-            
+
             // Thiết lập modal
             dialogStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             dialogStage.initOwner(buttonThemCanHo.getScene().getWindow());
-            
+
             // Thiết lập scene với kích thước phù hợp
             Scene scene = new Scene(root, 750, 650);
             dialogStage.setScene(scene);
-            
+
             // Thiết lập kích thước cửa sổ
             dialogStage.setMinWidth(700);
             dialogStage.setMinHeight(600);
             dialogStage.setMaxWidth(800);
             dialogStage.setMaxHeight(700);
             dialogStage.setResizable(false); // Tắt resize vì không có khung cửa sổ
-            
+
             // Căn giữa cửa sổ
             dialogStage.centerOnScreen();
-            
+
             // Hiển thị dialog và chờ đóng
             dialogStage.showAndWait();
-            
+
             // Sau khi đóng form thêm căn hộ, reload dữ liệu để cập nhật danh sách
             // Form closed, reloading data
             refreshApartmentData();
-            
+
         } catch (Exception e) {
             showError("Lỗi khi mở form thêm căn hộ", "Chi tiết: " + e.getMessage());
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Refresh apartment data after add/edit/delete operations
      */
@@ -772,11 +765,11 @@ public class Home_list implements Initializable {
         if (cacheDataService != null) {
             cacheDataService.refreshCacheData();
         }
-        
+
         // Reload data from database
         loadData();
     }
-    
+
     /**
      * Loads data from cache (no database refresh)
      */
@@ -786,7 +779,7 @@ public class Home_list implements Initializable {
                 // Loading apartment data from cache
                 List<CanHoDto> canHoDtoList = canHoService.getAllCanHo();
                 canHoList = FXCollections.observableArrayList();
-                
+
                 if (canHoDtoList != null) {
                     for (CanHoDto dto : canHoDtoList) {
                         // Tạm thời hiển thị tất cả căn hộ (tắt logic ẩn căn hộ)
@@ -811,7 +804,7 @@ public class Home_list implements Initializable {
                         }
                     }
                 }
-                
+
                 filteredList = FXCollections.observableArrayList(canHoList);
                 if (tabelViewCanHo != null) {
                     ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
@@ -836,10 +829,8 @@ public class Home_list implements Initializable {
         try {
             if (canHoService != null) {
                 List<CanHoDto> canHoDtoList = canHoService.getAllCanHo();
-                System.out.println("=== DEBUG: loadData() called ===");
-                System.out.println("DEBUG: canHoService available, got " + (canHoDtoList != null ? canHoDtoList.size() : 0) + " apartments from service");
                 canHoList = FXCollections.observableArrayList();
-                
+
                 if (canHoDtoList != null) {
                     for (CanHoDto dto : canHoDtoList) {
                         // Tạm thời hiển thị tất cả căn hộ (tắt logic ẩn căn hộ)
@@ -864,16 +855,14 @@ public class Home_list implements Initializable {
                         }
                     }
                 }
-                
+
                 filteredList = FXCollections.observableArrayList(canHoList);
                 if (tabelViewCanHo != null) {
                     ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
-                    System.out.println("DEBUG: Set " + filteredList.size() + " apartments to table view");
                 } else {
                     System.err.println("ERROR: tabelViewCanHo is null!");
                 }
                 updateKetQuaLabel();
-                System.out.println("=== DEBUG: loadData() completed with " + canHoList.size() + " apartments ===");
                     } else {
             System.err.println("ERROR: canHoService is null! Cannot load apartment data");
             // Initialize empty lists without sample data
@@ -895,7 +884,7 @@ public class Home_list implements Initializable {
         updateKetQuaLabel();
     }
     }
-    
+
     /**
      * Kiểm tra xem căn hộ có nên hiển thị trong danh sách hay không (sử dụng cache)
      * Ẩn những căn hộ có tất cả cư dân đã chuyển đi
@@ -904,12 +893,12 @@ public class Home_list implements Initializable {
         try {
             // Sử dụng cache service thay vì gọi database
             io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto chiTiet = cacheDataService.getCanHoChiTietFromCache(dto.getMaCanHo());
-            
+
             if (chiTiet == null || chiTiet.getCuDanList() == null || chiTiet.getCuDanList().isEmpty()) {
                 // Nếu không có cư dân thì vẫn hiển thị (căn hộ trống)
                 return true;
             }
-            
+
             // Kiểm tra xem có cư dân nào còn đang ở không
             for (io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto cuDan : chiTiet.getCuDanList()) {
                 String trangThai = cuDan.getTrangThaiCuTru();
@@ -918,11 +907,10 @@ public class Home_list implements Initializable {
                     return true;
                 }
             }
-            
+
             // Tất cả cư dân đều đã chuyển đi thì ẩn căn hộ
-            System.out.println("DEBUG: Hiding apartment " + dto.getMaCanHo() + " - all residents moved out (from cache)");
             return false;
-            
+
         } catch (Exception e) {
             System.err.println("ERROR: Cannot check apartment residents from cache for " + dto.getMaCanHo() + ": " + e.getMessage());
             // Nếu cache có lỗi thì fallback về method cũ
@@ -938,12 +926,12 @@ public class Home_list implements Initializable {
         try {
             // Lấy thông tin chi tiết căn hộ để kiểm tra cư dân
             io.github.ktpm.bluemoonmanagement.model.dto.canHo.CanHoChiTietDto chiTiet = canHoService.getCanHoChiTiet(dto);
-            
+
             if (chiTiet == null || chiTiet.getCuDanList() == null || chiTiet.getCuDanList().isEmpty()) {
                 // Nếu không có cư dân thì vẫn hiển thị (căn hộ trống)
                 return true;
             }
-            
+
             // Kiểm tra xem có cư dân nào còn đang ở không
             for (io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto cuDan : chiTiet.getCuDanList()) {
                 String trangThai = cuDan.getTrangThaiCuTru();
@@ -952,11 +940,10 @@ public class Home_list implements Initializable {
                     return true;
                 }
             }
-            
+
             // Tất cả cư dân đều đã chuyển đi thì ẩn căn hộ
-            System.out.println("DEBUG: Hiding apartment " + dto.getMaCanHo() + " - all residents moved out");
             return false;
-            
+
         } catch (Exception e) {
             System.err.println("ERROR: Cannot check apartment residents for " + dto.getMaCanHo() + ": " + e.getMessage());
             // Nếu có lỗi thì vẫn hiển thị để tránh mất dữ liệu
@@ -972,17 +959,17 @@ public class Home_list implements Initializable {
     private void updateKetQuaLabel() {
         int total = filteredList != null ? filteredList.size() : 0;
         if (labelKetQuaHienThi != null) {
-            labelKetQuaHienThi.setText(String.format("Hiển thị 1 - %d trên tổng số %d căn hộ", total, total));
+            labelKetQuaHienThi.setText(String.format("Hiển thị tổng %d căn hộ", total));
         }
     }
-    
+
     /**
      * Shows error dialog to user
      */
     private void showError(String title, String message) {
         ThongBaoController.showError(title != null ? title : "Lỗi", message);
     }
-    
+
     private void showSuccess(String title, String message) {
         ThongBaoController.showSuccess(title, message);
     }
@@ -998,7 +985,7 @@ public class Home_list implements Initializable {
         if (tabelViewCanHo != null && tableColumnMaCanHo != null) {
             // Cast table view to correct type
             TableView<CanHoTableData> typedTableView = (TableView<CanHoTableData>) tabelViewCanHo;
-            
+
             // Setup cell value factories - need to cast to proper types
             ((TableColumn<CanHoTableData, String>) tableColumnMaCanHo).setCellValueFactory(new PropertyValueFactory<>("maCanHo"));
             ((TableColumn<CanHoTableData, String>) tableColumnToaNha).setCellValueFactory(new PropertyValueFactory<>("toaNha"));
@@ -1008,12 +995,12 @@ public class Home_list implements Initializable {
             ((TableColumn<CanHoTableData, String>) tableColumnChuSoHuu).setCellValueFactory(new PropertyValueFactory<>("chuHo"));
             ((TableColumn<CanHoTableData, String>) tableColumnSuDung).setCellValueFactory(new PropertyValueFactory<>("trangThaiSuDung"));
             ((TableColumn<CanHoTableData, String>) tableColumnKiThuat).setCellValueFactory(new PropertyValueFactory<>("trangThaiKiThuat"));
-            
+
             // Map cột "Tình trạng" (tableColumnSoHuu trong FXML) với dữ liệu trangThaiBan
             if (tableColumnSoHuu != null) {
                 ((TableColumn<CanHoTableData, String>) tableColumnSoHuu).setCellValueFactory(new PropertyValueFactory<>("trangThaiBan"));
             }
-            
+
             // Thêm sự kiện LEFT-click để xem chi tiết căn hộ (chỉ chuột trái)
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<CanHoTableData> row = new javafx.scene.control.TableRow<>();
@@ -1027,10 +1014,9 @@ public class Home_list implements Initializable {
                 return row;
             });
         }
-        
-        System.out.println("CanHo table setup completed");
+
     }
-    
+
     /**
      * Xử lý sự kiện xem chi tiết căn hộ
      */
@@ -1039,9 +1025,9 @@ public class Home_list implements Initializable {
             if (canHoService != null) {
                 CanHoDto canHoDto = new CanHoDto();
                 canHoDto.setMaCanHo(canHo.getMaCanHo());
-                
+
                 CanHoChiTietDto chiTiet = canHoService.getCanHoChiTiet(canHoDto);
-                
+
                 if (chiTiet != null) {
                     openChiTietCanHo(chiTiet);
                 } else {
@@ -1060,57 +1046,49 @@ public class Home_list implements Initializable {
      */
     private void openChiTietCanHo(CanHoChiTietDto chiTiet) {
         try {
-            System.out.println("DEBUG: Starting to open chi tiet can ho for: " + chiTiet.getMaCanHo());
-            
+
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
                 getClass().getResource("/view/chi_tiet_can_ho.fxml")
             );
-            System.out.println("DEBUG: FXML Loader created successfully");
-            
+
             javafx.scene.Parent root = loader.load();
-            System.out.println("DEBUG: FXML loaded successfully");
-            
+
             ChiTietCanHoController controller = loader.getController();
-            System.out.println("DEBUG: Controller obtained: " + (controller != null ? "SUCCESS" : "NULL"));
-            
+
             // Inject ApplicationContext trước tiên
             if (applicationContext != null) {
-                System.out.println("DEBUG: Injecting ApplicationContext from Home_list to ChiTietCanHoController");
                 controller.setApplicationContext(applicationContext);
             } else {
                 System.err.println("ERROR: ApplicationContext is null in Home_list!");
             }
-            
+
             // Inject CanHoService
             if (canHoService != null) {
                 controller.setCanHoService(canHoService);
             }
-            
+
             // Inject PhuongTienService từ ApplicationContext
             try {
                 if (applicationContext != null) {
-                    io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService phuongTienService = 
+                    io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService phuongTienService =
                         applicationContext.getBean(io.github.ktpm.bluemoonmanagement.service.phuongTien.PhuongTienService.class);
                     controller.setPhuongTienService(phuongTienService);
-                    System.out.println("DEBUG: Injected PhuongTienService from Home_list to ChiTietCanHoController");
                 }
             } catch (Exception e) {
                 System.err.println("ERROR: Cannot get PhuongTienService from ApplicationContext in Home_list: " + e.getMessage());
             }
-            
+
             // Inject HoaDonService từ ApplicationContext
             try {
                 if (applicationContext != null && hoaDonService != null) {
                     // Pass the already autowired HoaDonService directly
                     // Since HoaDonService is already @Autowired in Home_list, just pass it
                     // But first, let's get it from ApplicationContext to ensure it's fresh
-                    io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService freshHoaDonService = 
+                    io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService freshHoaDonService =
                         applicationContext.getBean(io.github.ktpm.bluemoonmanagement.service.hoaDon.HoaDonService.class);
-                    System.out.println("DEBUG: Got fresh HoaDonService from ApplicationContext in Home_list");
-                    
+
                     // Note: Since ChiTietCanHoController already has @Autowired HoaDonService,
                     // we just need to ensure ApplicationContext is set so ensureServicesAvailable() can work
-                    System.out.println("DEBUG: HoaDonService will be available via ApplicationContext in ChiTietCanHoController");
                 } else {
                     System.err.println("ERROR: ApplicationContext or HoaDonService is null in Home_list");
                     System.err.println("  - ApplicationContext: " + (applicationContext != null ? "OK" : "NULL"));
@@ -1120,21 +1098,17 @@ public class Home_list implements Initializable {
                 System.err.println("ERROR: Cannot get HoaDonService from ApplicationContext in Home_list: " + e.getMessage());
                 e.printStackTrace();
             }
-            
+
             // Set data sau khi đã inject services
-            System.out.println("DEBUG: Setting CanHo data to controller");
             controller.setCanHoData(chiTiet);
-            System.out.println("DEBUG: CanHo data set successfully");
-            
+
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             stage.setTitle("Chi tiết căn hộ - " + chiTiet.getMaCanHo());
             stage.setScene(new javafx.scene.Scene(root, 720, 450));
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(tabelViewCanHo.getScene().getWindow());
-            System.out.println("DEBUG: About to show stage");
             stage.show();
-            System.out.println("DEBUG: Stage shown successfully");
         } catch (Exception e) {
             System.err.println("ERROR: Exception in openChiTietCanHo: " + e.getMessage());
             e.printStackTrace();
@@ -1147,7 +1121,6 @@ public class Home_list implements Initializable {
     // Setter for dependency injection
     public void setCanHoService(CanHoService canHoService) {
         this.canHoService = canHoService;
-        System.out.println("CanHoService đã được set thủ công: " + (canHoService != null));
     }
 
     /**
@@ -1156,16 +1129,14 @@ public class Home_list implements Initializable {
     public void injectServices(CanHoService canHoService) {
         if (this.canHoService == null && canHoService != null) {
             this.canHoService = canHoService;
-            System.out.println("Đã inject CanHoService thủ công từ parent controller");
         }
     }
-    
+
     /**
      * Method để inject ApplicationContext
      */
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
-        System.out.println("DEBUG: Đã inject ApplicationContext vào Home_list");
     }
 
     /**
@@ -1182,7 +1153,7 @@ public class Home_list implements Initializable {
         private String trangThaiKiThuat;
         private String trangThaiBan; // Thêm trường trạng thái bán
 
-        public CanHoTableData(String maCanHo, String toaNha, String tang, String soNha, 
+        public CanHoTableData(String maCanHo, String toaNha, String tang, String soNha,
                             String dienTich, String chuHo, String trangThaiSuDung, String trangThaiKiThuat, String trangThaiBan) {
             this.maCanHo = maCanHo;
             this.toaNha = toaNha;
@@ -1267,7 +1238,7 @@ public class Home_list implements Initializable {
         public void setTrangThaiCuTru(String trangThaiCuTru) { this.trangThaiCuTru = trangThaiCuTru; }
         public void setNgayChuyenDen(String ngayChuyenDen) { this.ngayChuyenDen = ngayChuyenDen; }
     }
-    
+
     public static class TaiKhoanTableData {
         private String email;
         private String hoVaTen;
@@ -1282,14 +1253,14 @@ public class Home_list implements Initializable {
             this.ngayTao = ngayTao;
             this.ngayCapNhat = ngayCapNhat;
         }
-        
+
         // Getters
         public String getEmail() { return email; }
         public String getHoVaTen() { return hoVaTen; }
         public String getVaiTro() { return vaiTro; }
         public String getNgayCapNhat() { return ngayCapNhat; }
         public String getNgayTao() { return ngayTao; }
-        
+
         // Setters
         public void setEmail(String email) { this.email = email; }
         public void setHoVaTen(String hoVaTen) { this.hoVaTen = hoVaTen; }
@@ -1297,7 +1268,7 @@ public class Home_list implements Initializable {
         public void setNgayTao(String ngayTao) { this.ngayTao = ngayTao; }
         public void setNgayCapNhat(String ngayCapNhat) { this.ngayCapNhat = ngayCapNhat; }
     }
-    
+
     public static class KhoanThuTableData {
         private String maKhoanThu;
         private String tenKhoanThu;
@@ -1308,9 +1279,9 @@ public class Home_list implements Initializable {
         private String ngayTao;
         private String thoiHan;
         private String ghiChu;
-        
-        public KhoanThuTableData(String maKhoanThu, String tenKhoanThu, String loaiKhoanThu, 
-                                String donViTinh, String soTien, String phamVi, 
+
+        public KhoanThuTableData(String maKhoanThu, String tenKhoanThu, String loaiKhoanThu,
+                                String donViTinh, String soTien, String phamVi,
                                 String ngayTao, String thoiHan, String ghiChu) {
             this.maKhoanThu = maKhoanThu;
             this.tenKhoanThu = tenKhoanThu;
@@ -1322,7 +1293,7 @@ public class Home_list implements Initializable {
             this.thoiHan = thoiHan;
             this.ghiChu = ghiChu;
         }
-        
+
         // Getters
         public String getMaKhoanThu() { return maKhoanThu; }
         public String getTenKhoanThu() { return tenKhoanThu; }
@@ -1333,7 +1304,7 @@ public class Home_list implements Initializable {
         public String getNgayTao() { return ngayTao; }
         public String getThoiHan() { return thoiHan; }
         public String getGhiChu() { return ghiChu; }
-        
+
         // Setters
         public void setMaKhoanThu(String maKhoanThu) { this.maKhoanThu = maKhoanThu; }
         public void setTenKhoanThu(String tenKhoanThu) { this.tenKhoanThu = tenKhoanThu; }
@@ -1345,7 +1316,7 @@ public class Home_list implements Initializable {
         public void setThoiHan(String thoiHan) { this.thoiHan = thoiHan; }
         public void setGhiChu(String ghiChu) { this.ghiChu = ghiChu; }
     }
-    
+
     public static class HoaDonTableData {
         private String maHoaDon;
         private String maCanHo;
@@ -1354,8 +1325,8 @@ public class Home_list implements Initializable {
         private String soTien;
         private String ngayNop;
         private String trangThaiThanhToan;
-        
-        public HoaDonTableData(String maHoaDon, String maCanHo, String tenKhoanThu, 
+
+        public HoaDonTableData(String maHoaDon, String maCanHo, String tenKhoanThu,
                               String loaiKhoanThu, String soTien, String ngayNop, String trangThaiThanhToan) {
             this.maHoaDon = maHoaDon;
             this.maCanHo = maCanHo;
@@ -1365,7 +1336,7 @@ public class Home_list implements Initializable {
             this.ngayNop = ngayNop;
             this.trangThaiThanhToan = trangThaiThanhToan;
         }
-        
+
         // Getters
         public String getMaHoaDon() { return maHoaDon; }
         public String getMaCanHo() { return maCanHo; }
@@ -1374,7 +1345,7 @@ public class Home_list implements Initializable {
         public String getSoTien() { return soTien; }
         public String getNgayNop() { return ngayNop; }
         public String getTrangThaiThanhToan() { return trangThaiThanhToan; }
-        
+
         // Setters
         public void setMaHoaDon(String maHoaDon) { this.maHoaDon = maHoaDon; }
         public void setMaCanHo(String maCanHo) { this.maCanHo = maCanHo; }
@@ -1447,7 +1418,6 @@ public class Home_list implements Initializable {
             ChiTietTaiKhoanController controller = loader.getController();
             // Inject ApplicationContext trước tiên
             if (applicationContext != null) {
-                System.out.println("DEBUG: Injecting ApplicationContext from Home_list to ChiTietTaiKhoanController");
                 controller.setApplicationContext(applicationContext);
             } else {
                 System.err.println("ERROR: ApplicationContext is null in Home_list!");
@@ -1519,7 +1489,7 @@ public class Home_list implements Initializable {
             }
             // Set data cho form
             controller.setTaiKhoanData(taiKhoanDto);
-            
+
             // Tạo cửa sổ mới
             Stage stage = new Stage();
             stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
@@ -1527,10 +1497,10 @@ public class Home_list implements Initializable {
             stage.setScene(new Scene(root, 800, 600));
             stage.initModality(Modality.WINDOW_MODAL);
             stage.initOwner(tabelViewTaiKhoan.getScene().getWindow());
-            
+
             // Refresh table sau khi đóng
             stage.setOnHidden(e -> refreshTaiKhoanData());
-            
+
             stage.show();
         } catch (IOException e) {
             showError("Lỗi mở form sửa", "Không thể mở form chỉnh sửa tài khoản: " + e.getMessage());
@@ -1654,8 +1624,7 @@ public class Home_list implements Initializable {
     @FXML
     public void themCuDanClicked(ActionEvent event) {
         try {
-            System.out.println("Mở form thêm cư dân...");
-            
+
             // Load view + controller using FxViewLoader
             FxView<?> fxView = fxViewLoader.loadFxView("/view/cu_dan.fxml");
 
@@ -1694,7 +1663,7 @@ public class Home_list implements Initializable {
         if (tabelViewCuDan != null) {
             // Cast table view to correct type
             TableView<CuDanTableData> typedTableView = (TableView<CuDanTableData>) tabelViewCuDan;
-            
+
             // Setup cell value factories
             ((TableColumn<CuDanTableData, String>) tableColumnMaDinhDanh).setCellValueFactory(new PropertyValueFactory<>("maDinhDanh"));
             ((TableColumn<CuDanTableData, String>) tableColumnHoVaTen).setCellValueFactory(new PropertyValueFactory<>("hoVaTen"));
@@ -1704,7 +1673,7 @@ public class Home_list implements Initializable {
             ((TableColumn<CuDanTableData, String>) tableColumnSoDienThoai).setCellValueFactory(new PropertyValueFactory<>("soDienThoai"));
             ((TableColumn<CuDanTableData, String>) tableColumnNgayChuyenDen).setCellValueFactory(new PropertyValueFactory<>("ngayChuyenDen"));
             ((TableColumn<CuDanTableData, String>) tableColumnTrangThaiCuDan).setCellValueFactory(new PropertyValueFactory<>("trangThaiCuTru"));
-            
+
             // Setup LEFT double-click event để mở popup chỉnh sửa cư dân (chỉ chuột trái)
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<CuDanTableData> row = new javafx.scene.control.TableRow<>();
@@ -1717,7 +1686,7 @@ public class Home_list implements Initializable {
                 });
                 return row;
             });
-            
+
             // Setup scroll bars - enable vertical scrolling, disable horizontal scrolling
             javafx.application.Platform.runLater(() -> {
                 for (javafx.scene.Node node : typedTableView.lookupAll(".scroll-bar")) {
@@ -1735,21 +1704,21 @@ public class Home_list implements Initializable {
                     }
                 }
             });
-            
+
             // Thiết lập chiều rộng (không cố định chiều cao để cho phép dynamic sizing)
             typedTableView.setPrefWidth(970);
             typedTableView.setMaxWidth(970);
-            
+
             // Cho phép cuộn bằng phím mũi tên và chuột
             typedTableView.setOnKeyPressed(event -> {
-                if (event.getCode() == javafx.scene.input.KeyCode.UP || 
+                if (event.getCode() == javafx.scene.input.KeyCode.UP ||
                     event.getCode() == javafx.scene.input.KeyCode.DOWN ||
                     event.getCode() == javafx.scene.input.KeyCode.PAGE_UP ||
                     event.getCode() == javafx.scene.input.KeyCode.PAGE_DOWN) {
                     // Các phím này sẽ tự động cuộn TableView
                 }
             });
-            
+
             // Thêm tooltip hướng dẫn cho bảng khoản thu
             javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(
                 "Double-click để xem/chỉnh sửa khoản thu\n" +
@@ -1757,16 +1726,14 @@ public class Home_list implements Initializable {
                 "• Vai trò khác: Chỉ có thể xem chi tiết\n" +
                 "Right-click để refresh dữ liệu");
             javafx.scene.control.Tooltip.install(typedTableView, tooltip);
-            
+
             // Đảm bảo TableView có thể focus để nhận sự kiện phím
             typedTableView.setFocusTraversable(true);
-            
-            System.out.println("CuDan table setup completed");
+
         } else {
-            System.out.println("WARNING: tabelViewCuDan is null");
         }
     }
-    
+
     /**
      * Xử lý chỉnh sửa cư dân
      */
@@ -1777,21 +1744,20 @@ public class Home_list implements Initializable {
                 showError("Lỗi quyền", "Bạn không có quyền chỉnh sửa cư dân.\nChỉ người dùng có vai trò 'Tổ phó' mới được phép thực hiện thao tác này.");
                 return;
             }
-            
-            System.out.println("Mở form chỉnh sửa cư dân: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
-            
+
+
             // Load view + controller using FxViewLoader
             FxView<?> fxView = fxViewLoader.loadFxView("/view/cu_dan.fxml");
-            
+
             // Get controller and setup edit mode
             Object controller = fxView.getController();
             if (controller instanceof io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController) {
-                io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController cuDanController = 
+                io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController cuDanController =
                     (io.github.ktpm.bluemoonmanagement.controller.ThemCuDanController) controller;
-                
+
                 // Set ApplicationContext for controller
                 cuDanController.setApplicationContext(applicationContext);
-                
+
                 // Setup edit mode với dữ liệu cư dân hiện tại (CuDanTableData)
                 cuDanController.setupEditMode(cuDan);
             }
@@ -1816,9 +1782,8 @@ public class Home_list implements Initializable {
 
             // Hiển thị cửa sổ mới và chờ đóng
             newStage.showAndWait();
-            
+
             // Reload dữ liệu sau khi đóng form chỉnh sửa
-            System.out.println("Form chỉnh sửa cư dân đã đóng, reload dữ liệu...");
             loadCuDanData();
 
         } catch (IOException e) {
@@ -1839,7 +1804,7 @@ public class Home_list implements Initializable {
         try {
             // Hiển thị dialog xác nhận tùy chỉnh
             boolean confirmed = showCustomConfirmDialog(cuDan.getHoVaTen(), cuDan.getMaDinhDanh());
-            
+
             if (confirmed) {
                 if (cuDanService != null) {
                     // Kiểm tra quyền trước khi xóa
@@ -1854,9 +1819,7 @@ public class Home_list implements Initializable {
                     }
 
                     // Gọi service để xóa mềm cư dân
-                    System.out.println("DEBUG Controller: Gọi service xóa mềm với mã: " + cuDan.getMaDinhDanh());
                     boolean deleted = cuDanService.xoaMem(cuDan.getMaDinhDanh());
-                    System.out.println("DEBUG Controller: Kết quả xóa: " + deleted);
 
                     if (deleted) {
                         showSuccess("Thành công", "Đã xóa cư dân thành công!");
@@ -1891,9 +1854,8 @@ public class Home_list implements Initializable {
             cacheDataService.refreshCacheData();
         }
         loadCuDanData();
-        System.out.println("✅ Residents data refreshed");
     }
-    
+
     /**
      * Load dữ liệu cư dân từ service
      */
@@ -1902,14 +1864,9 @@ public class Home_list implements Initializable {
             if (cuDanService != null) {
                 List<io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto> cuDanDtoList = cuDanService.getAllCuDan();
                 cuDanList.clear();
-                
-                System.out.println("=== DEBUG: Kiểm tra dữ liệu mã căn hộ từ database ===");
-                System.out.println("Tổng số cư dân từ service: " + (cuDanDtoList != null ? cuDanDtoList.size() : 0));
-                
+
                 if (cuDanDtoList != null) {
                     for (io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto dto : cuDanDtoList) {
-                        System.out.println("Cư dân: " + dto.getHoVaTen() + " (" + dto.getMaDinhDanh() + ") - Mã căn hộ: '" + dto.getMaCanHo() + "'");
-                        
                         CuDanTableData tableData = new CuDanTableData(
                             dto.getMaDinhDanh(),
                             dto.getHoVaTen(),
@@ -1924,18 +1881,14 @@ public class Home_list implements Initializable {
                         cuDanList.add(tableData);
                     }
                 }
-                
+
                 filteredCuDanList = FXCollections.observableArrayList(cuDanList);
                 if (tabelViewCuDan != null) {
                     ((TableView<CuDanTableData>) tabelViewCuDan).setItems(filteredCuDanList);
                 }
                 updateCuDanKetQuaLabel();
-                System.out.println("Loaded " + cuDanList.size() + " residents from service");
-            } else {
-                System.err.println("CuDanService is null");
             }
         } catch (Exception e) {
-            System.err.println("Lỗi khi tải dữ liệu cư dân từ service: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -1947,12 +1900,7 @@ public class Home_list implements Initializable {
         int total = filteredCuDanList != null ? filteredCuDanList.size() : 0;
         if (labelKetQuaHienThiCuDan != null) {
             // Với chiều cao 400px, có thể hiển thị khoảng 15-16 dòng
-            int visibleRows = Math.min(total, 15);
-            if (total <= 15) {
-                labelKetQuaHienThiCuDan.setText(String.format("Hiển thị %d/%d cư dân", total, total));
-            } else {
-                labelKetQuaHienThiCuDan.setText(String.format("Hiển thị %d đầu tiên / %d cư dân", visibleRows, total));
-            }
+                labelKetQuaHienThiCuDan.setText(String.format("Hiển thị %d cư dân", total));
         }
     }
 
@@ -1973,9 +1921,6 @@ public class Home_list implements Initializable {
                 isToTruong = "Tổ trưởng".equals(vaiTro);
                 isKeToan = "Kế toán".equals(vaiTro);
                 isToPho = "Tổ phó".equals(vaiTro);
-                System.out.println("DEBUG: User role = " + vaiTro + ", isToTruong = " + isToTruong + ", isKeToan = " + isKeToan + ", isToPho = " + isToPho);
-            } else {
-                System.out.println("DEBUG: Không có user hiện tại");
             }
         } catch (Exception e) {
             System.err.println("Lỗi khi kiểm tra vai trò người dùng: " + e.getMessage());
@@ -1989,24 +1934,22 @@ public class Home_list implements Initializable {
             boolean shouldDisableCuDan = isToTruong || isKeToan;
             buttonThemCuDan.setDisable(shouldDisableCuDan);
             if (shouldDisableCuDan) {
-                String reason = isToTruong ? "Tổ trưởng không có quyền thêm cư dân" : 
+                String reason = isToTruong ? "Tổ trưởng không có quyền thêm cư dân" :
                                            "Kế toán không có quyền thêm cư dân";
                 javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonThemCuDan, tooltip);
-                System.out.println("DEBUG: Đã disable nút thêm cư dân cho " + vaiTro);
             }
         }
 
-        // Disable nút thêm căn hộ cho Tổ trưởng và Kế toán  
+        // Disable nút thêm căn hộ cho Tổ trưởng và Kế toán
         if (buttonThemCanHo != null) {
             boolean shouldDisableCanHo = isToTruong || isKeToan;
             buttonThemCanHo.setDisable(shouldDisableCanHo);
             if (shouldDisableCanHo) {
-                String reason = isToTruong ? "Tổ trưởng không có quyền thêm căn hộ" : 
+                String reason = isToTruong ? "Tổ trưởng không có quyền thêm căn hộ" :
                                            "Kế toán không có quyền thêm căn hộ";
                 javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonThemCanHo, tooltip);
-                System.out.println("DEBUG: Đã disable nút thêm căn hộ cho " + vaiTro);
             }
         }
 
@@ -2023,9 +1966,6 @@ public class Home_list implements Initializable {
                 }
                 javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonThemKhoanThu, tooltip);
-                System.out.println("DEBUG: Đã disable nút thêm khoản thu cho " + vaiTro);
-            } else {
-                System.out.println("DEBUG: Kế toán được phép thêm khoản thu - nút enable");
             }
         }
 
@@ -2037,9 +1977,6 @@ public class Home_list implements Initializable {
                 String reason = "Chỉ Tổ phó mới có quyền xuất Excel căn hộ";
                 javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonXuatExcelCanHo, tooltip);
-                System.out.println("DEBUG: Đã disable nút xuất Excel căn hộ cho " + vaiTro);
-            } else {
-                System.out.println("DEBUG: Tổ phó được phép xuất Excel căn hộ - nút enable");
             }
         }
 
@@ -2050,9 +1987,6 @@ public class Home_list implements Initializable {
                 String reason = "Chỉ Tổ phó mới có quyền nhập Excel căn hộ";
                 javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonNhapExcelCanHo, tooltip);
-                System.out.println("DEBUG: Đã disable nút nhập Excel căn hộ cho " + vaiTro);
-            } else {
-                System.out.println("DEBUG: Tổ phó được phép nhập Excel căn hộ - nút enable");
             }
         }
 
@@ -2064,9 +1998,6 @@ public class Home_list implements Initializable {
                 String reason = "Chỉ Tổ phó mới có quyền xuất Excel cư dân";
                 javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonXuatExcelCuDan, tooltip);
-                System.out.println("DEBUG: Đã disable nút xuất Excel cư dân cho " + vaiTro);
-            } else {
-                System.out.println("DEBUG: Tổ phó được phép xuất Excel cư dân - nút enable");
             }
         }
 
@@ -2077,9 +2008,6 @@ public class Home_list implements Initializable {
                 String reason = "Chỉ Tổ phó mới có quyền nhập Excel cư dân";
                 javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonNhapExcelCuDan, tooltip);
-                System.out.println("DEBUG: Đã disable nút nhập Excel cư dân cho " + vaiTro);
-            } else {
-                System.out.println("DEBUG: Tổ phó được phép nhập Excel cư dân - nút enable");
             }
         }
 
@@ -2091,9 +2019,6 @@ public class Home_list implements Initializable {
                 String reason = "Chỉ Kế toán mới có quyền xuất Excel khoản thu";
                 javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonXuatExcelKhoanThu, tooltip);
-                System.out.println("DEBUG: Đã disable nút xuất Excel khoản thu cho " + vaiTro);
-            } else {
-                System.out.println("DEBUG: Kế toán được phép xuất Excel khoản thu - nút enable");
             }
         }
 
@@ -2105,17 +2030,13 @@ public class Home_list implements Initializable {
                 String reason = "Chỉ Kế toán mới có quyền xuất Excel thu phí/hóa đơn";
                 javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(reason);
                 javafx.scene.control.Tooltip.install(buttonXuatExcelThuPhi, tooltip);
-                System.out.println("DEBUG: Đã disable nút xuất Excel thu phí cho " + vaiTro);
-            } else {
-                System.out.println("DEBUG: Kế toán được phép xuất Excel thu phí - nút enable");
             }
         }
 
-        System.out.println("DEBUG: Hoàn thành thiết lập quyền nút");
     }
-    
+
     // ============= SEARCH FUNCTIONS =============
-    
+
     /**
      * Xử lý tìm kiếm căn hộ
      */
@@ -2127,13 +2048,13 @@ public class Home_list implements Initializable {
         String tang = textFieldTang != null ? textFieldTang.getText().trim() : "";
         String toa = textFieldToa != null ? textFieldToa.getText().trim() : "";
         String trangThai = comboBoxTrangThai != null && comboBoxTrangThai.getValue() != null ? comboBoxTrangThai.getValue().toString() : "";
-        
+
         // Nếu tất cả các điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
         if (maCanHo.isEmpty() && chuSoHuu.isEmpty() && soNha.isEmpty() &&
-            tang.isEmpty() && 
-            toa.isEmpty() && 
+            tang.isEmpty() &&
+            toa.isEmpty() &&
             ("Tất cả".equals(trangThai) || trangThai.isEmpty())) {
-            
+
             filteredList = FXCollections.observableArrayList(canHoList);
             if (tabelViewCanHo != null) {
                 ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
@@ -2141,34 +2062,34 @@ public class Home_list implements Initializable {
             updateKetQuaLabel();
             return;
         }
-        
+
         // Lọc dữ liệu dựa trên các tiêu chí tìm kiếm
         if (canHoList != null) {
             ObservableList<CanHoTableData> searchResults = canHoList.stream()
                 .filter(canHo -> {
-                    boolean matchesMaCanHo = maCanHo.isEmpty() || 
+                    boolean matchesMaCanHo = maCanHo.isEmpty() ||
                         canHo.getMaCanHo().toLowerCase().contains(maCanHo.toLowerCase());
-                    boolean matchesChuSoHuu = chuSoHuu.isEmpty() || 
+                    boolean matchesChuSoHuu = chuSoHuu.isEmpty() ||
                         canHo.getChuHo().toLowerCase().contains(chuSoHuu.toLowerCase());
-                    boolean matchesSoNha = soNha.isEmpty() || 
+                    boolean matchesSoNha = soNha.isEmpty() ||
                         canHo.getSoNha().toLowerCase().contains(soNha.toLowerCase());
                     boolean matchesTang = tang.isEmpty() ||
                         canHo.getTang().toLowerCase().contains(tang.toLowerCase());
                     boolean matchesToa = toa.isEmpty() ||
                         canHo.getToaNha().toLowerCase().contains(toa.toLowerCase());
-                    
+
                     // Xử lý logic tìm kiếm trạng thái căn hộ
                     boolean matchesTrangThai = true;
                     if (!"Tất cả".equals(trangThai) && !trangThai.isEmpty()) {
                         String actualTrangThai = canHo.getTrangThaiSuDung();
                         if ("Sử dụng".equals(trangThai)) {
                             // "Sử dụng" sẽ match với các trạng thái khác "Trống"
-                            matchesTrangThai = actualTrangThai != null && 
+                            matchesTrangThai = actualTrangThai != null &&
                                              !actualTrangThai.equalsIgnoreCase("Trống") &&
                                              !actualTrangThai.equalsIgnoreCase("Không sử dụng");
                         } else if ("Trống".equals(trangThai)) {
                             // "Trống" sẽ match với trạng thái "Trống" hoặc "Không sử dụng"
-                            matchesTrangThai = actualTrangThai != null && 
+                            matchesTrangThai = actualTrangThai != null &&
                                              (actualTrangThai.equalsIgnoreCase("Trống") ||
                                               actualTrangThai.equalsIgnoreCase("Không sử dụng"));
                         } else {
@@ -2176,26 +2097,22 @@ public class Home_list implements Initializable {
                             matchesTrangThai = actualTrangThai != null && actualTrangThai.equals(trangThai);
                         }
                     }
-                    
+
                     return matchesMaCanHo && matchesChuSoHuu && matchesSoNha && matchesTang && matchesToa && matchesTrangThai;
                 })
-                .collect(FXCollections::observableArrayList, 
-                        ObservableList::add, 
+                .collect(FXCollections::observableArrayList,
+                        ObservableList::add,
                         ObservableList::addAll);
-            
+
             filteredList = searchResults;
             if (tabelViewCanHo != null) {
                 ((TableView<CanHoTableData>) tabelViewCanHo).setItems(filteredList);
             }
             updateKetQuaLabel();
-            
-            System.out.println("🔍 Apartment search completed:");
-            System.out.println("  - Search criteria: MaCanHo=" + maCanHo + ", ChuSoHuu=" + chuSoHuu + 
-                             ", SoNha=" + soNha + ", Tang=" + tang + ", Toa=" + toa + ", TrangThai=" + trangThai);
-            System.out.println("  - Results: " + searchResults.size() + "/" + canHoList.size());
+
         }
     }
-    
+
     /**
      * Xử lý tìm kiếm cư dân
      */
@@ -2205,13 +2122,13 @@ public class Home_list implements Initializable {
         String hoVaTen = textFieldHoVaTen != null ? textFieldHoVaTen.getText().trim() : "";
         String maCanHo = textFieldMaCanHoCuDan != null ? textFieldMaCanHoCuDan.getText().trim() : "";
         String email = textFieldEmail != null ? textFieldEmail.getText().trim() : "";
-        String trangThai = comboBoxTrangThaiCuDan != null && comboBoxTrangThaiCuDan.getValue() != null ? 
+        String trangThai = comboBoxTrangThaiCuDan != null && comboBoxTrangThaiCuDan.getValue() != null ?
                           comboBoxTrangThaiCuDan.getValue().toString() : "";
-        
+
         // Nếu tất cả các điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
         if (maDinhDanh.isEmpty() && hoVaTen.isEmpty() && maCanHo.isEmpty() && email.isEmpty() &&
             ("Tất cả".equals(trangThai) || trangThai.isEmpty())) {
-            
+
             filteredCuDanList = FXCollections.observableArrayList(cuDanList);
             if (tabelViewCuDan != null) {
                 ((TableView<CuDanTableData>) tabelViewCuDan).setItems(filteredCuDanList);
@@ -2219,41 +2136,36 @@ public class Home_list implements Initializable {
             updateCuDanKetQuaLabel();
             return;
         }
-        
+
         // Lọc dữ liệu dựa trên các tiêu chí tìm kiếm
         if (cuDanList != null) {
             ObservableList<CuDanTableData> searchResults = cuDanList.stream()
                 .filter(cuDan -> {
-                    boolean matchesMaDinhDanh = maDinhDanh.isEmpty() || 
+                    boolean matchesMaDinhDanh = maDinhDanh.isEmpty() ||
                         cuDan.getMaDinhDanh().toLowerCase().contains(maDinhDanh.toLowerCase());
-                    boolean matchesHoVaTen = hoVaTen.isEmpty() || 
+                    boolean matchesHoVaTen = hoVaTen.isEmpty() ||
                         cuDan.getHoVaTen().toLowerCase().contains(hoVaTen.toLowerCase());
-                    boolean matchesMaCanHo = maCanHo.isEmpty() || 
+                    boolean matchesMaCanHo = maCanHo.isEmpty() ||
                         cuDan.getMaCanHo().toLowerCase().contains(maCanHo.toLowerCase());
-                    boolean matchesEmail = email.isEmpty() || 
+                    boolean matchesEmail = email.isEmpty() ||
                         cuDan.getEmail().toLowerCase().contains(email.toLowerCase());
                     boolean matchesTrangThai = "Tất cả".equals(trangThai) || trangThai.isEmpty() ||
                         cuDan.getTrangThaiCuTru().equals(trangThai);
-                    
+
                     return matchesMaDinhDanh && matchesHoVaTen && matchesMaCanHo && matchesEmail && matchesTrangThai;
                 })
-                .collect(FXCollections::observableArrayList, 
-                        ObservableList::add, 
+                .collect(FXCollections::observableArrayList,
+                        ObservableList::add,
                         ObservableList::addAll);
-            
+
             filteredCuDanList = searchResults;
             if (tabelViewCuDan != null) {
                 ((TableView<CuDanTableData>) tabelViewCuDan).setItems(filteredCuDanList);
             }
             updateCuDanKetQuaLabel();
-            
-            System.out.println("🔍 Resident search completed:");
-            System.out.println("  - Search criteria: MaDinhDanh=" + maDinhDanh + ", HoVaTen=" + hoVaTen + 
-                             ", MaCanHo=" + maCanHo + ", Email=" + email + ", TrangThai=" + trangThai);
-            System.out.println("  - Results: " + searchResults.size() + "/" + cuDanList.size());
         }
     }
-    
+
     /**
      * Xử lý tìm kiếm khoản thu
      */
@@ -2261,13 +2173,13 @@ public class Home_list implements Initializable {
     private void handleTimKiemKhoanThu() {
         String maKhoanThu = textFieldMaKhoanThu != null ? textFieldMaKhoanThu.getText().trim() : "";
         String tenKhoanThu = textFieldTenKhoanThu != null ? textFieldTenKhoanThu.getText().trim() : "";
-        String loaiKhoanThu = comboBoxLoaiKhoanThu != null && comboBoxLoaiKhoanThu.getValue() != null ? 
+        String loaiKhoanThu = comboBoxLoaiKhoanThu != null && comboBoxLoaiKhoanThu.getValue() != null ?
                              comboBoxLoaiKhoanThu.getValue().toString() : "";
-        
+
         // Nếu tất cả các điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
-        if (maKhoanThu.isEmpty() && tenKhoanThu.isEmpty() && 
+        if (maKhoanThu.isEmpty() && tenKhoanThu.isEmpty() &&
             ("Tất cả".equals(loaiKhoanThu) || loaiKhoanThu.isEmpty())) {
-            
+
             filteredKhoanThuList = FXCollections.observableArrayList(khoanThuList);
             if (tabelViewKhoanThu != null) {
                 ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
@@ -2275,38 +2187,34 @@ public class Home_list implements Initializable {
             updateKhoanThuKetQuaLabel();
             return;
         }
-        
+
         // Lọc dữ liệu dựa trên các tiêu chí tìm kiếm
         if (khoanThuList != null) {
             ObservableList<KhoanThuTableData> searchResults = khoanThuList.stream()
                 .filter(khoanThu -> {
-                    boolean matchesMaKhoanThu = maKhoanThu.isEmpty() || 
+                    boolean matchesMaKhoanThu = maKhoanThu.isEmpty() ||
                         khoanThu.getMaKhoanThu().toLowerCase().contains(maKhoanThu.toLowerCase());
-                    boolean matchesTenKhoanThu = tenKhoanThu.isEmpty() || 
+                    boolean matchesTenKhoanThu = tenKhoanThu.isEmpty() ||
                         khoanThu.getTenKhoanThu().toLowerCase().contains(tenKhoanThu.toLowerCase());
                     boolean matchesLoaiKhoanThu = "Tất cả".equals(loaiKhoanThu) || loaiKhoanThu.isEmpty() ||
                         khoanThu.getLoaiKhoanThu().equals(loaiKhoanThu) ||
                         khoanThu.getLoaiKhoanThu().toLowerCase().contains(loaiKhoanThu.toLowerCase());
-                    
+
                     return matchesMaKhoanThu && matchesTenKhoanThu && matchesLoaiKhoanThu;
                 })
-                .collect(FXCollections::observableArrayList, 
-                        ObservableList::add, 
+                .collect(FXCollections::observableArrayList,
+                        ObservableList::add,
                         ObservableList::addAll);
-            
+
             filteredKhoanThuList = searchResults;
             if (tabelViewKhoanThu != null) {
                 ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
             }
             updateKhoanThuKetQuaLabel();
-            
-            System.out.println("🔍 Fee search completed:");
-            System.out.println("  - Search criteria: MaKhoanThu=" + maKhoanThu + ", TenKhoanThu=" + tenKhoanThu + 
-                             ", LoaiKhoanThu=" + loaiKhoanThu);
-            System.out.println("  - Results: " + searchResults.size() + "/" + khoanThuList.size());
+
         }
     }
-    
+
     /**
      * Xử lý tìm kiếm thu phí (trang lịch sử thu)
      */
@@ -2315,16 +2223,16 @@ public class Home_list implements Initializable {
         String maCanHo = textFieldMaCanHoThuPhi != null ? textFieldMaCanHoThuPhi.getText().trim() : "";
 
         String tenKhoanThu = textFieldTenKhoanThu1 != null ? textFieldTenKhoanThu1.getText().trim() : "";
-        String loaiKhoanThu = comboBoxLoaiKhoanThu1 != null && comboBoxLoaiKhoanThu1.getValue() != null ? 
+        String loaiKhoanThu = comboBoxLoaiKhoanThu1 != null && comboBoxLoaiKhoanThu1.getValue() != null ?
                              comboBoxLoaiKhoanThu1.getValue().toString() : "";
-        String trangThaiHoaDon = comboBoxTrangThaiHoaDon != null && comboBoxTrangThaiHoaDon.getValue() != null ? 
+        String trangThaiHoaDon = comboBoxTrangThaiHoaDon != null && comboBoxTrangThaiHoaDon.getValue() != null ?
                                 comboBoxTrangThaiHoaDon.getValue().toString() : "";
-        
+
         // Nếu tất cả các điều kiện tìm kiếm đều trống thì hiển thị toàn bộ
         if (maCanHo.isEmpty() && tenKhoanThu.isEmpty() &&
             ("Tất cả".equals(loaiKhoanThu) || loaiKhoanThu.isEmpty()) &&
             ("Tất cả".equals(trangThaiHoaDon) || trangThaiHoaDon.isEmpty())) {
-            
+
             filteredHoaDonList = FXCollections.observableArrayList(hoaDonList);
             if (tabelViewThuPhi != null) {
                 ((TableView<HoaDonTableData>) tabelViewThuPhi).setItems(filteredHoaDonList);
@@ -2332,41 +2240,36 @@ public class Home_list implements Initializable {
             updateHoaDonKetQuaLabel();
             return;
         }
-        
+
         // Lọc dữ liệu dựa trên các tiêu chí tìm kiếm
         if (hoaDonList != null) {
             ObservableList<HoaDonTableData> searchResults = hoaDonList.stream()
                 .filter(hoaDon -> {
-                    boolean matchesMaCanHo = maCanHo.isEmpty() || 
+                    boolean matchesMaCanHo = maCanHo.isEmpty() ||
                         hoaDon.getMaCanHo().toLowerCase().contains(maCanHo.toLowerCase());
-                    boolean matchesTenKhoanThu = tenKhoanThu.isEmpty() || 
+                    boolean matchesTenKhoanThu = tenKhoanThu.isEmpty() ||
                         hoaDon.getTenKhoanThu().toLowerCase().contains(tenKhoanThu.toLowerCase());
                     boolean matchesLoaiKhoanThu = "Tất cả".equals(loaiKhoanThu) || loaiKhoanThu.isEmpty() ||
                         hoaDon.getLoaiKhoanThu().equals(loaiKhoanThu);
                     boolean matchesTrangThaiHoaDon = "Tất cả".equals(trangThaiHoaDon) || trangThaiHoaDon.isEmpty() ||
                         hoaDon.getTrangThaiThanhToan().equals(trangThaiHoaDon);
-                    
-                    return matchesMaCanHo && matchesTenKhoanThu && 
+
+                    return matchesMaCanHo && matchesTenKhoanThu &&
                            matchesLoaiKhoanThu && matchesTrangThaiHoaDon;
                 })
-                .collect(FXCollections::observableArrayList, 
-                        ObservableList::add, 
+                .collect(FXCollections::observableArrayList,
+                        ObservableList::add,
                         ObservableList::addAll);
-            
+
             filteredHoaDonList = searchResults;
             if (tabelViewThuPhi != null) {
                 ((TableView<HoaDonTableData>) tabelViewThuPhi).setItems(filteredHoaDonList);
             }
             updateHoaDonKetQuaLabel();
-            
-            System.out.println("🔍 Invoice search completed:");
-            System.out.println("  - Search criteria: MaCanHo=" + maCanHo + 
-                             ", TenKhoanThu=" + tenKhoanThu + ", LoaiKhoanThu=" + loaiKhoanThu + 
-                             ", TrangThaiHoaDon=" + trangThaiHoaDon);
-            System.out.println("  - Results: " + searchResults.size() + "/" + hoaDonList.size());
+
         }
     }
-    
+
     /**
      * Setup search listeners for auto-search on text input
      */
@@ -2390,7 +2293,7 @@ public class Home_list implements Initializable {
         if (comboBoxTrangThai != null) {
             comboBoxTrangThai.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemCanHo());
         }
-        
+
         // Cư dân search listeners
         if (textFieldMaDinhDanh != null) {
             textFieldMaDinhDanh.textProperty().addListener((obs, oldText, newText) -> handleTimKiemCuDan());
@@ -2407,7 +2310,7 @@ public class Home_list implements Initializable {
         if (comboBoxTrangThaiCuDan != null) {
             comboBoxTrangThaiCuDan.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemCuDan());
         }
-        
+
         // Khoản thu search listeners
         if (textFieldMaKhoanThu != null) {
             textFieldMaKhoanThu.textProperty().addListener((obs, oldText, newText) -> handleTimKiemKhoanThu());
@@ -2418,7 +2321,7 @@ public class Home_list implements Initializable {
         if (comboBoxLoaiKhoanThu != null) {
             comboBoxLoaiKhoanThu.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemKhoanThu());
         }
-        
+
         // Thu phí search listeners
         if (textFieldMaCanHoThuPhi != null) {
             textFieldMaCanHoThuPhi.textProperty().addListener((obs, oldText, newText) -> handleTimKiemThuPhi());
@@ -2432,8 +2335,7 @@ public class Home_list implements Initializable {
         if (comboBoxTrangThaiHoaDon != null) {
             comboBoxTrangThaiHoaDon.valueProperty().addListener((obs, oldValue, newValue) -> handleTimKiemThuPhi());
         }
-        
-        System.out.println("✅ Search listeners setup completed");
+
     }
 
     /**
@@ -2478,62 +2380,51 @@ public class Home_list implements Initializable {
      * Setup right-click refresh functionality for all panes
      */
     private void setupRightClickRefresh() {
-        System.out.println("=== DEBUG: Setting up right-click refresh functionality ===");
-        
+
         // Add right-click event handler for each pane
         for (Node pane : allPanes) {
             if (pane != null) {
                 pane.setOnMouseClicked(event -> {
                     if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
-                        System.out.println("🔄 RIGHT CLICK DETECTED - Refreshing page...");
                         handleRightClickRefresh();
                         event.consume(); // Prevent context menu
                     }
                 });
-                System.out.println("✅ Added right-click handler to: " + pane.getClass().getSimpleName());
             }
         }
-        
-        System.out.println("=== DEBUG: Right-click refresh setup completed ===");
+
     }
-    
+
     /**
      * Handle right-click refresh based on current visible pane
      */
     private void handleRightClickRefresh() {
         try {
-            System.out.println("🔄 Starting right-click refresh...");
-            
+
             // Determine which pane is currently visible and refresh accordingly using right-click methods
             if (gridPaneTrangChu.isVisible()) {
-                System.out.println("📊 Refreshing Dashboard...");
                 refreshDashboard();
             } else if (scrollPaneCanHo.isVisible()) {
-                System.out.println("🏠 Refreshing Apartments data...");
                 refreshApartmentDataRightClick();
             } else if (scrollPaneCuDan.isVisible()) {
-                System.out.println("👥 Refreshing Residents data...");
                 refreshResidentDataRightClick();
             } else if (scrollPaneTaiKhoan.isVisible()) {
-                System.out.println("👤 Refreshing Accounts data...");
                 refreshAccountDataRightClick();
             } else if (scrollPaneKhoanThu.isVisible()) {
-                System.out.println("💰 Refreshing Fee data...");
                 refreshFeeDataRightClick();
             } else {
-                System.out.println("🔄 Refreshing all data...");
                 refreshAllDataRightClick();
             }
-            
+
             // Show success feedback
-            
-            
+
+
         } catch (Exception e) {
             System.err.println("❌ ERROR during right-click refresh: " + e.getMessage());
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Refresh dashboard data
      */
@@ -2542,74 +2433,62 @@ public class Home_list implements Initializable {
         loadData();
         loadCuDanData();
         loadTaiKhoanData();
-        System.out.println("✅ Dashboard refreshed");
     }
-    
+
     /**
      * Refresh apartment data for right-click (separate from main refresh)
      */
     private void refreshApartmentDataRightClick() {
-        System.out.println("🖱️ Right-click refresh: Apartments");
         // Clear cache and reload apartments data
         if (cacheDataService != null) {
             cacheDataService.refreshCacheData();
         }
         loadData();
-        System.out.println("✅ Apartments data refreshed via right-click");
     }
-    
+
     /**
      * Refresh residents data for right-click (separate from main refresh)
      */
     private void refreshResidentDataRightClick() {
-        System.out.println("🖱️ Right-click refresh: Residents");
         // Clear cache and reload residents data
         if (cacheDataService != null) {
             cacheDataService.refreshCacheData();
         }
         loadCuDanData();
-        System.out.println("✅ Residents data refreshed via right-click");
     }
-    
+
     /**
      * Refresh accounts data for right-click
      */
     private void refreshAccountDataRightClick() {
-        System.out.println("🖱️ Right-click refresh: Accounts");
         loadTaiKhoanData();
-        System.out.println("✅ Accounts data refreshed via right-click");
     }
-    
+
     /**
      * Refresh fee data for right-click
      */
     private void refreshFeeDataRightClick() {
-        System.out.println("🖱️ Right-click refresh: Fees");
         refreshKhoanThuDataInternal();
-        System.out.println("✅ Fee data refreshed via right-click");
     }
-    
+
     /**
      * Refresh all data for right-click
      */
     private void refreshAllDataRightClick() {
-        System.out.println("🖱️ Right-click refresh: All data");
         refreshApartmentDataRightClick();
         refreshResidentDataRightClick();
         refreshAccountDataRightClick();
         refreshFeeDataRightClick();
-        System.out.println("✅ All data refreshed via right-click");
     }
 
-    
+
     /**
      * Refresh accounts data
      */
     public void refreshTaiKhoanData() {
         loadTaiKhoanData();
-        System.out.println("✅ Accounts data refreshed");
     }
-    
+
     /**
      * Public method to refresh fee data - can be called from other controllers
      */
@@ -2619,31 +2498,27 @@ public class Home_list implements Initializable {
             cacheDataService.refreshCacheData();
         }
         loadKhoanThuData();
-        System.out.println("✅ Fee data refreshed");
     }
 
     /**
      * Refresh toàn bộ dữ liệu bao gồm cả charts - được gọi từ ThemKhoanThuController
      */
     public void refreshAllDataIncludingCharts() {
-        System.out.println("🔄 Starting refreshAllDataIncludingCharts()...");
         try {
             refreshAllDataForHomepage();
-            System.out.println("✅ refreshAllDataIncludingCharts() completed successfully");
         } catch (Exception e) {
             System.err.println("❌ Error in refreshAllDataIncludingCharts(): " + e.getMessage());
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Private method for internal refresh fee data
      */
     private void refreshKhoanThuDataInternal() {
         loadKhoanThuData();
-        System.out.println("✅ Fee data refreshed internally");
     }
-    
+
     /**
      * Setup Khoản Thu table
      */
@@ -2656,13 +2531,13 @@ public class Home_list implements Initializable {
             ((TableColumn<KhoanThuTableData, String>) tableColumnMaKhoanThu).setCellValueFactory(new PropertyValueFactory<>("maKhoanThu"));
             ((TableColumn<KhoanThuTableData, String>) tableColumnTenKhoanThu).setCellValueFactory(new PropertyValueFactory<>("tenKhoanThu"));
             ((TableColumn<KhoanThuTableData, String>) tableColumnLoaiKhoanThu).setCellValueFactory(new PropertyValueFactory<>("loaiKhoanThu"));
-            
+
             // Setup cột "Số tiền" với nút "Xem thêm" cho khoản thu phương tiện (CHỈ cho bảng khoản thu)
             if (tableColumnSoTien != null && typedTableView == tabelViewKhoanThu) {
                 TableColumn<KhoanThuTableData, String> soTienColumn = (TableColumn<KhoanThuTableData, String>) tableColumnSoTien;
                 soTienColumn.setCellFactory(column -> new javafx.scene.control.TableCell<KhoanThuTableData, String>() {
                     private final javafx.scene.control.Button btnXemThem = new javafx.scene.control.Button("Xem thêm");
-                    
+
                     {
                         btnXemThem.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-size: 12px; -fx-padding: 5 10;");
                         btnXemThem.setOnAction(event -> {
@@ -2675,7 +2550,7 @@ public class Home_list implements Initializable {
                             }
                         });
                     }
-                    
+
                     @Override
                     protected void updateItem(String item, boolean empty) {
                         super.updateItem(item, empty);
@@ -2704,19 +2579,19 @@ public class Home_list implements Initializable {
                     }
                 });
             }
-            
-            // "Bộ phận quản lý" -> map với ghiChu 
+
+            // "Bộ phận quản lý" -> map với ghiChu
             if (tableColumnBoPhanQuanLy != null) {
                 ((TableColumn<KhoanThuTableData, String>) tableColumnBoPhanQuanLy).setCellValueFactory(new PropertyValueFactory<>("ghiChu"));
             }
-            
+
             // Bỏ cột "Ngày tạo" trong bảng khoản thu - không cần hiển thị nữa
-            
+
             // "Hạn nộp" (tableColumnNgayTao1) -> map với thoiHan
             if (tableColumnNgayTao1 != null) {
                 ((TableColumn<KhoanThuTableData, String>) tableColumnNgayTao1).setCellValueFactory(new PropertyValueFactory<>("thoiHan"));
             }
-            
+
             // "Trạng thái hóa đơn" -> hiển thị dựa trên dữ liệu từ database
             if (tableColumnTrangThaiHoaDon != null) {
                 ((TableColumn<KhoanThuTableData, String>) tableColumnTrangThaiHoaDon).setCellValueFactory(cellData -> {
@@ -2729,7 +2604,7 @@ public class Home_list implements Initializable {
                                 .filter(kt -> kt.getMaKhoanThu().equals(khoanThu.getMaKhoanThu()))
                                 .findFirst()
                                 .orElse(null);
-                            
+
                             if (khoanThuDto != null) {
                                 return new javafx.beans.property.SimpleStringProperty(
                                     khoanThuDto.isTaoHoaDon() ? "Đã tạo" : "Chưa tạo"
@@ -2747,54 +2622,38 @@ public class Home_list implements Initializable {
             typedTableView.setRowFactory(tv -> {
                 javafx.scene.control.TableRow<KhoanThuTableData> row = new javafx.scene.control.TableRow<>();
                 row.setOnMouseClicked(event -> {
-                    System.out.println("🖱️ Mouse clicked on KhoanThu table row");
-                    System.out.println("   - Button: " + event.getButton());
-                    System.out.println("   - Click count: " + event.getClickCount());
-                    System.out.println("   - Row empty: " + row.isEmpty());
-                    
                     if (!row.isEmpty() && event.getButton() == javafx.scene.input.MouseButton.PRIMARY) {
                         KhoanThuTableData rowData = row.getItem();
-                        System.out.println("   - Row data: " + (rowData != null ? rowData.getTenKhoanThu() : "null"));
-                        
+
                         if (event.getClickCount() == 2) {
                             // Double click - kiểm tra quyền để quyết định hành động
-                            System.out.println("   - Double click detected");
                             boolean hasEditPermission = hasKhoanThuEditPermission();
-                            System.out.println("   - Has edit permission: " + hasEditPermission);
-                            
+
                             if (hasEditPermission) {
                                 // Kế toán: mở form chỉnh sửa
-                                System.out.println("   - Opening edit form");
                                 handleEditKhoanThu(rowData);
                             } else {
                                 // Các vị trí khác: chỉ xem chi tiết
-                                System.out.println("   - No permission - showing detail view");
                                 handleXemChiTietKhoanThu(rowData);
                             }
                         } else if (event.getClickCount() == 1) {
-                            System.out.println("   - Single click - selecting row only");
                         }
                     }
                 });
                 return row;
             });
-            
-            System.out.println("DEBUG: setupKhoanThuTable completed successfully");
-        } else {
-            System.out.println("ERROR: setupKhoanThuTable failed - table or column is null");
-            System.out.println("DEBUG: tabelViewKhoanThu = " + (tabelViewKhoanThu != null ? "OK" : "NULL"));
-            System.out.println("DEBUG: tableColumnMaKhoanThu = " + (tableColumnMaKhoanThu != null ? "OK" : "NULL"));
+
         }
     }
-    
+
     /**
      * Kiểm tra quyền chỉnh sửa khoản thu (chỉ Kế toán mới được chỉnh sửa)
      */
     private boolean hasKhoanThuEditPermission() {
         try {
-            io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto currentUser = 
+            io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto currentUser =
                 io.github.ktpm.bluemoonmanagement.session.Session.getCurrentUser();
-            
+
             if (currentUser != null && currentUser.getVaiTro() != null) {
                 String vaiTro = currentUser.getVaiTro();
                 return "Kế toán".equals(vaiTro);
@@ -2815,11 +2674,11 @@ public class Home_list implements Initializable {
                 showInfo("Thông tin", "Đây không phải là khoản thu phương tiện.");
                 return;
             }
-            
+
             StringBuilder phiXeDetails = new StringBuilder();
             phiXeDetails.append("📋 CHI TIẾT PHÍ GỬI XE - ").append(rowData.getTenKhoanThu()).append("\n");
             phiXeDetails.append("Mã khoản thu: ").append(rowData.getMaKhoanThu()).append("\n\n");
-            
+
             if (khoanThuService != null) {
                 try {
                     // Lấy thông tin chi tiết khoản thu từ service
@@ -2828,18 +2687,18 @@ public class Home_list implements Initializable {
                         .filter(kt -> kt.getMaKhoanThu().equals(rowData.getMaKhoanThu()))
                         .findFirst()
                         .orElse(null);
-                        
+
                     if (khoanThuDto != null && khoanThuDto.getPhiGuiXeList() != null && !khoanThuDto.getPhiGuiXeList().isEmpty()) {
                         phiXeDetails.append("🚗 BẢNG GIÁ PHÍ GỬI XE:");
                         phiXeDetails.append("\n" + "=".repeat(35));
-                        
+
                         for (io.github.ktpm.bluemoonmanagement.model.dto.phiGuiXe.PhiGuiXeDto phiXe : khoanThuDto.getPhiGuiXeList()) {
                             phiXeDetails.append("\n🔸 ").append(phiXe.getLoaiXe())
                                       .append(": ").append(String.format("%,d", phiXe.getSoTien()))
                                       .append(" VND");
                         }
                         phiXeDetails.append("\n" + "=".repeat(35));
-                        
+
                         // Thêm ghi chú
                         phiXeDetails.append("\n\n📝 Ghi chú: Phí được tính theo tháng cho mỗi loại phương tiện.");
                     } else {
@@ -2854,7 +2713,7 @@ public class Home_list implements Initializable {
             } else {
                 phiXeDetails.append("❌ Dịch vụ không khả dụng.");
             }
-            
+
             showInfo("Chi tiết phí gửi xe", phiXeDetails.toString());
         } catch (Exception e) {
             showError("Lỗi khi xem chi tiết phí xe", "Chi tiết: " + e.getMessage());
@@ -2876,7 +2735,7 @@ public class Home_list implements Initializable {
             details.append(" Bộ phận quản lý: ").append(rowData.getGhiChu() != null ? rowData.getGhiChu() : "Không có").append("\n");
             details.append(" Ngày tạo: ").append(rowData.getNgayTao()).append("\n");
             details.append(" Thời hạn: ").append(rowData.getThoiHan());
-            
+
             // Nếu là khoản thu phương tiện, hiển thị chi tiết phí xe luôn
             if ("Phương tiện".equals(rowData.getDonViTinh()) && khoanThuService != null) {
                 try {
@@ -2886,11 +2745,11 @@ public class Home_list implements Initializable {
                         .filter(kt -> kt.getMaKhoanThu().equals(rowData.getMaKhoanThu()))
                         .findFirst()
                         .orElse(null);
-                        
+
                     if (khoanThuDto != null && khoanThuDto.getPhiGuiXeList() != null && !khoanThuDto.getPhiGuiXeList().isEmpty()) {
                         details.append("\n\n📋 CHI TIẾT PHÍ GỬI XE:");
                         details.append("\n" + "=".repeat(30));
-                        
+
                         for (io.github.ktpm.bluemoonmanagement.model.dto.phiGuiXe.PhiGuiXeDto phiXe : khoanThuDto.getPhiGuiXeList()) {
                             details.append("\n• ").append(phiXe.getLoaiXe())
                                   .append(": ").append(String.format("%,d", phiXe.getSoTien()))
@@ -2905,31 +2764,30 @@ public class Home_list implements Initializable {
                     details.append("\n\n❌ Không thể tải thông tin chi tiết phí xe.");
                 }
             }
-            
+
             showInfo("Chi tiết khoản thu", details.toString());
         } catch (Exception e) {
             showError("Lỗi khi xem chi tiết", "Chi tiết: " + e.getMessage());
         }
     }
-    
 
-    
+
+
     /**
      * Handle Khoản Thu edit
      */
     private void handleEditKhoanThu(KhoanThuTableData rowData) {
         try {
-            System.out.println("Mở form chỉnh sửa khoản thu: " + rowData.getTenKhoanThu() + " (" + rowData.getMaKhoanThu() + ")");
-            
+
             // Load view + controller using FxViewLoader
             FxView<?> fxView = fxViewLoader.loadFxView("/view/khoan_thu.fxml");
-            
+
             // Get controller and setup edit mode (bỏ phần set ApplicationContext gây lỗi)
             Object controller = fxView.getController();
             if (controller instanceof io.github.ktpm.bluemoonmanagement.controller.ThemKhoanThuController) {
-                io.github.ktpm.bluemoonmanagement.controller.ThemKhoanThuController khoanThuController = 
+                io.github.ktpm.bluemoonmanagement.controller.ThemKhoanThuController khoanThuController =
                     (io.github.ktpm.bluemoonmanagement.controller.ThemKhoanThuController) controller;
-                
+
                 // Setup edit mode với dữ liệu khoản thu hiện tại
                 khoanThuController.setupEditMode(rowData);
             }
@@ -2954,9 +2812,8 @@ public class Home_list implements Initializable {
 
             // Hiển thị cửa sổ mới và chờ đóng
             newStage.showAndWait();
-            
+
             // Reload dữ liệu sau khi đóng form chỉnh sửa
-            System.out.println("Form chỉnh sửa khoản thu đã đóng, reload dữ liệu...");
             refreshKhoanThuData();
 
         } catch (IOException e) {
@@ -2969,18 +2826,15 @@ public class Home_list implements Initializable {
             showError("Lỗi", "Lỗi khi xử lý chỉnh sửa khoản thu: " + e.getMessage());
         }
     }
-    
+
     /**
      * Load Khoản Thu data
      */
     private void loadKhoanThuData() {
-        System.out.println("=== DEBUG: loadKhoanThuData() called ===");
-        System.out.println("DEBUG: khoanThuService = " + (khoanThuService != null ? "OK" : "NULL"));
-        
+
         try {
             if (khoanThuService != null) {
                 List<KhoanThuDto> khoanThuDtoList = khoanThuService.getAllKhoanThu();
-                System.out.println("DEBUG: Got " + (khoanThuDtoList != null ? khoanThuDtoList.size() : 0) + " fees from service");
                 khoanThuList = FXCollections.observableArrayList();
 
                 if (khoanThuDtoList != null) {
@@ -2989,7 +2843,7 @@ public class Home_list implements Initializable {
                         String thoiHan = dto.getThoiHan() != null ? dto.getThoiHan().toString() : "";
                         String soTien = String.format("%,d VNĐ", dto.getSoTien());
                         String loaiKhoanThu = dto.isBatBuoc() ? "Bắt buộc" : "Tự nguyện";
-                        
+
                         KhoanThuTableData tableData = new KhoanThuTableData(
                             dto.getMaKhoanThu(),
                             dto.getTenKhoanThu(),
@@ -3008,12 +2862,10 @@ public class Home_list implements Initializable {
                 filteredKhoanThuList = FXCollections.observableArrayList(khoanThuList);
                 if (tabelViewKhoanThu != null) {
                     ((TableView<KhoanThuTableData>) tabelViewKhoanThu).setItems(filteredKhoanThuList);
-                    System.out.println("DEBUG: Set " + filteredKhoanThuList.size() + " fees to table view");
                 } else {
                     System.err.println("ERROR: tabelViewKhoanThu is null!");
                 }
                 updateKhoanThuKetQuaLabel();
-                System.out.println("=== DEBUG: loadKhoanThuData() completed with " + khoanThuList.size() + " fees ===");
             } else {
                 System.err.println("KhoanThuService is not available, cannot load data.");
                 // Initialize empty lists without sample data
@@ -3036,9 +2888,9 @@ public class Home_list implements Initializable {
             updateKhoanThuKetQuaLabel();
         }
     }
-    
 
-    
+
+
     /**
      * Update khoản thu result label
      */
@@ -3047,7 +2899,7 @@ public class Home_list implements Initializable {
             labelKetQuaHienThiKhoanThu.setText("Hiển thị " + filteredKhoanThuList.size() + " khoản thu");
         }
     }
-    
+
     /**
      * Refresh all data
      */
@@ -3056,13 +2908,12 @@ public class Home_list implements Initializable {
         refreshCuDanData();
         refreshTaiKhoanData();
         refreshKhoanThuDataInternal();
-        
+
         // Refresh biểu đồ sau khi load dữ liệu mới
         loadChartData();
-        
-        System.out.println("✅ All data refreshed including charts");
+
     }
-    
+
     /**
      * Show visual feedback for successful refresh
      */
@@ -3076,7 +2927,7 @@ public class Home_list implements Initializable {
             }
         });
     }
-    
+
     /**
      * Show visual feedback for successful right-click refresh
      */
@@ -3093,47 +2944,41 @@ public class Home_list implements Initializable {
 
     // Ensure updateTotalStatistics method is defined
     private void updateTotalStatistics() {
-        System.out.println("📊 Updating total statistics...");
-        
+
         try {
             // Tính tổng số căn hộ từ ArrayList (hiển thị 0 nếu database rỗng)
             int totalApartments = (canHoList != null && !canHoList.isEmpty()) ? canHoList.size() : 0;
-            
+
             // Tính tổng số cư dân từ ArrayList (hiển thị 0 nếu database rỗng)
             int totalResidents = (cuDanList != null && !cuDanList.isEmpty()) ? cuDanList.size() : 0;
-            
+
             // Tính tổng số khoản thu từ ArrayList (hiển thị 0 nếu database rỗng)
             int totalFees = (khoanThuList != null && !khoanThuList.isEmpty()) ? khoanThuList.size() : 0;
-            
+
             // Cập nhật labelCanHoNumber = tổng số căn hộ
             if (labelCanHoNumber != null) {
                 labelCanHoNumber.setText(String.valueOf(totalApartments));
-                System.out.println("🏠 Updated labelCanHoNumber with total apartments: " + totalApartments);
             }
-            
+
             // Cập nhật labelCuDanNumber = tổng số cư dân
             if (labelCuDanNumber != null) {
                 labelCuDanNumber.setText(String.valueOf(totalResidents));
-                System.out.println("👥 Updated labelCuDanNumber with total residents: " + totalResidents);
             }
-            
+
             // Cập nhật labelCuDanNumber1 = tổng số khoản thu
             if (labelCuDanNumber1 != null) {
                 labelCuDanNumber1.setText(String.valueOf(totalFees));
-                System.out.println("💰 Updated labelCuDanNumber1 with total fees: " + totalFees);
             }
-            
-            System.out.println("✅ Total statistics updated successfully");
-            
+
+
             // Hiển thị thông báo nếu database trống
             if (totalApartments == 0 && totalResidents == 0 && totalFees == 0) {
-                System.out.println("⚠️ Database appears to be empty - all counts are 0");
             }
-            
+
         } catch (Exception e) {
             System.err.println("❌ Error updating statistics: " + e.getMessage());
             e.printStackTrace();
-            
+
             // Trong trường hợp lỗi, vẫn hiển thị 0 cho 3 label chính
             if (labelCanHoNumber != null) labelCanHoNumber.setText("0");
             if (labelCuDanNumber != null) labelCuDanNumber.setText("0");
@@ -3145,17 +2990,15 @@ public class Home_list implements Initializable {
      * Load dữ liệu cho biểu đồ
      */
     private void loadChartData() {
-        System.out.println("📊 Loading chart data...");
-        
+
         try {
             // Load dữ liệu cho BarChart (Biến động dân cư theo tháng)
             loadBarChartData();
-            
+
             // Load dữ liệu cho PieChart (Khoản thu tháng này)
             loadPieChartData();
-            
-            System.out.println("✅ Chart data loaded successfully");
-            
+
+
         } catch (Exception e) {
             System.err.println("❌ Error loading chart data: " + e.getMessage());
             e.printStackTrace();
@@ -3169,42 +3012,41 @@ public class Home_list implements Initializable {
     private void loadBarChartData() {
         try {
             if (barChartDanCu == null) {
-                System.out.println("⚠️ barChartDanCu is null, skipping bar chart data load");
                 return;
             }
 
             javafx.scene.chart.BarChart<String, Number> chart = (javafx.scene.chart.BarChart<String, Number>) barChartDanCu;
-            
+
             // Xóa dữ liệu cũ
             chart.getData().clear();
-            
+
             // Tạo series dữ liệu
             javafx.scene.chart.XYChart.Series<String, Number> series = new javafx.scene.chart.XYChart.Series<>();
             series.setName("Số cư dân");
-            
+
             // Lấy dữ liệu thực từ database cho 6 tháng gần nhất
             java.time.LocalDate now = java.time.LocalDate.now();
-            
+
             for (int i = 5; i >= 0; i--) {
                 java.time.LocalDate month = now.minusMonths(i);
                 String monthLabel = month.getMonth().getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.forLanguageTag("vi")) + " " + month.getYear();
-                
+
                 // Lấy số cư dân thực tế cho tháng này từ database
                 int cuDanCount = getCuDanCountForMonth(month);
-                
+
                 series.getData().add(new javafx.scene.chart.XYChart.Data<>(monthLabel, cuDanCount));
             }
-            
+
             chart.getData().add(series);
-            
+
             // Thiết lập style cho biểu đồ
             chart.setLegendVisible(false);
             chart.setAnimated(true);
             chart.setTitle("");
-            
+
             // Đổi màu thành xanh cho BarChart
             chart.setStyle("-fx-background-color: transparent;");
-            
+
             // Đặt màu xanh cho các cột trong biểu đồ
             javafx.application.Platform.runLater(() -> {
                 try {
@@ -3220,9 +3062,8 @@ public class Home_list implements Initializable {
                     System.err.println("Error setting bar chart colors: " + e.getMessage());
                 }
             });
-            
-            System.out.println("📊 BarChart data loaded: " + series.getData().size() + " data points");
-            
+
+
         } catch (Exception e) {
             System.err.println("❌ Error loading bar chart data: " + e.getMessage());
             e.printStackTrace();
@@ -3235,16 +3076,15 @@ public class Home_list implements Initializable {
     private void loadPieChartData() {
         try {
             if (pieChartKhoanThu == null) {
-                System.out.println("⚠️ pieChartKhoanThu is null, skipping pie chart data load");
                 return;
             }
 
             // Xóa dữ liệu cũ
             pieChartKhoanThu.getData().clear();
-            
+
             // Lấy dữ liệu thực từ database thay vì sử dụng dữ liệu mẫu
             Map<String, Integer> feeTypeCount = PieChartDataUtil.getKhoanThuDataFromDatabase(khoanThuService);
-            
+
             if (feeTypeCount != null && !feeTypeCount.isEmpty()) {
                 // Tạo dữ liệu cho PieChart từ database thực
                 for (java.util.Map.Entry<String, Integer> entry : feeTypeCount.entrySet()) {
@@ -3254,24 +3094,22 @@ public class Home_list implements Initializable {
                     );
                     pieChartKhoanThu.getData().add(slice);
                 }
-                
-                System.out.println("📊 PieChart data loaded from database: " + feeTypeCount.size() + " categories");
+
             } else {
                 // Nếu không có dữ liệu, hiển thị thông báo với style đẹp hơn
                 javafx.scene.chart.PieChart.Data emptySlice = new javafx.scene.chart.PieChart.Data(
                     "Chưa có khoản thu nào", 1);
                 pieChartKhoanThu.getData().add(emptySlice);
-                
-                System.out.println("📊 No real data found in database for PieChart");
+
             }
-            
+
             // Thiết lập style cho biểu đồ
             pieChartKhoanThu.setLegendVisible(true);
             pieChartKhoanThu.setAnimated(true);
             pieChartKhoanThu.setLabelsVisible(false); // Ẩn label trên từng slice để gọn gàng hơn
             pieChartKhoanThu.setTitle("");
-            
-   
+
+
             javafx.application.Platform.runLater(() -> {
                 try {
                     int colorIndex = 0;
@@ -3283,13 +3121,12 @@ public class Home_list implements Initializable {
                             colorIndex++;
                         }
                     }
-                    
-                    System.out.println("🎨 Applied custom colors to pie chart slices");
+
                 } catch (Exception e) {
                     System.err.println("Error setting pie chart colors: " + e.getMessage());
                 }
             });
-            
+
         } catch (Exception e) {
             System.err.println("❌ Error loading pie chart data: " + e.getMessage());
             e.printStackTrace();
@@ -3304,28 +3141,16 @@ public class Home_list implements Initializable {
             if (cuDanService != null) {
                 // Lấy tất cả cư dân từ database
                 List<CudanDto> allCuDan = cuDanService.getAllCuDan();
-                
+
                 if (allCuDan == null || allCuDan.isEmpty()) {
-                    System.out.println("⚠️ No resident data found in database for month: " + month);
                     // Return test data để biểu đồ có thể hiển thị
                     return getTestDataForMonth(month);
                 }
-                
-                System.out.println("🔍 Total residents in database: " + allCuDan.size());
-                
-                // Debug: In thông tin một vài cư dân đầu tiên
-                if (allCuDan.size() <= 5) {
-                    for (CudanDto cuDan : allCuDan) {
-                        System.out.println("🔍 Resident: " + cuDan.getHoVaTen() + 
-                            " - Move date: " + cuDan.getNgayChuyenDen() + 
-                            " - Status: " + cuDan.getTrangThaiCuTru());
-                    }
-                }
-                
+
                 // Đếm số cư dân có ngày chuyển đến <= tháng được yêu cầu
                 // và chưa chuyển đi (hoặc chuyển đi sau tháng được yêu cầu)
                 java.time.LocalDate endOfMonth = month.withDayOfMonth(month.lengthOfMonth());
-                
+
                 // Đếm tất cả cư dân đang hoạt động trước
                 long allActiveCount = allCuDan.stream()
                     .filter(cuDan -> {
@@ -3333,9 +3158,8 @@ public class Home_list implements Initializable {
                         return trangThai != null && !trangThai.trim().isEmpty();
                     })
                     .count();
-                
-                System.out.println("📊 Active residents (any status): " + allActiveCount);
-                
+
+
                 // Logic đếm linh hoạt hơn
                 long count = allCuDan.stream()
                     .filter(cuDan -> {
@@ -3351,26 +3175,24 @@ public class Home_list implements Initializable {
                         if (trangThai == null || trangThai.trim().isEmpty()) {
                             return false;
                         }
-                        
+
                         // Chấp nhận nhiều trạng thái hơn
-                        return trangThai.contains("Đang cư trú") || 
+                        return trangThai.contains("Đang cư trú") ||
                                trangThai.contains("Thường trú") ||
                                trangThai.contains("Tạm trú") ||
                                trangThai.equals("Active") ||
                                (!trangThai.contains("Chuyển đi") && !trangThai.contains("Inactive"));
                     })
                     .count();
-                
-                System.out.println("📊 Filtered resident count for " + month + ": " + count);
-                
+
+
                 // Nếu vẫn không có dữ liệu, dùng test data
                 if (count == 0) {
-                    System.out.println("📊 No residents match filter criteria, using test data");
                     return getTestDataForMonth(month);
                 }
-                
+
                 return (int) count;
-                
+
             } else {
                 System.err.println("⚠️ CuDanService is null, using fallback data");
                 // Fallback: sử dụng dữ liệu hiện tại hoặc test data
@@ -3387,7 +3209,7 @@ public class Home_list implements Initializable {
             return getTestDataForMonth(month);
         }
     }
-    
+
     /**
      * Generate test data cho biểu đồ khi không có dữ liệu thực
      */
@@ -3395,11 +3217,11 @@ public class Home_list implements Initializable {
         // Tạo dữ liệu test dựa trên tháng để có biến động
         java.time.LocalDate now = java.time.LocalDate.now();
         int monthsDiff = (int) java.time.temporal.ChronoUnit.MONTHS.between(month, now);
-        
+
         // Base number của cư dân + biến động theo tháng
         int baseCount = 45; // Số cư dân cơ bản
         int variation = (monthsDiff * 2) - 5; // Biến động theo tháng
-        
+
         int result = baseCount + variation + (month.getMonthValue() % 3); // Thêm chút random
         return Math.max(result, 10); // Đảm bảo ít nhất 10
     }
@@ -3414,82 +3236,78 @@ public class Home_list implements Initializable {
 
             // Setup cell value factories
             ((TableColumn<HoaDonTableData, String>) tableColumnMaHoaDon).setCellValueFactory(new PropertyValueFactory<>("maHoaDon"));
-            
+
             // Ẩn cột mã hóa đơn
             tableColumnMaHoaDon.setVisible(false);
-            
+
             ((TableColumn<HoaDonTableData, String>) tableColumnMaCanHoThuPhi).setCellValueFactory(new PropertyValueFactory<>("maCanHo"));
             ((TableColumn<HoaDonTableData, String>) tableColumnTenKhoanThuThuPhi).setCellValueFactory(new PropertyValueFactory<>("tenKhoanThu"));
             ((TableColumn<HoaDonTableData, String>) tableColumnLoaiKhoanThuThuPhi).setCellValueFactory(new PropertyValueFactory<>("loaiKhoanThu"));
             ((TableColumn<HoaDonTableData, String>) tableColumnNgayNop).setCellValueFactory(new PropertyValueFactory<>("ngayNop"));
-            
+
             // Setup "Số tiền" column specifically for invoice table
             if (tableColumnSoTien != null && typedTableView == tabelViewThuPhi) {
                 ((TableColumn<HoaDonTableData, String>) tableColumnSoTien).setCellValueFactory(new PropertyValueFactory<>("soTien"));
             }
-            
+
             // Setup action column with payment status
             if (tableColumnThaoTacLichSuThu != null) {
                 ((TableColumn<HoaDonTableData, String>) tableColumnThaoTacLichSuThu).setCellValueFactory(new PropertyValueFactory<>("trangThaiThanhToan"));
             }
-            
+
             // Thiết lập chiều rộng các cột để chia đều toàn bộ bảng
             double tableWidth = 970; // Chiều rộng tổng của bảng
-            
+
             // Chia đều cho 5 cột hiển thị (loại trừ cột mã hóa đơn đã ẩn)
             if (tableColumnMaCanHoThuPhi != null) {
                 tableColumnMaCanHoThuPhi.setPrefWidth(tableWidth * 0.15); // 15% - Mã căn hộ
                 tableColumnMaCanHoThuPhi.setMinWidth(120);
                 tableColumnMaCanHoThuPhi.setMaxWidth(150);
             }
-            
+
             if (tableColumnTenKhoanThuThuPhi != null) {
                 tableColumnTenKhoanThuThuPhi.setPrefWidth(tableWidth * 0.25); // 25% - Tên khoản thu (dài nhất)
                 tableColumnTenKhoanThuThuPhi.setMinWidth(200);
                 tableColumnTenKhoanThuThuPhi.setMaxWidth(300);
             }
-            
+
             if (tableColumnLoaiKhoanThuThuPhi != null) {
                 tableColumnLoaiKhoanThuThuPhi.setPrefWidth(tableWidth * 0.15); // 15% - Loại khoản thu
                 tableColumnLoaiKhoanThuThuPhi.setMinWidth(120);
                 tableColumnLoaiKhoanThuThuPhi.setMaxWidth(150);
             }
-            
+
             if (tableColumnSoTien != null && typedTableView == tabelViewThuPhi) {
                 tableColumnSoTien.setPrefWidth(tableWidth * 0.15); // 15% - Số tiền
                 tableColumnSoTien.setMinWidth(120);
                 tableColumnSoTien.setMaxWidth(150);
             }
-            
+
             if (tableColumnNgayNop != null) {
                 tableColumnNgayNop.setPrefWidth(tableWidth * 0.15); // 15% - Ngày nộp
                 tableColumnNgayNop.setMinWidth(120);
                 tableColumnNgayNop.setMaxWidth(150);
             }
-            
+
             if (tableColumnThaoTacLichSuThu != null) {
                 tableColumnThaoTacLichSuThu.setPrefWidth(tableWidth * 0.15); // 15% - Trạng thái thanh toán
                 tableColumnThaoTacLichSuThu.setMinWidth(120);
                 tableColumnThaoTacLichSuThu.setMaxWidth(150);
             }
-            
-            System.out.println("HoaDon table setup completed with invoice ID column hidden and column widths set");
+
         } else {
-            System.out.println("WARNING: tabelViewThuPhi or tableColumnMaHoaDon is null");
         }
     }
-    
+
     /**
      * Load HoaDon data from service
      */
     private void loadHoaDonData() {
-        System.out.println("=== DEBUG: loadHoaDonData() called ===");
         System.out.println("DEBUG: hoaDonService = " + (hoaDonService != null ? "OK" : "NULL"));
-        
+
         try {
             if (hoaDonService != null) {
                 List<io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto> hoaDonDtoList = hoaDonService.getAllHoaDon();
-                System.out.println("DEBUG: Got " + (hoaDonDtoList != null ? hoaDonDtoList.size() : 0) + " invoices from service");
                 hoaDonList = FXCollections.observableArrayList();
 
                 if (hoaDonDtoList != null) {
@@ -3497,7 +3315,7 @@ public class Home_list implements Initializable {
                         String ngayNop = dto.getNgayNop() != null ? dto.getNgayNop().toString() : "Chưa nộp";
                         String soTien = String.format("%,d VNĐ", dto.getSoTien());
                         String trangThaiThanhToan = dto.isDaNop() ? "Đã thanh toán" : "Chưa thanh toán";
-                        
+
                         HoaDonTableData tableData = new HoaDonTableData(
                             String.valueOf(dto.getMaHoaDon()),
                             dto.getMaCanHo() != null ? dto.getMaCanHo() : "",
@@ -3514,12 +3332,10 @@ public class Home_list implements Initializable {
                 filteredHoaDonList = FXCollections.observableArrayList(hoaDonList);
                 if (tabelViewThuPhi != null) {
                     ((TableView<HoaDonTableData>) tabelViewThuPhi).setItems(filteredHoaDonList);
-                    System.out.println("DEBUG: Set " + filteredHoaDonList.size() + " invoices to table view");
                 } else {
                     System.err.println("ERROR: tabelViewThuPhi is null!");
                 }
                 updateHoaDonKetQuaLabel();
-                System.out.println("=== DEBUG: loadHoaDonData() completed with " + hoaDonList.size() + " invoices ===");
             } else {
                 System.err.println("HoaDonService is not available, cannot load data.");
                 // Initialize empty lists without sample data
@@ -3542,9 +3358,9 @@ public class Home_list implements Initializable {
             updateHoaDonKetQuaLabel();
         }
     }
-    
 
-    
+
+
     /**
      * Update hóa đơn result label
      */
@@ -3553,13 +3369,12 @@ public class Home_list implements Initializable {
             labelHienThiKetQua1.setText("Hiển thị " + filteredHoaDonList.size() + " hóa đơn");
         }
     }
-    
+
     /**
      * Public method to refresh invoice data - can be called from other controllers
      */
     public void refreshHoaDonData() {
         loadHoaDonData();
-        System.out.println("✅ Invoice data refreshed");
     }
 
     /**
@@ -3569,19 +3384,18 @@ public class Home_list implements Initializable {
         try {
             // Refresh all data
             loadData();           // Load apartment data
-            loadCuDanData();      // Load resident data  
+            loadCuDanData();      // Load resident data
             loadTaiKhoanData();   // Load account data
             loadKhoanThuData();   // Load fee data
             loadHoaDonData();     // Load invoice data
-            
+
             // ⭐ Refresh charts (bao gồm PieChart)
             loadChartData();      // Load chart data including PieChart
-            
+
             // Update total statistics after loading data
             updateTotalStatistics();
-            
-            System.out.println("✅ Homepage data refreshed successfully (including charts)");
-            
+
+
         } catch (Exception e) {
             System.err.println("❌ Error refreshing homepage data: " + e.getMessage());
             e.printStackTrace();
