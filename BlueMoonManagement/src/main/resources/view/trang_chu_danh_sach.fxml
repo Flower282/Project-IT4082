@@ -7,6 +7,7 @@
 <?import javafx.scene.chart.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.*?>
 <?import javafx.scene.text.*?>
 
 <StackPane prefHeight="620.0" prefWidth="1080.0" stylesheets="@style/dashboard_style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="io.github.ktpm.bluemoonmanagement.controller.Home_list">
@@ -175,7 +176,54 @@
                               <Font name="Arial Bold" size="24.0" />
                            </font>
                         </Label>
-                        <PieChart fx:id="pieChartKhoanThu" layoutX="69.0" layoutY="-33.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="60.0" />
+                        <PieChart fx:id="pieChartKhoanThu" layoutX="69.0" layoutY="-33.0" AnchorPane.bottomAnchor="80.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="60.0" />
+                        
+                        <!-- 🎨 Chú thích tự tạo với dấu tròn cố định và phần trăm -->
+                        <HBox alignment="CENTER" spacing="50.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0">
+                           <children>
+                              <!-- Chú thích Bắt buộc với phần trăm -->
+                              <VBox alignment="CENTER" spacing="5.0">
+                                 <children>
+                                    <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                       <children>
+                                          <Circle fill="#2196f3" radius="8.0" stroke="TRANSPARENT" />
+                                          <Label text="Bắt buộc">
+                                             <font>
+                                                <Font name="Arial" size="14.0" />
+                                             </font>
+                                          </Label>
+                                       </children>
+                                    </HBox>
+                                    <Label fx:id="labelPhanTramBatBuoc" text="0%" textAlignment="CENTER">
+                                       <font>
+                                          <Font name="Arial Bold" size="12.0" />
+                                       </font>
+                                    </Label>
+                                 </children>
+                              </VBox>
+                              
+                              <!-- Chú thích Tự nguyện với phần trăm -->
+                              <VBox alignment="CENTER" spacing="5.0">
+                                 <children>
+                                    <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                       <children>
+                                          <Circle fill="#ff9800" radius="8.0" stroke="TRANSPARENT" />
+                                          <Label text="Tự nguyện">
+                                             <font>
+                                                <Font name="Arial" size="14.0" />
+                                             </font>
+                                          </Label>
+                                       </children>
+                                    </HBox>
+                                    <Label fx:id="labelPhanTramTuNguyen" text="0%" textAlignment="CENTER">
+                                       <font>
+                                          <Font name="Arial Bold" size="12.0" />
+                                       </font>
+                                    </Label>
+                                 </children>
+                              </VBox>
+                           </children>
+                        </HBox>
                      </children>
                   </AnchorPane>
                </children>

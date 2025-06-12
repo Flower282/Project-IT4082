@@ -219,6 +219,12 @@ public class Home_list implements Initializable {
     private PieChart pieChartKhoanThu;
 
     @FXML
+    private Label labelPhanTramBatBuoc;
+
+    @FXML
+    private Label labelPhanTramTuNguyen;
+
+    @FXML
     private ScrollPane scrollPaneCanHo;
 
     @FXML
@@ -477,6 +483,9 @@ public class Home_list implements Initializable {
     private int itemsPerPageCuDan = 10;
     private int totalPagesCuDan = 1;
     private List<CuDanTableData> allCuDanData;
+    
+    // Flag để tránh reload nhiều lần
+    private boolean isHomepageLoading = false;
 
     // Reference to table view for CanHo được inject từ FXML
 
@@ -614,8 +623,10 @@ public class Home_list implements Initializable {
         switch (key) {
             case "TrangChu" -> {
                 gridPaneTrangChu.setVisible(true);
-                // Refresh data khi quay về trang chủ
-                refreshAllDataForHomepage();
+                // Chỉ refresh data nếu chưa đang loading
+                if (!isHomepageLoading) {
+                    refreshAllDataForHomepage();
+                }
             }
             case "CanHo" -> scrollPaneCanHo.setVisible(true);
             case "CuDan" -> scrollPaneCuDan.setVisible(true);
@@ -3103,10 +3114,10 @@ public class Home_list implements Initializable {
 
             }
 
-            // Thiết lập style cho biểu đồ
-            pieChartKhoanThu.setLegendVisible(true);
+            // Thiết lập style cho biểu đồ - Ẩn legend mặc định vì đã có chú thích tự tạo
+            pieChartKhoanThu.setLegendVisible(false);
             pieChartKhoanThu.setAnimated(true);
-            pieChartKhoanThu.setLabelsVisible(false); // Ẩn label trên từng slice để gọn gàng hơn
+            pieChartKhoanThu.setLabelsVisible(false); // Tắt labels mặc định để tự tạo labels trong slice
             pieChartKhoanThu.setTitle("");
 
 
@@ -3121,6 +3132,9 @@ public class Home_list implements Initializable {
                             colorIndex++;
                         }
                     }
+                    
+                    
+                    updateLegendPercentages();
 
                 } catch (Exception e) {
                     System.err.println("Error setting pie chart colors: " + e.getMessage());
@@ -3132,6 +3146,12 @@ public class Home_list implements Initializable {
             e.printStackTrace();
         }
     }
+
+
+
+
+
+
 
     /**
      * Lấy số lượng cư dân thực tế cho một tháng cụ thể từ database
@@ -3379,7 +3399,14 @@ public class Home_list implements Initializable {
      * Refresh all data for homepage
      */
     private void refreshAllDataForHomepage() {
+        // Tránh reload nhiều lần
+        if (isHomepageLoading) {
+            return;
+        }
+        
         try {
+            isHomepageLoading = true;
+            
             // Refresh all data
             loadData();           // Load apartment data
             loadCuDanData();      // Load resident data
@@ -3397,6 +3424,11 @@ public class Home_list implements Initializable {
         } catch (Exception e) {
             System.err.println("❌ Error refreshing homepage data: " + e.getMessage());
             e.printStackTrace();
+        } finally {
+            // Reset flag sau khi hoàn thành
+            javafx.application.Platform.runLater(() -> {
+                isHomepageLoading = false;
+            });
         }
     }
     
@@ -3781,4 +3813,42 @@ public class Home_list implements Initializable {
 
 
     
+    /**
+     * Cập nhật phần trăm cho chú thích cố định
+     */
+    private void updateLegendPercentages() {
+        try {
+            // Tính tổng giá trị để tính phần trăm
+            double total = pieChartKhoanThu.getData().stream()
+                .mapToDouble(data -> data.getPieValue())
+                .sum();
+            
+            if (total > 0) {
+                for (javafx.scene.chart.PieChart.Data data : pieChartKhoanThu.getData()) {
+                    double percentage = (data.getPieValue() / total) * 100;
+                    String percentText = String.format("%.1f%%", percentage);
+                    
+                    // Cập nhật label dựa trên tên data
+                    String dataName = data.getName().toLowerCase();
+                    if (dataName.contains("bắt buộc") && labelPhanTramBatBuoc != null) {
+                        labelPhanTramBatBuoc.setText(percentText);
+                    } else if (dataName.contains("tự nguyện") && labelPhanTramTuNguyen != null) {
+                        labelPhanTramTuNguyen.setText(percentText);
+                    }
+                }
+            } else {
+                // Nếu không có dữ liệu, hiển thị 0%
+                if (labelPhanTramBatBuoc != null) {
+                    labelPhanTramBatBuoc.setText("0%");
+                }
+                if (labelPhanTramTuNguyen != null) {
+                    labelPhanTramTuNguyen.setText("0%");
+                }
+            }
+            
+            
+        } catch (Exception e) {
+            System.err.println("Error updating legend percentages: " + e.getMessage());
+        }
+    }
 }
