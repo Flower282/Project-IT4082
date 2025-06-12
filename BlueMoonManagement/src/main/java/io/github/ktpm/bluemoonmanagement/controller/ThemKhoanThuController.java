@@ -158,12 +158,6 @@ public class ThemKhoanThuController {
         if (textFieldDonGia != null) {
             textFieldDonGia.setDisable(false);
         }
-        
-        // Debug: Check if vehicle fields are initialized
-        System.out.println("DEBUG INIT: textFieldGiaXeDap null? " + (textFieldGiaXeDap == null));
-        System.out.println("DEBUG INIT: textFieldGiaXeMay null? " + (textFieldGiaXeMay == null));
-        System.out.println("DEBUG INIT: textFieldGiaXeOTo null? " + (textFieldGiaXeOTo == null));
-        System.out.println("DEBUG INIT: hBoxDonGiaPhuongTien null? " + (hBoxDonGiaPhuongTien == null));
 
         // Thiết lập format tiền cho các text field
         setupMoneyFormatting();
@@ -216,73 +210,59 @@ public class ThemKhoanThuController {
             labelTieuDe.setText("Thêm khoản thu mới");
         }
         
-        System.out.println("✅ Form set to ADD mode - showing 'Thêm khoản thu' button, hiding edit buttons");
     }
     
     @FXML
     private void onDonViTinhChanged(ActionEvent event) {
-        System.out.println("DEBUG: onDonViTinhChanged - Selected: " + comboBoxDonViTinh.getValue());
         
         // Kiểm tra nếu "Phương tiện" được chọn
         if ("Phương tiện".equals(comboBoxDonViTinh.getValue())) {
-            System.out.println("DEBUG: Switching to vehicle mode - showing vehicle price fields");
             
             // Ẩn trường đơn giá chung
             if (hBoxDonGia != null) {
                 hBoxDonGia.setVisible(false);
                 hBoxDonGia.setDisable(true);
-                System.out.println("DEBUG: ✅ hBoxDonGia hidden");
             }
             if (textFieldDonGia != null) {
                 textFieldDonGia.setDisable(true);
                 textFieldDonGia.clear();
-                System.out.println("DEBUG: ✅ textFieldDonGia disabled and cleared");
             }
             
             // HIỂN THỊ và enable các ô giá xe
             if (hBoxDonGiaPhuongTien != null) {
                 hBoxDonGiaPhuongTien.setVisible(true);
                 hBoxDonGiaPhuongTien.setDisable(false);
-                System.out.println("DEBUG: ✅ hBoxDonGiaPhuongTien shown and enabled");
             }
             
             // Enable và hiển thị tất cả ô giá xe 
             if (textFieldGiaXeDap != null) {
                 textFieldGiaXeDap.setDisable(false);
             textFieldGiaXeDap.setVisible(true);
-                System.out.println("DEBUG: ✅ textFieldGiaXeDap enabled and visible");
             }
             if (textFieldGiaXeMay != null) {
                 textFieldGiaXeMay.setDisable(false);
             textFieldGiaXeMay.setVisible(true);
-                System.out.println("DEBUG: ✅ textFieldGiaXeMay enabled and visible");
             }
             if (textFieldGiaXeOTo != null) {
                 textFieldGiaXeOTo.setDisable(false);
             textFieldGiaXeOTo.setVisible(true);
-                System.out.println("DEBUG: ✅ textFieldGiaXeOTo enabled and visible");
             }
             
-            System.out.println("DEBUG: 🚗 Vehicle mode activated - vehicle price fields are now visible");
         } else {
-            System.out.println("DEBUG: Switching to non-vehicle mode - showing general price field");
             
             // Hiển thị và enable trường đơn giá chung
             if (hBoxDonGia != null) {
                 hBoxDonGia.setVisible(true);
                 hBoxDonGia.setDisable(false);
-                System.out.println("DEBUG: ✅ hBoxDonGia shown and enabled");
             }
             if (textFieldDonGia != null) {
                 textFieldDonGia.setDisable(false);
-                System.out.println("DEBUG: ✅ textFieldDonGia ENABLED for input");
             }
             
             // Ẩn và disable container phương tiện
             if (hBoxDonGiaPhuongTien != null) {
                 hBoxDonGiaPhuongTien.setVisible(false);
                 hBoxDonGiaPhuongTien.setDisable(true);
-                System.out.println("DEBUG: ✅ hBoxDonGiaPhuongTien container hidden");
             }
             
             // DISABLE tất cả các ô giá xe và clear giá trị
@@ -290,85 +270,70 @@ public class ThemKhoanThuController {
                 textFieldGiaXeDap.setDisable(true);
                 textFieldGiaXeDap.clear();
             textFieldGiaXeDap.setVisible(false);
-                System.out.println("DEBUG: ✅ textFieldGiaXeDap disabled and hidden");
             }
             if (textFieldGiaXeMay != null) {
                 textFieldGiaXeMay.setDisable(true);
                 textFieldGiaXeMay.clear();
             textFieldGiaXeMay.setVisible(false);
-                System.out.println("DEBUG: ✅ textFieldGiaXeMay disabled and hidden");
             }
             if (textFieldGiaXeOTo != null) {
                 textFieldGiaXeOTo.setDisable(true);
                 textFieldGiaXeOTo.clear();
             textFieldGiaXeOTo.setVisible(false);
-                System.out.println("DEBUG: ✅ textFieldGiaXeOTo disabled and hidden");
             }
             
-            System.out.println("DEBUG: 💰 General price mode activated - only general price field is enabled");
         }
     }
 
     @FXML
     private void onBoPhanQuanLyChanged(ActionEvent event) {
-        System.out.println("DEBUG: onBoPhanQuanLyChanged - Selected: " + comboBoxBoPhanQuanLy.getValue());
         
         // Kiểm tra nếu "Bên thứ 3" được chọn
         if ("Bên thứ 3".equals(comboBoxBoPhanQuanLy.getValue())) {
-            System.out.println("DEBUG: Switching to 3rd party mode - showing import excel controls");
             
             // HIỂN THỊ vBoxTenCoQuan để có thể nhập excel hóa đơn
             if (vBoxTenCoQuan != null) {
                 vBoxTenCoQuan.setVisible(true);
                 vBoxTenCoQuan.setDisable(false);
-                System.out.println("DEBUG: vBoxTenCoQuan shown and enabled (for excel import)");
             }
             
             // Ẩn và disable phần đơn vị tính và đơn giá (các nút của Ban quản lý)
             if (vBoxDonViTinhVaDonGia != null) {
                 vBoxDonViTinhVaDonGia.setVisible(false);
                 vBoxDonViTinhVaDonGia.setDisable(true);
-                System.out.println("DEBUG: vBoxDonViTinhVaDonGia hidden and disabled (Ban quản lý controls)");
             }
             
             // Clear và disable các combobox của Ban quản lý
             if (comboBoxDonViTinh != null) {
                 comboBoxDonViTinh.setValue(null);
                 comboBoxDonViTinh.setDisable(true);
-                System.out.println("DEBUG: comboBoxDonViTinh cleared and disabled");
             }
             
         } else {
-            System.out.println("DEBUG: Switching to Ban quản lý mode - enabling controls");
             
             // ẨN vBoxTenCoQuan vì không cần nhập excel cho Ban quản lý
             if (vBoxTenCoQuan != null) {
                 vBoxTenCoQuan.setVisible(false);
                 vBoxTenCoQuan.setDisable(true);
-                System.out.println("DEBUG: vBoxTenCoQuan hidden (not needed for Ban quản lý)");
             }
             
             // Hiển thị và enable lại phần đơn vị tính và đơn giá
             if (vBoxDonViTinhVaDonGia != null) {
                 vBoxDonViTinhVaDonGia.setVisible(true);
                 vBoxDonViTinhVaDonGia.setDisable(false);
-                System.out.println("DEBUG: vBoxDonViTinhVaDonGia shown and enabled");
             }
             
             // Enable lại combobox đơn vị tính
             if (comboBoxDonViTinh != null) {
                 comboBoxDonViTinh.setDisable(false);
-                System.out.println("DEBUG: comboBoxDonViTinh enabled");
             }
             
             // Đảm bảo trường đơn giá được enable khi quay lại chế độ bình thường
             if (hBoxDonGia != null) {
                 hBoxDonGia.setDisable(false);
-                System.out.println("DEBUG: hBoxDonGia enabled");
             }
             if (textFieldDonGia != null) {
                 textFieldDonGia.setDisable(false);
-                System.out.println("DEBUG: textFieldDonGia enabled");
             }
             
             // Trigger lại logic đơn vị tính để hiển thị đúng trường đơn giá
@@ -386,12 +351,7 @@ public class ThemKhoanThuController {
     }
     @FXML
     void ThemKhoanThuClicked(ActionEvent event) {
-        // DEBUG: Kiểm tra trạng thái form
-        System.out.println("=== DEBUG: ThemKhoanThuClicked() called ===");
-        System.out.println("DEBUG: isEditMode = " + isEditMode);
-        System.out.println("DEBUG: originalMaKhoanThu = " + originalMaKhoanThu);
-        System.out.println("DEBUG: currentKhoanThu = " + (currentKhoanThu != null ? "NOT NULL" : "NULL"));
-        
+
         // Kiểm tra quyền trước khi thực hiện
         if (!hasPermission()) {
             String action = isEditMode ? "chỉnh sửa" : "thêm";
@@ -402,12 +362,10 @@ public class ThemKhoanThuController {
         
         // Nếu ở chế độ edit, gọi method cập nhật
         if (isEditMode) {
-            System.out.println("DEBUG: In EDIT mode - calling handleUpdateKhoanThu()");
             handleUpdateKhoanThu();
             return;
         }
 
-        System.out.println("DEBUG: In ADD mode - proceeding with add logic");
         
         if (isAnyFieldEmpty()) {
             textError.setText("Vui lòng điền đầy đủ thông tin!");
@@ -461,34 +419,28 @@ public class ThemKhoanThuController {
 
         // Nếu đơn vị tính là "Phương tiện", tạo PhiGuiXeDto từ các text field
         if ("Phương tiện".equals(donViTinh)) {
-            System.out.println("DEBUG: 🚗 Vehicle mode - creating vehicle fee list from form");
             ArrayList<PhiGuiXeDto> phiGuiXeList = new ArrayList<>();
             
             // Thêm xe đạp nếu có giá
             if (!giaXeDap.trim().isEmpty()) {
                 int price = Integer.parseInt(giaXeDap.trim());
                 phiGuiXeList.add(new PhiGuiXeDto("Xe đạp", price, null)); // maKhoanThu sẽ được set sau
-                System.out.println("DEBUG: ✅ Added Xe đạp: " + price + " VND");
             }
             
             // Thêm xe máy nếu có giá
             if (!giaXeMay.trim().isEmpty()) {
                 int price = Integer.parseInt(giaXeMay.trim());
                 phiGuiXeList.add(new PhiGuiXeDto("Xe máy", price, null)); // maKhoanThu sẽ được set sau
-                System.out.println("DEBUG: ✅ Added Xe máy: " + price + " VND");
             }
             
             // Thêm xe ô tô nếu có giá
             if (!giaXeOTo.trim().isEmpty()) {
                 int price = Integer.parseInt(giaXeOTo.trim());
                 phiGuiXeList.add(new PhiGuiXeDto("Ô tô", price, null)); // maKhoanThu sẽ được set sau
-                System.out.println("DEBUG: ✅ Added Ô tô: " + price + " VND");
             }
             
             khoanThuDto.setPhiGuiXeList(phiGuiXeList);
-            System.out.println("DEBUG: Created " + phiGuiXeList.size() + " vehicle fee entries");
         } else {
-            System.out.println("DEBUG: 💰 Non-vehicle mode - no vehicle details needed");
             khoanThuDto.setPhiGuiXeList(new ArrayList<>());
         }
 
@@ -545,7 +497,6 @@ public class ThemKhoanThuController {
             ResponseDto response = khoanThuService.updateKhoanThu(updatedDto);
             
             if (response.isSuccess()) {
-                System.out.println("✅ Cập nhật khoản thu thành công!");
                 
                 // Tự động refresh bảng và chuyển về tab khoản thu
                 refreshKhoanThuTableAndGoToTab();
@@ -589,69 +540,51 @@ public class ThemKhoanThuController {
     }
     
     private boolean isAnyFieldEmpty() {
-        System.out.println("=== DEBUG: VALIDATION CHECK START ===");
         
         // Kiểm tra từng trường một cách chi tiết
-        System.out.println("DEBUG: LoaiKhoanThu: " + comboBoxLoaiKhoanThu.getValue() + " (null? " + (comboBoxLoaiKhoanThu.getValue() == null) + ")");
-        System.out.println("DEBUG: PhamVi: " + comboBoxPhamVi.getValue() + " (null? " + (comboBoxPhamVi.getValue() == null) + ")");
-        System.out.println("DEBUG: BoPhanQuanLy: " + comboBoxBoPhanQuanLy.getValue() + " (null? " + (comboBoxBoPhanQuanLy.getValue() == null) + ")");
-        
+
         // Kiểm tra các trường bắt buộc cơ bản
         if (comboBoxLoaiKhoanThu.getValue() == null) {
-            System.out.println("❌ MISSING: Loại khoản thu");
             return true;
         }
         if (comboBoxPhamVi.getValue() == null) {
-            System.out.println("❌ MISSING: Phạm vi");
             return true;
         }
         if (comboBoxBoPhanQuanLy.getValue() == null) {
-            System.out.println("❌ MISSING: Bộ phận quản lý");
             return true;
         }
 
         // Kiểm tra tên khoản thu
         String tenKhoanThu = textFieldTenKhoanThu.getText();
-        System.out.println("DEBUG: TenKhoanThu: '" + tenKhoanThu + "' (empty? " + tenKhoanThu.isEmpty() + ", length: " + tenKhoanThu.length() + ")");
         if (tenKhoanThu.isEmpty()) {
-            System.out.println("❌ MISSING: Tên khoản thu");
             return true;
         }
 
         // Kiểm tra DatePicker có giá trị không
-        System.out.println("DEBUG: HanNop: " + datePickerHanNop.getValue() + " (null? " + (datePickerHanNop.getValue() == null) + ")");
         if (datePickerHanNop.getValue() == null) {
-            System.out.println("❌ MISSING: Hạn nộp");
             return true;
         }
 
         // Nếu chọn "Bên thứ 3" thì không cần kiểm tra gì thêm (bỏ tên cơ quan)
         if ("Bên thứ 3".equals(comboBoxBoPhanQuanLy.getValue())) {
-            System.out.println("DEBUG: Validating for 'Bên thứ 3' mode - no additional validation needed");
-            System.out.println("✅ All fields valid for 'Bên thứ 3' mode");
             return false;
         }
 
         // Nếu không phải "Bên thứ 3" thì kiểm tra đơn vị tính và đơn giá
-        System.out.println("DEBUG: DonViTinh: " + comboBoxDonViTinh.getValue());
         if (comboBoxDonViTinh.getValue() == null) {
-            System.out.println("DEBUG: Missing đơn vị tính");
             return true;
         }
 
         // Kiểm tra đơn giá tùy theo đơn vị tính
         if ("Phương tiện".equals(comboBoxDonViTinh.getValue())) {
-            System.out.println("DEBUG: 🚗 Vehicle mode - validating vehicle prices");
             
             // Kiểm tra ít nhất 1 loại xe phải có giá
             String giaXeDap = textFieldGiaXeDap.getText().trim();
             String giaXeMay = textFieldGiaXeMay.getText().trim();
             String giaXeOTo = textFieldGiaXeOTo.getText().trim();
             
-            System.out.println("DEBUG: Vehicle prices - Xe đạp: '" + giaXeDap + "', Xe máy: '" + giaXeMay + "', Xe ô tô: '" + giaXeOTo + "'");
             
             if (giaXeDap.isEmpty() && giaXeMay.isEmpty() && giaXeOTo.isEmpty()) {
-                System.out.println("❌ MISSING: Phải nhập giá cho ít nhất một loại xe");
                 return true;
             }
             
@@ -659,39 +592,31 @@ public class ThemKhoanThuController {
             if (!giaXeDap.isEmpty()) {
                 int value = getNumberFromFormattedMoney(giaXeDap);
                 if (value <= 0) {
-                    System.out.println("❌ INVALID: Giá xe đạp không hợp lệ: " + giaXeDap);
                     return true;
                 }
             }
             if (!giaXeMay.isEmpty()) {
                 int value = getNumberFromFormattedMoney(giaXeMay);
                 if (value <= 0) {
-                    System.out.println("❌ INVALID: Giá xe máy không hợp lệ: " + giaXeMay);
                     return true;
                 }
             }
             if (!giaXeOTo.isEmpty()) {
                 int value = getNumberFromFormattedMoney(giaXeOTo);
                 if (value <= 0) {
-                    System.out.println("❌ INVALID: Giá xe ô tô không hợp lệ: " + giaXeOTo);
                     return true;
                 }
             }
             
-            System.out.println("✅ Vehicle prices validation passed");
         } else {
             // Kiểm tra đơn giá chung
             if (textFieldDonGia.getText().isEmpty()) {
-                System.out.println("❌ MISSING: đơn giá - value: '" + textFieldDonGia.getText() + 
-                                 "', disabled: " + textFieldDonGia.isDisabled() + 
-                                 ", visible: " + textFieldDonGia.isVisible());
                 return true;
             }
             
             // Kiểm tra format số cho đơn giá chung (sử dụng method format tiền)
             int value = getNumberFromFormattedMoney(textFieldDonGia.getText());
             if (value <= 0) {
-                System.out.println("❌ INVALID: Đơn giá không hợp lệ: " + textFieldDonGia.getText());
                 return true;
             }
         }
@@ -714,7 +639,6 @@ public class ThemKhoanThuController {
      */
     private void openVehicleDetailsPopup(String maKhoanThu, String tenKhoanThu) {
         try {
-            System.out.println("DEBUG: 🚗 Creating vehicle details popup for: " + tenKhoanThu + " (ID: " + maKhoanThu + ")");
             
             // Tạo dialog popup
             javafx.scene.control.Dialog<java.util.List<PhiGuiXeDto>> dialog = new javafx.scene.control.Dialog<>();
@@ -805,15 +729,12 @@ public class ThemKhoanThuController {
             java.util.Optional<java.util.List<PhiGuiXeDto>> result = dialog.showAndWait();
             result.ifPresent(phiGuiXeList -> {
                 if (!phiGuiXeList.isEmpty()) {
-                    System.out.println("DEBUG: 💾 Saving " + phiGuiXeList.size() + " vehicle fee entries");
                     // Ở đây bạn có thể gọi service để lưu danh sách phí xe
                     // Ví dụ: phiGuiXeService.savePhiGuiXeList(phiGuiXeList);
                     
                     for (PhiGuiXeDto dto : phiGuiXeList) {
-                        System.out.println("DEBUG: ✅ " + dto.getLoaiXe() + ": " + dto.getSoTien() + " VND");
                     }
                 } else {
-                    System.out.println("DEBUG: ⚠️ No vehicle fees entered");
                 }
                 
                 // Đóng form chính sau khi xử lý xong
@@ -839,7 +760,6 @@ public class ThemKhoanThuController {
      */
     private void refreshKhoanThuTable() {
         try {
-            System.out.println("🔄 Refreshing fee table...");
             
             javafx.application.Platform.runLater(() -> {
                 try {
@@ -883,7 +803,6 @@ public class ThemKhoanThuController {
                 // Refresh all data including charts
                 homeListController.refreshAllDataIncludingCharts();
                 
-                System.out.println("✅ Fee data refreshed successfully");
                 return;
             }
             
@@ -1030,7 +949,6 @@ public class ThemKhoanThuController {
         
         // Nếu là loại phương tiện, load và hiển thị giá các loại xe
         if ("Phương tiện".equals(data.getDonViTinh()) && khoanThuService != null) {
-            System.out.println("DEBUG: Loading vehicle prices for fee: " + data.getMaKhoanThu());
             try {
                 // Lấy chi tiết khoản thu từ service để có thông tin phí xe
                 List<io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto> khoanThuList = khoanThuService.getAllKhoanThu();
@@ -1040,7 +958,6 @@ public class ThemKhoanThuController {
                     .orElse(null);
                     
                 if (khoanThuDto != null && khoanThuDto.getPhiGuiXeList() != null && !khoanThuDto.getPhiGuiXeList().isEmpty()) {
-                    System.out.println("DEBUG: Found " + khoanThuDto.getPhiGuiXeList().size() + " vehicle fees");
                     
                     // Clear existing values
                     if (textFieldGiaXeDap != null) textFieldGiaXeDap.clear();
@@ -1052,7 +969,6 @@ public class ThemKhoanThuController {
                         String loaiXe = phiXe.getLoaiXe();
                         String gia = String.valueOf(phiXe.getSoTien());
                         
-                        System.out.println("DEBUG: Setting price for " + loaiXe + ": " + gia);
                         
                         if ("Xe đạp".equals(loaiXe) && textFieldGiaXeDap != null) {
                             textFieldGiaXeDap.setText(String.valueOf(phiXe.getSoTien()));
@@ -1066,7 +982,6 @@ public class ThemKhoanThuController {
                     // Trigger sự kiện để hiển thị các field xe
                     onDonViTinhChanged(null);
                 } else {
-                    System.out.println("DEBUG: No vehicle fees found for this fee");
                 }
             } catch (Exception e) {
                 System.err.println("Error loading vehicle prices: " + e.getMessage());
@@ -1232,10 +1147,8 @@ public class ThemKhoanThuController {
         // Giữ nguyên ngày tạo gốc nếu đang ở chế độ edit
         if (isEditMode && currentKhoanThu != null && currentKhoanThu.getNgayTao() != null) {
             khoanThuDto.setNgayTao(currentKhoanThu.getNgayTao());
-            System.out.println("DEBUG: Keeping original creation date: " + currentKhoanThu.getNgayTao());
         } else {
             khoanThuDto.setNgayTao(java.time.LocalDate.now());
-            System.out.println("DEBUG: Setting new creation date: " + java.time.LocalDate.now());
         }
         khoanThuDto.setThoiHan(java.time.LocalDate.parse(thoiHanNop));
         // Sử dụng tên cơ quan nếu có, nếu không thì dùng bộ phận quản lý
@@ -1247,7 +1160,6 @@ public class ThemKhoanThuController {
         
         // *** XỬ LÝ GIÁ XE CHO PHƯƠNG TIỆN ***
         if ("Phương tiện".equals(donViTinh)) {
-            System.out.println("DEBUG: 🚗 Creating vehicle fees for update...");
             List<PhiGuiXeDto> phiGuiXeList = new ArrayList<>();
             
             // Thêm giá xe đạp nếu có
@@ -1258,7 +1170,6 @@ public class ThemKhoanThuController {
                     phiXeDap.setLoaiXe("Xe đạp");
                     phiXeDap.setSoTien(giaXeDap);
                     phiGuiXeList.add(phiXeDap);
-                    System.out.println("DEBUG: Added bike price: " + String.format("%,d VNĐ", giaXeDap));
                 }
             }
             
@@ -1270,7 +1181,6 @@ public class ThemKhoanThuController {
                     phiXeMay.setLoaiXe("Xe máy");
                     phiXeMay.setSoTien(giaXeMay);
                     phiGuiXeList.add(phiXeMay);
-                    System.out.println("DEBUG: Added motorcycle price: " + String.format("%,d VNĐ", giaXeMay));
                 }
             }
             
@@ -1282,14 +1192,11 @@ public class ThemKhoanThuController {
                     phiXeOTo.setLoaiXe("Ô tô");
                     phiXeOTo.setSoTien(giaXeOTo);
                     phiGuiXeList.add(phiXeOTo);
-                    System.out.println("DEBUG: Added car price: " + String.format("%,d VNĐ", giaXeOTo));
                 }
             }
             
             khoanThuDto.setPhiGuiXeList(phiGuiXeList);
-            System.out.println("DEBUG: 💰 Vehicle mode - created " + phiGuiXeList.size() + " vehicle fees");
         } else {
-            System.out.println("DEBUG: 💰 Non-vehicle mode - no vehicle details needed");
             khoanThuDto.setPhiGuiXeList(new ArrayList<>());
         }
         
@@ -1302,7 +1209,6 @@ public class ThemKhoanThuController {
      */
     private void refreshKhoanThuTableAndGoToTab() {
         try {
-            System.out.println("🔄 Refreshing fee table and switching to KhoanThu tab...");
             
             // Find all windows and look for Home_list controller
             for (javafx.stage.Window window : javafx.stage.Window.getWindows()) {
@@ -1339,7 +1245,6 @@ public class ThemKhoanThuController {
                 // Then refresh all data including charts
                 homeListController.refreshAllDataIncludingCharts();
                 
-                System.out.println("✅ Fee data refreshed successfully and switched to KhoanThu tab");
                 return;
             }
             
@@ -1360,7 +1265,6 @@ public class ThemKhoanThuController {
      */
     private void refreshCacheAndVehicleFees() {
         try {
-            System.out.println("🔄 Refreshing cache and vehicle fees data...");
             
             javafx.application.Platform.runLater(() -> {
                 try {
@@ -1376,7 +1280,6 @@ public class ThemKhoanThuController {
                         }
                     }
                     
-                    System.out.println("✅ Cache and vehicle fees refreshed successfully");
                 } catch (Exception e) {
                     System.err.println("ERROR: Failed to refresh cache and vehicle fees: " + e.getMessage());
                     e.printStackTrace();
@@ -1407,7 +1310,6 @@ public class ThemKhoanThuController {
                     if (cacheService != null) {
                         java.lang.reflect.Method refreshMethod = cacheService.getClass().getMethod("refreshCacheData");
                         refreshMethod.invoke(cacheService);
-                        System.out.println("✅ Refreshed cache in Home_list controller");
                     }
                 } catch (Exception e) {
                     // Silently continue - cache refresh is optional
@@ -1421,7 +1323,6 @@ public class ThemKhoanThuController {
                     java.lang.reflect.Method refreshMethod = detailController.getClass().getDeclaredMethod("refreshData");
                     refreshMethod.setAccessible(true);
                     refreshMethod.invoke(detailController);
-                    System.out.println("✅ Refreshed data in ChiTietCanHoController");
                 } catch (Exception e) {
                     // Silently continue - refresh is optional
                 }
@@ -1444,7 +1345,6 @@ public class ThemKhoanThuController {
      */
     private void closeAllOpenDetailTabs() {
         try {
-            System.out.println("🚪 Closing all open detail tabs...");
             
             // Get all open windows
             java.util.List<javafx.stage.Window> openWindows = new java.util.ArrayList<>(javafx.stage.Window.getWindows());
@@ -1455,7 +1355,6 @@ public class ThemKhoanThuController {
                     
                     // Skip the main window - only close detail/form windows
                     if (isDetailOrFormWindow(stage)) {
-                        System.out.println("🚪 Closing detail window: " + stage.getTitle());
                         javafx.application.Platform.runLater(() -> {
                             try {
                                 stage.close();
@@ -1467,7 +1366,6 @@ public class ThemKhoanThuController {
                 }
             }
             
-            System.out.println("✅ All detail tabs closed");
             
         } catch (Exception e) {
             System.err.println("ERROR: Failed to close detail tabs: " + e.getMessage());
@@ -1522,7 +1420,6 @@ public class ThemKhoanThuController {
             setupMoneyFormattingForField(textFieldGiaXeOTo);
         }
         
-        System.out.println("✅ Money formatting setup completed for all price fields");
     }
     
     /**
@@ -1645,7 +1542,6 @@ public class ThemKhoanThuController {
             // Tạo hóa đơn trực tiếp mà không cần xác nhận
             try {
                 if (hoaDonService != null) {
-                    System.out.println("🧾 Đang tạo hóa đơn cho khoản thu: " + currentKhoanThu.getTenKhoanThu());
                     
                     // Kiểm tra trạng thái tạo hóa đơn trước khi gọi service
                     if (currentKhoanThu.isTaoHoaDon()) {
@@ -1662,7 +1558,6 @@ public class ThemKhoanThuController {
                         hoaDonService.generateHoaDon(currentKhoanThu);
                     
                     if (response.isSuccess()) {
-                        System.out.println("✅ Tạo hóa đơn thành công!");
                         
                         // Cập nhật trạng thái local của khoản thu hiện tại
                         if (currentKhoanThu != null) {
@@ -1697,7 +1592,6 @@ public class ThemKhoanThuController {
                         javafx.application.Platform.runLater(() -> {
                             try {
                                 refreshInvoiceDataAndGoToHistoryTab();
-                                System.out.println("🔄 Switched to 'Lịch sử thu' tab to show new invoice");
                             } catch (Exception e) {
                                 System.err.println("Could not switch to History tab: " + e.getMessage());
                             }
@@ -1777,7 +1671,6 @@ public class ThemKhoanThuController {
                 if (scene != null) {
                     javafx.scene.Node rootNode = scene.getRoot();
                     findAndRefreshHomeListInvoiceDataAndGoToHistoryTab(rootNode);
-                    System.out.println("🔄 Attempted to refresh invoice data and switch to History tab in Home_list");
                     break;
                 }
                 if (currentNode.getParent() != null) {
@@ -1804,7 +1697,6 @@ public class ThemKhoanThuController {
                 if (scene != null) {
                     javafx.scene.Node rootNode = scene.getRoot();
                     findAndRefreshHomeListInvoiceData(rootNode);
-                    System.out.println("🔄 Attempted to refresh invoice data in Home_list");
                     break;
                 }
                 if (currentNode.getParent() != null) {
@@ -1844,11 +1736,9 @@ public class ThemKhoanThuController {
                     
                 // Refresh invoice data
                 homeList.refreshHoaDonData();
-                System.out.println("✅ Successfully refreshed invoice data in Home_list");
                 
                 // Switch to LichSuThu tab to show new invoices
                 homeList.show("LichSuThu");
-                System.out.println("🔄 Switched to 'Lịch sử thu' tab to display new invoices");
                 return;
             }
             
@@ -1888,7 +1778,6 @@ public class ThemKhoanThuController {
                 io.github.ktpm.bluemoonmanagement.controller.Home_list homeList = 
                     (io.github.ktpm.bluemoonmanagement.controller.Home_list) controller;
                 homeList.refreshHoaDonData();
-                System.out.println("✅ Successfully refreshed invoice data in Home_list");
                 return;
             }
             
@@ -1933,7 +1822,6 @@ public class ThemKhoanThuController {
                             hoaDonService.importFromExcel(multipartFile);
                         
                         if (response.isSuccess()) {
-                            System.out.println("✅ Excel import successful for: " + selectedFile.getName());
                             
                             // 1. Refresh dữ liệu hóa đơn trong Home_list để cập nhật danh sách hóa đơn mới
                             refreshInvoiceDataInHomeList();
@@ -1953,7 +1841,6 @@ public class ThemKhoanThuController {
                                     // Ẩn nút "Nhập excel hóa đơn" vì đã tạo hóa đơn
                                     if (buttonThemFile != null) {
                                         buttonThemFile.setVisible(false);
-                                        System.out.println("🔄 Hidden 'Nhập excel hóa đơn' button after successful import");
                                     }
                                     
                                     // Hiển thị nút "Tạo hóa đơn" nếu user có quyền (cho trường hợp ban quản lý)
@@ -2008,20 +1895,12 @@ public class ThemKhoanThuController {
             if (buttonTaoHoaDon != null) {
                 boolean shouldShowCreateInvoice = hasAccountantPermission && !hasInvoiceCreated && !isBenThuBa;
                 buttonTaoHoaDon.setVisible(shouldShowCreateInvoice);
-                System.out.println("DEBUG: buttonTaoHoaDon visible = " + shouldShowCreateInvoice + 
-                    " (hasAccountantPermission=" + hasAccountantPermission + 
-                    ", hasInvoiceCreated=" + hasInvoiceCreated + 
-                    ", isBenThuBa=" + isBenThuBa + ")");
             }
             
             // Nút "Nhập excel hóa đơn" (cho Bên thứ 3)
             if (buttonThemFile != null) {
                 boolean shouldShowImportExcel = hasAccountantPermission && !hasInvoiceCreated && isBenThuBa;
                 buttonThemFile.setVisible(shouldShowImportExcel);
-                System.out.println("DEBUG: buttonThemFile visible = " + shouldShowImportExcel + 
-                    " (hasAccountantPermission=" + hasAccountantPermission + 
-                    ", hasInvoiceCreated=" + hasInvoiceCreated + 
-                    ", isBenThuBa=" + isBenThuBa + ")");
             }
             
         } catch (Exception e) {
@@ -2045,7 +1924,6 @@ public class ThemKhoanThuController {
                     buttonTaoHoaDon.setVisible(false);
                 }
                 
-                System.out.println("🔄 Updated button visibility after invoice creation - both buttons hidden");
             }
         } catch (Exception e) {
             System.err.println("Warning: Could not update button visibility: " + e.getMessage());

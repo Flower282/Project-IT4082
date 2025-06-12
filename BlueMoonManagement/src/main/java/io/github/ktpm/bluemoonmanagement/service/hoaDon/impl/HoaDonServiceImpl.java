@@ -60,18 +60,14 @@ public class HoaDonServiceImpl implements HoaDonService {
 
     @Override
     public ResponseDto generateHoaDon(KhoanThuDto khoanThuDto) {
-        System.out.println("🎯 === STARTING generateHoaDon() ===");
-        System.out.println("📋 Fee details: " + khoanThuDto.getTenKhoanThu() + " (ID: " + khoanThuDto.getMaKhoanThu() + ")");
         
         // Check user permissions first
         if (Session.getCurrentUser() == null || !Session.getCurrentUser().getVaiTro().equals("Kế toán")) {
-            System.out.println("❌ Permission denied: User is not accountant");
             return new ResponseDto(false, "Bạn không có quyền tạo hóa đơn. Chỉ Kế toán mới được phép thực hiện thao tác này.");
         }
 
         // Validate fee exists and is in correct state
         if (khoanThuDto == null || khoanThuDto.isTaoHoaDon()) {
-            System.out.println("❌ Fee validation failed: already has invoice or is null");
             return new ResponseDto(false, "Khoản thu đã tạo hóa đơn hoặc không hợp lệ!");
         }
         
@@ -83,7 +79,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                                  " ký tự), vượt quá giới hạn 15 ký tự của database!");
         }
 
-        System.out.println("✅ Permissions and validation passed");
 
         try {
             // Load fee entity
@@ -96,7 +91,6 @@ public class HoaDonServiceImpl implements HoaDonService {
             List<CanHo> danhSachCanHo;
             try {
                 danhSachCanHo = canHoRepository.findAll();
-                System.out.println("📊 Loaded " + danhSachCanHo.size() + " apartments from database");
             } catch (Exception e) {
                 System.err.println("❌ Failed to load apartments: " + e.getMessage());
                 return new ResponseDto(false, "Không thể tải danh sách căn hộ!");
@@ -106,11 +100,9 @@ public class HoaDonServiceImpl implements HoaDonService {
             List<CanHo> eligibleApartments;
             
             if ("Phương tiện".equals(khoanThuDto.getDonViTinh())) {
-                System.out.println("🔍 Lọc căn hộ đủ điều kiện cho phí phương tiện...");
                 
                 // Lấy danh sách căn hộ có phương tiện
                 List<CanHo> apartmentsWithVehicles = canHoRepository.findAllWithPhuongTien();
-                System.out.println("📋 Found " + apartmentsWithVehicles.size() + " apartments with vehicle data");
                 
                 // Lọc căn hộ: ĐANG SỬ DỤNG + CÓ PHƯƠNG TIỆN
                 eligibleApartments = apartmentsWithVehicles.stream()
@@ -123,34 +115,20 @@ public class HoaDonServiceImpl implements HoaDonService {
                                                 !canHo.getPhuongTienList().isEmpty();
                             
                             if (isOccupied && hasVehicles) {
-                                System.out.println("   ✅ " + canHo.getMaCanHo() + " - Đang sử dụng + Có " + 
-                                                 canHo.getPhuongTienList().size() + " phương tiện");
                                 return true;
                             } else {
-                                System.out.println("   ❌ " + canHo.getMaCanHo() + " - Bỏ qua (Sử dụng: " + 
-                                                 isOccupied + ", Có xe: " + hasVehicles + ")");
                                 return false;
                             }
                         })
                         .collect(java.util.stream.Collectors.toList());
-                        
-                System.out.println("🎯 Kết quả lọc: " + eligibleApartments.size() + "/" + 
-                                 apartmentsWithVehicles.size() + " căn hộ đủ điều kiện");
-                
             } else if ("Diện tích".equals(khoanThuDto.getDonViTinh()) && 
                       "Căn hộ đang sử dụng".equals(khoanThuDto.getPhamVi())) {
-                System.out.println("🔍 Lọc căn hộ đang sử dụng cho phí diện tích...");
                 
                 // Lọc chỉ căn hộ đang sử dụng
                 eligibleApartments = danhSachCanHo.stream()
                         .filter(canHo -> "Đang sử dụng".equals(canHo.getTrangThaiSuDung()))
                         .collect(java.util.stream.Collectors.toList());
-                        
-                System.out.println("🎯 Kết quả lọc: " + eligibleApartments.size() + "/" + 
-                                 danhSachCanHo.size() + " căn hộ đang sử dụng");
-                                 
             } else {
-                System.out.println("🔍 Sử dụng tất cả căn hộ (không cần lọc đặc biệt)");
                 eligibleApartments = danhSachCanHo;
             }
 
@@ -158,7 +136,6 @@ public class HoaDonServiceImpl implements HoaDonService {
             int totalErrors = 0;
 
             // Create invoices for filtered apartments only
-            System.out.println("🏭 Bắt đầu tạo hóa đơn cho " + eligibleApartments.size() + " căn hộ đã lọc...");
             
             for (CanHo canHo : eligibleApartments) {
                 try {
@@ -170,13 +147,10 @@ public class HoaDonServiceImpl implements HoaDonService {
                         continue;
                     }
                     
-                    System.out.println("🏠 Processing apartment: " + canHo.getMaCanHo() + " (Length: " + 
-                                     (canHo.getMaCanHo() != null ? canHo.getMaCanHo().length() : "null") + " chars)");
                     
                     // Calculate amount - now simplified since we pre-filtered
                     Integer soTien = calculateOptimizedInvoiceAmount(khoanThuDto, canHo);
                     if (soTien == null || soTien <= 0) {
-                        System.out.println("⏭️ Skipping apartment " + canHo.getMaCanHo() + " (amount = " + soTien + ")");
                         continue;
                     }
 
@@ -196,13 +170,9 @@ public class HoaDonServiceImpl implements HoaDonService {
                     hoaDon.setSoTien(soTien);
                     hoaDon.setDaNop(false);
 
-                    System.out.println("💾 Saving invoice: Apartment=" + canHo.getMaCanHo() + 
-                                     ", Fee=" + khoanThuEntity.getMaKhoanThu() + 
-                                     ", Amount=" + String.format("%,d", soTien));
 
                     // Save invoice
                     HoaDon savedHoaDon = hoaDonRepository.save(hoaDon);
-                    System.out.println("✅ Created invoice " + savedHoaDon.getMaHoaDon() + " for apartment " + canHo.getMaCanHo() + " (Amount: " + String.format("%,d", soTien) + " VND)");
                     totalInvoicesCreated++;
 
                 } catch (org.springframework.dao.DataIntegrityViolationException e) {
@@ -223,15 +193,11 @@ public class HoaDonServiceImpl implements HoaDonService {
                 try {
                     khoanThuEntity.setTaoHoaDon(true);
                     khoanThuRepository.save(khoanThuEntity);
-                    System.out.println("✅ Updated fee status to 'invoice created'");
                 } catch (Exception e) {
                     System.err.println("❌ Failed to update fee status: " + e.getMessage());
                 }
             }
 
-            System.out.println("🎯 === INVOICE GENERATION COMPLETED ===");
-            System.out.println("📈 Total invoices created: " + totalInvoicesCreated);
-            System.out.println("❌ Total errors: " + totalErrors);
 
             if (totalInvoicesCreated > 0) {
                 return new ResponseDto(true, 
@@ -260,14 +226,11 @@ public class HoaDonServiceImpl implements HoaDonService {
     private Integer calculateOptimizedInvoiceAmount(KhoanThuDto khoanThuDto, CanHo canHo) {
         try {
             String donViTinh = khoanThuDto.getDonViTinh();
-            System.out.println("💰 Tính phí tối ưu cho căn hộ " + canHo.getMaCanHo() + " (Đơn vị: " + donViTinh + ")");
             
             switch (donViTinh) {
                 case "Diện tích":
                     // Tính phí theo diện tích - đã lọc trước nên không cần kiểm tra điều kiện
                     int areaFee = (int) Math.ceil(khoanThuDto.getSoTien() * canHo.getDienTich());
-                    System.out.println("   📐 Phí diện tích: " + String.format("%,d", khoanThuDto.getSoTien()) + 
-                                     " x " + canHo.getDienTich() + "m² = " + String.format("%,d", areaFee) + " VND");
                     return areaFee;
                     
                 case "Phương tiện":
@@ -277,7 +240,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                 default:
                     // Các loại phí khác
                     int baseFee = khoanThuDto.getSoTien();
-                    System.out.println("   💰 Phí cơ bản: " + String.format("%,d", baseFee) + " VND");
                     return baseFee;
             }
         } catch (Exception e) {
@@ -291,7 +253,6 @@ public class HoaDonServiceImpl implements HoaDonService {
      */
     private Integer calculateVehicleFeeOptimized(KhoanThuDto khoanThuDto, CanHo canHo) {
         try {
-            System.out.println("   🚗 Tính phí phương tiện tối ưu cho căn hộ: " + canHo.getMaCanHo());
             
             // Căn hộ đã được lọc trước, chắc chắn có phương tiện
             List<io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien> phuongTienList = canHo.getPhuongTienList();
@@ -309,7 +270,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                     .filter(pt -> "Ô tô".equals(pt.getLoaiPhuongTien()))
                     .count();
             
-            System.out.println("   📊 Phương tiện: Xe đạp=" + countXeDap + ", Xe máy=" + countXeMay + ", Ô tô=" + countOto);
             
             // Tính phí nhanh bằng Stream API
             int totalVehicleFee = 0;
@@ -328,19 +288,12 @@ public class HoaDonServiceImpl implements HoaDonService {
                             }
                             
                             int phiLoaiXe = soLuong * phi.getSoTien();
-                            if (soLuong > 0) {
-                                System.out.println("     • " + loaiXe + ": " + soLuong + " x " + 
-                                                 String.format("%,d", phi.getSoTien()) + " = " + 
-                                                 String.format("%,d", phiLoaiXe) + " VND");
-                            }
                             return phiLoaiXe;
                         })
                         .sum();
                         
-                System.out.println("   🎯 TỔNG PHÍ PHƯƠNG TIỆN: " + String.format("%,d", totalVehicleFee) + " VND");
             } else {
                 totalVehicleFee = khoanThuDto.getSoTien();
-                System.out.println("   ⚠️ Không có bảng giá -> Dùng phí cơ bản: " + String.format("%,d", totalVehicleFee) + " VND");
             }
             
             return totalVehicleFee;
@@ -357,18 +310,15 @@ public class HoaDonServiceImpl implements HoaDonService {
     private Integer calculateSimpleInvoiceAmount(KhoanThuDto khoanThuDto, CanHo canHo) {
         try {
             String donViTinh = khoanThuDto.getDonViTinh();
-            System.out.println("💰 Calculating fee for apartment " + canHo.getMaCanHo() + " with unit: " + donViTinh);
             
             switch (donViTinh) {
                 case "Diện tích":
                     // Tính phí theo diện tích
                     if (khoanThuDto.getPhamVi().equals("Căn hộ đang sử dụng") && 
                         !canHo.getTrangThaiSuDung().equals("Đang sử dụng")) {
-                        System.out.println("   ⏭️ Bỏ qua căn hộ không sử dụng: " + canHo.getMaCanHo());
                         return 0;
                     }
                     int areaFee = (int) Math.ceil(khoanThuDto.getSoTien() * canHo.getDienTich());
-                    System.out.println("   📐 Phí theo diện tích: " + khoanThuDto.getSoTien() + " x " + canHo.getDienTich() + "m² = " + areaFee + " VND");
                     return areaFee;
                     
                 case "Phương tiện":
@@ -378,7 +328,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                 default:
                     // Các loại phí khác dùng số tiền cơ bản
                     int baseFee = khoanThuDto.getSoTien();
-                    System.out.println("   💰 Phí cơ bản: " + baseFee + " VND");
                     return baseFee;
             }
         } catch (Exception e) {
@@ -392,11 +341,9 @@ public class HoaDonServiceImpl implements HoaDonService {
      */
     private Integer calculateVehicleFeeFromDatabase(KhoanThuDto khoanThuDto, CanHo canHo) {
         try {
-            System.out.println("   🚗 Kiểm tra điều kiện phí phương tiện cho căn hộ: " + canHo.getMaCanHo());
             
             // ĐIỀU KIỆN 1: Căn hộ phải đang có người ở
             if (!"Đang sử dụng".equals(canHo.getTrangThaiSuDung())) {
-                System.out.println("   ❌ Căn hộ " + canHo.getMaCanHo() + " không đang sử dụng (Trạng thái: " + canHo.getTrangThaiSuDung() + ") -> Bỏ qua");
                 return 0;
             }
             
@@ -410,13 +357,9 @@ public class HoaDonServiceImpl implements HoaDonService {
                 apartmentWithVehicles.getPhuongTienList();
             
             if (phuongTienList == null || phuongTienList.isEmpty()) {
-                System.out.println("   ❌ Căn hộ " + canHo.getMaCanHo() + " không có phương tiện nào -> Bỏ qua (Phí = 0)");
                 return 0;
             }
             
-            System.out.println("   ✅ Căn hộ " + canHo.getMaCanHo() + " đủ điều kiện:");
-            System.out.println("     • Trạng thái: " + canHo.getTrangThaiSuDung());
-            System.out.println("     • Số phương tiện: " + phuongTienList.size() + " chiếc");
             
             // Đếm từng loại xe
             long countXeDap = phuongTienList.stream()
@@ -431,14 +374,9 @@ public class HoaDonServiceImpl implements HoaDonService {
                     .filter(pt -> "Ô tô".equals(pt.getLoaiPhuongTien()))
                     .count();
             
-            System.out.println("   📊 Chi tiết phương tiện:");
-            System.out.println("     • Xe đạp: " + countXeDap + " chiếc");
-            System.out.println("     • Xe máy: " + countXeMay + " chiếc"); 
-            System.out.println("     • Ô tô: " + countOto + " chiếc");
             
             // Kiểm tra có ít nhất 1 phương tiện
             if (countXeDap == 0 && countXeMay == 0 && countOto == 0) {
-                System.out.println("   ❌ Không có phương tiện hợp lệ -> Bỏ qua (Phí = 0)");
                 return 0;
             }
             
@@ -473,14 +411,8 @@ public class HoaDonServiceImpl implements HoaDonService {
                 // Tổng phí
                 totalVehicleFee = tienXeDap + tienXeMay + tienOto;
                 
-                System.out.println("   💰 Chi tiết tính phí:");
-                System.out.println("     • Xe đạp: " + countXeDap + " x " + String.format("%,d", phiXeDap) + " = " + String.format("%,d", tienXeDap) + " VND");
-                System.out.println("     • Xe máy: " + countXeMay + " x " + String.format("%,d", phiXeMay) + " = " + String.format("%,d", tienXeMay) + " VND");
-                System.out.println("     • Ô tô: " + countOto + " x " + String.format("%,d", phiOto) + " = " + String.format("%,d", tienOto) + " VND");
-                System.out.println("     • 🎯 TỔNG PHÍ: " + String.format("%,d", totalVehicleFee) + " VND");
                 
             } else {
-                System.out.println("   ⚠️ Không tìm thấy bảng giá phương tiện -> Sử dụng phí cơ bản");
                 totalVehicleFee = khoanThuDto.getSoTien();
             }
             
@@ -491,7 +423,6 @@ public class HoaDonServiceImpl implements HoaDonService {
             e.printStackTrace();
             
             // Fallback: Trả về 0 nếu có lỗi để bỏ qua căn hộ này
-            System.out.println("   🔄 Fallback: Bỏ qua căn hộ do lỗi (Phí = 0)");
             return 0;
         }
     }
@@ -502,21 +433,17 @@ public class HoaDonServiceImpl implements HoaDonService {
     private Integer calculateInvoiceAmount(KhoanThuDto khoanThuDto, CanHo canHo) {
         try {
             String donViTinh = khoanThuDto.getDonViTinh();
-            System.out.println("💰 Calculating fee with unit: " + donViTinh + ", scope: " + khoanThuDto.getPhamVi());
             
             switch (donViTinh) {
                 case "Diện tích":
                     if (khoanThuDto.getPhamVi().equals("Tất cả")) {
                         int soTien = (int) Math.ceil(khoanThuDto.getSoTien() * canHo.getDienTich());
-                        System.out.println("   📐 Area-based calculation (All): " + khoanThuDto.getSoTien() + " x " + canHo.getDienTich() + " = " + soTien);
                         return soTien;
                     } else if (khoanThuDto.getPhamVi().equals("Căn hộ đang sử dụng")) {
                         if (canHo.getTrangThaiSuDung().equals("Đang sử dụng")) {
                             int soTien = (int) Math.ceil(khoanThuDto.getSoTien() * canHo.getDienTich());
-                            System.out.println("   📐 Area-based calculation (In-use): " + khoanThuDto.getSoTien() + " x " + canHo.getDienTich() + " = " + soTien);
                             return soTien;
                         } else {
-                            System.out.println("   ⏭️ Skipping apartment " + canHo.getMaCanHo() + " (not in use: " + canHo.getTrangThaiSuDung() + ")");
                             return 0;
                         }
                     }
@@ -527,11 +454,9 @@ public class HoaDonServiceImpl implements HoaDonService {
                         // Load vehicles for this apartment with explicit handling
                         List<io.github.ktpm.bluemoonmanagement.model.entity.PhuongTien> phuongTienList = canHo.getPhuongTienList();
                         if (phuongTienList == null) {
-                            System.out.println("   🚗 No vehicles found for apartment " + canHo.getMaCanHo() + " (list is null)");
                             return 0;
                         }
                         
-                        System.out.println("   🚗 Found " + phuongTienList.size() + " vehicles for apartment " + canHo.getMaCanHo());
                         
                         // Calculate fees for each vehicle type
                         int totalVehicleFee = 0;
@@ -574,11 +499,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                         
                         totalVehicleFee = tienGuiXeDap + tienGuiXeMay + tienGuiOto;
                         
-                        System.out.println("   🚗 Vehicle calculation details:");
-                        System.out.println("     - Xe đạp: " + countXeDap + " x " + soTienXeDap + " = " + tienGuiXeDap);
-                        System.out.println("     - Xe máy: " + countXeMay + " x " + soTienXeMay + " = " + tienGuiXeMay);
-                        System.out.println("     - Ô tô: " + countOto + " x " + soTienOto + " = " + tienGuiOto);
-                        System.out.println("     - Total: " + totalVehicleFee);
                         
                         return totalVehicleFee;
                         
@@ -591,7 +511,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                                     .findFirst()
                                     .orElse(null);
                             if (reloadedCanHo != null && reloadedCanHo.getPhuongTienList() != null) {
-                                System.out.println("   🔄 Reloaded apartment with vehicles, trying calculation again...");
                                 return calculateVehicleFeeFromList(khoanThuDto, reloadedCanHo.getPhuongTienList());
                             }
                         } catch (Exception ex) {
@@ -599,12 +518,10 @@ public class HoaDonServiceImpl implements HoaDonService {
                         }
                         
                         // Final fallback - return base amount if vehicle calculation fails
-                        System.out.println("   ⚠️ Using base vehicle fee due to loading issues: " + khoanThuDto.getSoTien());
                         return khoanThuDto.getSoTien();
                     }
                     
                 default:
-                    System.out.println("   ⚠️ Unknown fee unit: " + donViTinh + ", using base amount");
                     return khoanThuDto.getSoTien();
             }
             
@@ -661,7 +578,6 @@ public class HoaDonServiceImpl implements HoaDonService {
             
             totalVehicleFee = (countXeDap * soTienXeDap) + (countXeMay * soTienXeMay) + (countOto * soTienOto);
             
-            System.out.println("   🚗 Vehicle fee calculation from list: " + totalVehicleFee);
             return totalVehicleFee;
             
         } catch (Exception e) {
@@ -702,7 +618,6 @@ public class HoaDonServiceImpl implements HoaDonService {
             return new ResponseDto(false, "Bạn không có quyền import hóa đơn. Chỉ Kế toán mới được phép.");
         }
         try {
-            System.out.println("=== DEBUG: Starting HoaDon Excel import ===");
             File tempFile = File.createTempFile("hoadondichvu_temp", ".xlsx");
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
                 fos.write(file.getBytes());
@@ -710,17 +625,14 @@ public class HoaDonServiceImpl implements HoaDonService {
             
             Function<Row, HoaDonDichVuDto> rowMapper = row -> {
                 try {
-                    System.out.println("DEBUG: Processing row " + row.getRowNum() + " - Total cells: " + row.getLastCellNum());
                     
                     // Skip header row
                     if (row.getRowNum() == 0) {
-                        System.out.println("DEBUG: Skipping header row 0");
                         return null;
                     }
                     
                     // Check if row is empty
                     if (row.getLastCellNum() < 3) {
-                        System.out.println("DEBUG: Row " + row.getRowNum() + " has insufficient cells: " + row.getLastCellNum());
                         return null;
                     }
                     
@@ -739,7 +651,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                             }
                         }
                     }
-                    System.out.println("DEBUG: Tên khoản thu: '" + tenKhoanThu + "'");
                     
                     // Mã căn hộ (column 1)
                     String maCanHo = "";
@@ -756,7 +667,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                             }
                         }
                     }
-                    System.out.println("DEBUG: Mã căn hộ: '" + maCanHo + "'");
                     
                     // Số tiền (column 2)
                     int soTien = 0;
@@ -774,7 +684,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                             }
                         }
                     }
-                    System.out.println("DEBUG: Số tiền: " + soTien);
                     
                     // Relaxed validation - chỉ cần có tên khoản thu và mã căn hộ
                     if (tenKhoanThu.isEmpty() && maCanHo.isEmpty()) {
@@ -801,7 +710,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                     dto.setMaCanHo(maCanHo);
                     dto.setSoTien(soTien);
                     
-                    System.out.println("DEBUG: ✅ Successfully parsed row " + row.getRowNum() + " - " + tenKhoanThu + " | " + maCanHo + " | " + soTien);
                     return dto;
                 } catch (Exception e) {
                     System.err.println("ERROR: Exception at row " + row.getRowNum() + ": " + e.getMessage());
@@ -811,19 +719,16 @@ public class HoaDonServiceImpl implements HoaDonService {
             };
             
             List<HoaDonDichVuDto> hoaDonDichVuDtoList = XlxsFileUtil.importFromExcel(tempFile.getAbsolutePath(), rowMapper);
-            System.out.println("DEBUG: Raw parsed results: " + hoaDonDichVuDtoList.size() + " entries (including nulls)");
             
             // Count nulls before filtering
             long nullCount = hoaDonDichVuDtoList.stream().filter(dto -> dto == null).count();
             long validCount = hoaDonDichVuDtoList.stream().filter(dto -> dto != null).count();
-            System.out.println("DEBUG: Null entries: " + nullCount + ", Valid entries: " + validCount);
             
             // Filter out null values
             hoaDonDichVuDtoList = hoaDonDichVuDtoList.stream()
                 .filter(dto -> dto != null)
                 .collect(Collectors.toList());
             
-            System.out.println("DEBUG: After filtering nulls: " + hoaDonDichVuDtoList.size() + " valid entries");
             
             if (hoaDonDichVuDtoList.isEmpty()) {
                 tempFile.delete();
@@ -840,7 +745,6 @@ public class HoaDonServiceImpl implements HoaDonService {
                 .map(canHo -> canHo.getMaCanHo())
                 .sorted()
                 .collect(Collectors.toList());
-            System.out.println("DEBUG: Valid apartment codes in system: " + validApartmentCodes);
             
             // Validate and map to entities
             List<HoaDon> hoaDonList = new ArrayList<>();
@@ -883,10 +787,8 @@ public class HoaDonServiceImpl implements HoaDonService {
                     
                     if (existingKhoanThu == null) {
                         khoanThu = khoanThuRepository.save(khoanThu);
-                        System.out.println("DEBUG: Created new KhoanThu: " + dto.getTenKhoanThu());
                     } else {
                         khoanThu = existingKhoanThu;
-                        System.out.println("DEBUG: Using existing KhoanThu: " + dto.getTenKhoanThu());
                     }
                     
                     hoaDon.setKhoanThu(khoanThu);
@@ -940,14 +842,11 @@ public class HoaDonServiceImpl implements HoaDonService {
                 if (khoanThu != null) {
                     khoanThu.setTaoHoaDon(true);
                     khoanThuRepository.save(khoanThu);
-                    System.out.println("DEBUG: Updated KhoanThu " + khoanThuId + " taoHoaDon = true");
                 }
             }
             
             tempFile.delete();
             
-            System.out.println("DEBUG: Successfully imported " + hoaDonList.size() + " invoices");
-            System.out.println("DEBUG: Updated " + updatedKhoanThuIds.size() + " KhoanThu status to 'đã tạo hóa đơn'");
             
             // Create success message with details
             StringBuilder successMsg = new StringBuilder();
@@ -974,7 +873,6 @@ public class HoaDonServiceImpl implements HoaDonService {
     @Override
     public ResponseDto updateTrangThaiThanhToan(Integer maHoaDon, boolean daNop) {
         try {
-            System.out.println("💰 Updating payment status for invoice: " + maHoaDon + " to " + (daNop ? "PAID" : "UNPAID"));
             
             // Tìm hóa đơn trong database
             HoaDon hoaDon = hoaDonRepository.findById(maHoaDon).orElse(null);
@@ -989,17 +887,14 @@ public class HoaDonServiceImpl implements HoaDonService {
             // Cập nhật ngày nộp nếu đã thanh toán
             if (daNop) {
                 hoaDon.setNgayNop(LocalDateTime.now());
-                System.out.println("✅ Set payment date to: " + hoaDon.getNgayNop());
             } else {
                 hoaDon.setNgayNop(null);
-                System.out.println("🔄 Cleared payment date");
             }
             
             // Lưu vào database
             hoaDonRepository.save(hoaDon);
             
             String statusMessage = daNop ? "đã thanh toán" : "chưa thanh toán";
-            System.out.println("✅ Successfully updated invoice " + maHoaDon + " to " + statusMessage);
             
             return new ResponseDto(true, "Cập nhật trạng thái hóa đơn thành công: " + statusMessage);
             
@@ -1013,8 +908,6 @@ public class HoaDonServiceImpl implements HoaDonService {
     @Override
     public ResponseDto thuToanBoPhiCanHo(String maCanHo, List<HoaDonDto> hoaDonList) {
         try {
-            System.out.println("💰 Starting bulk payment for apartment: " + maCanHo);
-            System.out.println("   📋 Processing " + hoaDonList.size() + " invoices");
             
             // Kiểm tra quyền
             if (Session.getCurrentUser() == null) {
@@ -1043,13 +936,11 @@ public class HoaDonServiceImpl implements HoaDonService {
                         if (result.isSuccess()) {
                             successCount++;
                             totalAmount += hoaDonDto.getSoTien() != null ? hoaDonDto.getSoTien() : 0;
-                            System.out.println("   ✅ Processed invoice: " + hoaDonDto.getMaHoaDon() + " - " + hoaDonDto.getTenKhoanThu());
                         } else {
                             errors.add("Hóa đơn " + hoaDonDto.getMaHoaDon() + ": " + result.getMessage());
                             System.err.println("   ❌ Failed to process invoice: " + hoaDonDto.getMaHoaDon());
                         }
                     } else {
-                        System.out.println("   ⏭️ Skipping already paid invoice: " + hoaDonDto.getMaHoaDon());
                     }
                 } catch (Exception e) {
                     errors.add("Hóa đơn " + hoaDonDto.getMaHoaDon() + ": " + e.getMessage());
@@ -1073,7 +964,6 @@ public class HoaDonServiceImpl implements HoaDonService {
             }
             
             boolean isSuccess = successCount > 0;
-            System.out.println("🏁 Bulk payment completed: " + successCount + "/" + hoaDonList.size() + " success");
             
             return new ResponseDto(isSuccess, message.toString().trim());
             

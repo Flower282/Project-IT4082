@@ -42,3 +42,5 @@ logging:
     org.springframework.orm.jpa: OFF
     org.springframework.transaction: OFF
     org.springframework.security: OFF
+    com.zaxxer.hikari: OFF
+    com.password4j: OFF

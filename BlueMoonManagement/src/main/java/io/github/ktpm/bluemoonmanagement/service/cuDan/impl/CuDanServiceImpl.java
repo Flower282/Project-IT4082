@@ -79,20 +79,13 @@ public class CuDanServiceImpl implements CuDanService {
             io.github.ktpm.bluemoonmanagement.model.entity.CanHo canHo = 
                 canHoRepository.findById(cudanDto.getMaCanHo()).orElse(null);
             cuDan.setCanHo(canHo);
-            System.out.println("=== DEBUG: Adding resident to apartment ===");
-            System.out.println("Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
-            System.out.println("Apartment: " + cudanDto.getMaCanHo());
-            System.out.println("Apartment entity found: " + (canHo != null));
         } else {
             // Set null if no apartment code provided
             cuDan.setCanHo(null);
-            System.out.println("=== DEBUG: Adding resident without apartment ===");
-            System.out.println("Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
         }
         
         cuDanRepository.save(cuDan);
         entityManager.flush(); // Force immediate flush to database
-        System.out.println("=== DEBUG: Resident saved and flushed successfully ===");
         return new ResponseDto(true, "Thêm cư dân thành công");
     }
 
@@ -121,7 +114,6 @@ public class CuDanServiceImpl implements CuDanService {
             // Chuyển sang trạng thái "Đã chuyển đi" từ trạng thái khác
             cuDan.setNgayChuyenDi(LocalDate.now()); // Set ngày chuyển đi = hôm nay
             cuDan.setNgayChuyenDen(null); // Clear ngày chuyển đến
-            System.out.println("=== DEBUG: Chuyển cư dân sang trạng thái 'Đã chuyển đi' từ ComboBox ===");
         }
         
         // Kiểm tra nếu cư dân chuyển từ "Đã chuyển đi" và có mã căn hộ mới
@@ -130,25 +122,17 @@ public class CuDanServiceImpl implements CuDanService {
             "Đã chuyển đi".equals(existingCuDan.getTrangThaiCuTru()) 
             && cudanDto.getMaCanHo() != null && !cudanDto.getMaCanHo().trim().isEmpty()) {
             
-            System.out.println("=== DEBUG: Cư dân đang ở trạng thái 'Đã chuyển đi' và được cập nhật mã căn hộ mới ===");
-            System.out.println("Cư dân: " + cudanDto.getHoVaTen() + " (" + cudanDto.getMaDinhDanh() + ")");
-            System.out.println("Trạng thái hiện tại: " + existingCuDan.getTrangThaiCuTru());
-            System.out.println("Trạng thái mới từ form: " + cudanDto.getTrangThaiCuTru());
-            System.out.println("Mã căn hộ mới: " + cudanDto.getMaCanHo());
             
             // Xử lý logic thay đổi trạng thái từ "Đã chuyển đi"
             if ("Đã chuyển đi".equals(cudanDto.getTrangThaiCuTru())) {
                 // Nếu vẫn giữ trạng thái "Đã chuyển đi" - không thay đổi gì
-                System.out.println("=== DEBUG: Giữ nguyên trạng thái 'Đã chuyển đi' ===");
             } else {
                 // Chuyển từ "Đã chuyển đi" sang trạng thái khác
                 cuDan.setNgayChuyenDi(null); // Clear ngày chuyển đi
                 if ("Cư trú".equals(cudanDto.getTrangThaiCuTru())) {
                     cuDan.setNgayChuyenDen(LocalDate.now()); // Set ngày chuyển đến mới
-                    System.out.println("=== DEBUG: Chuyển từ 'Đã chuyển đi' sang 'Cư trú' ===");
                 } else {
                     cuDan.setNgayChuyenDen(null); // Clear ngày chuyển đến cho "Không cư trú"
-                    System.out.println("=== DEBUG: Chuyển từ 'Đã chuyển đi' sang 'Không cư trú' ===");
                 }
             }
             hasNewApartment = true;
@@ -161,10 +145,6 @@ public class CuDanServiceImpl implements CuDanService {
                 canHoRepository.findById(cudanDto.getMaCanHo()).orElse(null);
             cuDan.setCanHo(canHo);
             
-            System.out.println("=== DEBUG: Cập nhật cư dân vào căn hộ ===");
-            System.out.println("Cư dân: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
-            System.out.println("Căn hộ: " + cudanDto.getMaCanHo());
-            System.out.println("Trạng thái mới: " + cuDan.getTrangThaiCuTru());
         } else {
             // Set null if no apartment code provided
             cuDan.setCanHo(null);
@@ -217,11 +197,9 @@ public class CuDanServiceImpl implements CuDanService {
                 try {
                     // Skip header row (row index 0)
                     if (row.getRowNum() == 0) {
-                        System.out.println("DEBUG: Skipping header row");
                         return null;
                     }
                     
-                    System.out.println("DEBUG: Processing row " + row.getRowNum());
                     CudanDto cudanDto = new CudanDto();
                     
                     // Mã định danh (column 0)
@@ -234,7 +212,6 @@ public class CuDanServiceImpl implements CuDanService {
                         }
                     }
                     cudanDto.setMaDinhDanh(maDinhDanh);
-                    System.out.println("DEBUG: Mã định danh: " + maDinhDanh);
                     
                     // Họ và tên (column 1)
                     String hoVaTen = "";
@@ -345,7 +322,6 @@ public class CuDanServiceImpl implements CuDanService {
                         cudanDto.setMaCanHo(maCanHo.trim());
                     }
                     
-                    System.out.println("DEBUG: Successfully parsed row " + row.getRowNum() + " - " + maDinhDanh);
                     return cudanDto;
                 } catch (Exception e) {
                     System.err.println("ERROR: Lỗi khi đọc dòng Excel cư dân row " + row.getRowNum() + ": " + e.getMessage());
@@ -417,8 +393,6 @@ public class CuDanServiceImpl implements CuDanService {
     @Transactional
     public boolean xoaMem(String maDinhDanh) {
         try {
-            System.out.println("=== DEBUG: Xử lý xóa mềm cư dân ===");
-            System.out.println("Mã định danh: " + maDinhDanh);
             
             // Kiểm tra user hiện tại
             if (Session.getCurrentUser() == null) {
@@ -426,8 +400,6 @@ public class CuDanServiceImpl implements CuDanService {
                 return false;
             }
             
-            System.out.println("DEBUG: Người dùng hiện tại: " + Session.getCurrentUser().getHoTen() + " (" + Session.getCurrentUser().getEmail() + ")");
-            System.out.println("DEBUG: Vai trò: " + Session.getCurrentUser().getVaiTro());
             
             if (!"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
                 System.err.println("DEBUG: Không có quyền xóa - cần vai trò 'Tổ phó'");
@@ -441,9 +413,6 @@ public class CuDanServiceImpl implements CuDanService {
                 return false;
             }
             
-            System.out.println("DEBUG: Tìm thấy cư dân: " + cuDan.getHoVaTen());
-            System.out.println("DEBUG: Trạng thái hiện tại: " + cuDan.getTrangThaiCuTru());
-            System.out.println("DEBUG: Căn hộ hiện tại: " + (cuDan.getCanHo() != null ? cuDan.getCanHo().getMaCanHo() : "NULL"));
             
             // Soft delete: cập nhật ngày chuyển đi, trạng thái và XÓA mối quan hệ với căn hộ
             cuDan.setNgayChuyenDi(LocalDate.now());
@@ -459,16 +428,11 @@ public class CuDanServiceImpl implements CuDanService {
             // Verify lại sau khi save
             CuDan verifyAfterSave = cuDanRepository.findById(maDinhDanh).orElse(null);
             if (verifyAfterSave != null) {
-                System.out.println("DEBUG: Sau khi save - Trạng thái: " + verifyAfterSave.getTrangThaiCuTru());
-                System.out.println("DEBUG: Sau khi save - Ngày chuyển đi: " + verifyAfterSave.getNgayChuyenDi());
-                System.out.println("DEBUG: Sau khi save - Căn hộ: " + (verifyAfterSave.getCanHo() != null ? verifyAfterSave.getCanHo().getMaCanHo() : "NULL"));
                 
                 // Test mapping để đảm bảo mapper hoạt động đúng
                 io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CudanDto testDto = cuDanMapper.toCudanDto(verifyAfterSave);
-                System.out.println("DEBUG: Mapping test - DTO mã căn hộ: '" + testDto.getMaCanHo() + "'");
             }
             
-            System.out.println("DEBUG: Xóa mềm thành công - Mã căn hộ hiển thị null!");
             return true;
         } catch (Exception e) {
             System.err.println("Lỗi khi xóa mềm cư dân: " + e.getMessage());

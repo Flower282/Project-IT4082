@@ -645,7 +645,7 @@ public class Home_list implements Initializable {
     @FXML
     void goToHoSo(ActionEvent event) {
         show("HoSo");
-        parentController.updateScreenLabel("HoSo");
+        parentController.updateScreenLabel("Hồ sơ");
     }
 
     @FXML
@@ -3303,8 +3303,6 @@ public class Home_list implements Initializable {
      * Load HoaDon data from service
      */
     private void loadHoaDonData() {
-        System.out.println("DEBUG: hoaDonService = " + (hoaDonService != null ? "OK" : "NULL"));
-
         try {
             if (hoaDonService != null) {
                 List<io.github.ktpm.bluemoonmanagement.model.dto.hoaDon.HoaDonDto> hoaDonDtoList = hoaDonService.getAllHoaDon();

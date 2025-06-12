@@ -39,7 +39,6 @@ public class DataLoader implements ApplicationRunner {
     
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        System.out.println("=== BẮT ĐẦU LOAD DỮ LIỆU VÀO CACHE ===");
         long startTime = System.currentTimeMillis();
         
         try {
@@ -56,9 +55,6 @@ public class DataLoader implements ApplicationRunner {
             dataCache.setLoaded(true);
             
             long endTime = System.currentTimeMillis();
-            System.out.println("=== LOAD DỮ LIỆU HOÀN TẤT ===");
-            System.out.println("Tổng thời gian: " + (endTime - startTime) + "ms");
-            System.out.println("Tổng số items đã cache: " + dataCache.getTotalCachedItems());
             
         } catch (Exception e) {
             System.err.println("LỖI KHI LOAD DỮ LIỆU: " + e.getMessage());
@@ -70,12 +66,8 @@ public class DataLoader implements ApplicationRunner {
     private void loadCanHoData() {
         try {
             if (canHoService != null) {
-                System.out.print("Loading căn hộ... ");
                 var canHoList = canHoService.getAllCanHo();
                 dataCache.setCanHoList(canHoList);
-                System.out.println("✓ " + (canHoList != null ? canHoList.size() : 0) + " căn hộ");
-            } else {
-                System.out.println("⚠ CanHoService không khả dụng");
             }
         } catch (Exception e) {
             System.err.println("✗ Lỗi load căn hộ: " + e.getMessage());
@@ -85,12 +77,8 @@ public class DataLoader implements ApplicationRunner {
     private void loadCuDanData() {
         try {
             if (cuDanService != null) {
-                System.out.print("Loading cư dân... ");
                 var cuDanList = cuDanService.getAllCuDan();
                 dataCache.setCuDanList(cuDanList);
-                System.out.println("✓ " + (cuDanList != null ? cuDanList.size() : 0) + " cư dân");
-            } else {
-                System.out.println("⚠ CuDanService không khả dụng");
             }
         } catch (Exception e) {
             System.err.println("✗ Lỗi load cư dân: " + e.getMessage());
@@ -100,12 +88,8 @@ public class DataLoader implements ApplicationRunner {
     private void loadKhoanThuData() {
         try {
             if (khoanThuService != null) {
-                System.out.print("Loading khoản thu... ");
                 var khoanThuList = khoanThuService.getAllKhoanThu();
                 dataCache.setKhoanThuList(khoanThuList);
-                System.out.println("✓ " + (khoanThuList != null ? khoanThuList.size() : 0) + " khoản thu");
-            } else {
-                System.out.println("⚠ KhoanThuService không khả dụng");
             }
         } catch (Exception e) {
             System.err.println("✗ Lỗi load khoản thu: " + e.getMessage());

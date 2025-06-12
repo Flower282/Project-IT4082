@@ -27,12 +27,10 @@ public class CacheDataService {
      * Lấy chi tiết căn hộ từ cache
      */
     public CanHoChiTietDto getCanHoChiTietFromCache(String maCanHo) {
-        System.out.println("=== DEBUG: Building CanHoChiTietDto from cache for: " + maCanHo + " ===");
-        
+
         // Lấy thông tin căn hộ cơ bản
         CanHoDto canHoDto = dataCache.getCanHo(maCanHo);
         if (canHoDto == null) {
-            System.out.println("DEBUG: CanHo not found in cache: " + maCanHo);
             return null;
         }
         
@@ -59,11 +57,6 @@ public class CacheDataService {
         // Lấy danh sách hóa đơn từ cache
         List<HoaDonDto> hoaDonList = getHoaDonListFromCache(maCanHo);
         chiTietDto.setHoaDonList(hoaDonList);
-        
-        System.out.println("DEBUG: Built CanHoChiTietDto with:");
-        System.out.println("  - " + cuDanList.size() + " residents");
-        System.out.println("  - " + phuongTienList.size() + " vehicles");
-        System.out.println("  - " + hoaDonList.size() + " invoices");
         
         return chiTietDto;
     }
@@ -139,7 +132,6 @@ public class CacheDataService {
      * Refresh cache data - gọi khi có thay đổi
      */
     public void refreshCacheData() {
-        System.out.println("=== DEBUG: Refreshing cache data ===");
         dataCache.clearCache();
         // DataLoader sẽ tự động load lại khi cache bị clear
     }

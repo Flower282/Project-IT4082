@@ -29,7 +29,6 @@ public class PhuongTienServiceImpl implements PhuongTienService {
 
     @Override
     public ResponseDto themPhuongTien(PhuongTienDto phuongTienDto) {
-        System.out.println("DEBUG: themPhuongTien called with apartment: " + phuongTienDto.getMaCanHo());
         
         if (Session.getCurrentUser() == null || !"Tổ phó".equals(Session.getCurrentUser().getVaiTro())) {
             return new ResponseDto(false, "Bạn không có quyền thêm phương tiện. Chỉ Tổ phó mới được phép.");
@@ -62,7 +61,6 @@ public class PhuongTienServiceImpl implements PhuongTienService {
             // Lưu vào database
             phuongTienRepository.save(phuongTien);
             
-            System.out.println("DEBUG: Successfully added vehicle " + phuongTien.getBienSo() + " to apartment " + canHo.getMaCanHo());
             
             return new ResponseDto(true, "Thêm phương tiện thành công cho căn hộ " + canHo.getMaCanHo());
         } catch (Exception e) {

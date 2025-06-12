@@ -48,15 +48,7 @@ public class PieChartDataUtil {
                 String labelTuNguyen = String.format("Tự nguyện (%d khoản - %,d VNĐ)", 
                     totalTuNguyen, totalAmountTuNguyen);
                 feeTypeCount.put(labelTuNguyen, (int)totalTuNguyen);
-                System.out.println("🔍 DEBUG Label: Added 'Tự nguyện' → '" + labelTuNguyen + "'");
-            } else {
-                System.out.println("🔍 DEBUG Label: No 'Tự nguyện' data (totalTuNguyen = 0)");
-            }
-            
-            System.out.println("📊 Fee data queried directly from database:");
-            System.out.println("  - Bắt buộc: " + totalBatBuoc + " khoản, tổng " + String.format("%,d VNĐ", totalAmountBatBuoc));
-            System.out.println("  - Tự nguyện: " + totalTuNguyen + " khoản, tổng " + String.format("%,d VNĐ", totalAmountTuNguyen));
-            
+            }            
             return feeTypeCount;
             
         } catch (Exception e) {
@@ -83,7 +75,6 @@ public class PieChartDataUtil {
             List<KhoanThuDto> allKhoanThu = khoanThuService.getAllKhoanThu();
             
             if (allKhoanThu == null || allKhoanThu.isEmpty()) {
-                System.out.println("⚠️ No fee data found in database");
                 return null;
             }
             
@@ -120,10 +111,7 @@ public class PieChartDataUtil {
                 feeTypeCount.put(labelTuNguyen, totalTuNguyen);
             }
             
-            System.out.println("📊 Fee data from list (fallback):");
-            System.out.println("  - Bắt buộc: " + totalBatBuoc + " khoản, tổng " + String.format("%,d VNĐ", totalAmountBatBuoc));
-            System.out.println("  - Tự nguyện: " + totalTuNguyen + " khoản, tổng " + String.format("%,d VNĐ", totalAmountTuNguyen));
-            
+
             return feeTypeCount;
             
         } catch (Exception e) {
@@ -141,21 +129,16 @@ public class PieChartDataUtil {
      */
     public static String getSliceColor(String dataName, int colorIndex) {
         if (dataName == null) {
-            System.out.println("🔍 DEBUG Color: dataName is NULL, using default color");
             return getDefaultColor(colorIndex);
         }
         
         String lowerName = dataName.toLowerCase();
-        System.out.println("🔍 DEBUG Color: dataName = '" + dataName + "', lowerName = '" + lowerName + "'");
         
         if (lowerName.contains("bắt buộc")) {
-            System.out.println("🔍 DEBUG Color: Contains 'bắt buộc' → returning BLUE #2196F3");
             return "#2196F3"; // 🔵 Màu xanh cho Bắt buộc
         } else if (lowerName.contains("tự nguyện")) {
-            System.out.println("🔍 DEBUG Color: Contains 'tự nguyện' → returning ORANGE #FF9800");
             return "#FF9800"; // 🟠 Màu cam cho Tự nguyện  
         } else {
-            System.out.println("🔍 DEBUG Color: No match for '" + lowerName + "' → using default color");
             return getDefaultColor(colorIndex);
         }
     }

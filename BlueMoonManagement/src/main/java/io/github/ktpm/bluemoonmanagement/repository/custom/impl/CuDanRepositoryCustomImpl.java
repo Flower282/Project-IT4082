@@ -21,18 +21,6 @@ public class CuDanRepositoryCustomImpl implements CuDanRepositoryCustom {
         TypedQuery<CuDan> query = entityManager.createQuery(jpql, CuDan.class);
         
         List<CuDan> result = query.getResultList();
-        
-        System.out.println("=== DEBUG: Custom query result ===");
-        System.out.println("Total residents found: " + result.size());
-        for (CuDan cuDan : result) {
-            if (cuDan.getCanHo() != null) {
-                System.out.println("Resident: " + cuDan.getHoVaTen() + " -> Apartment: " + cuDan.getCanHo().getMaCanHo());
-            } else {
-                System.out.println("Resident: " + cuDan.getHoVaTen() + " -> No apartment");
-            }
-        }
-        System.out.println("=== END DEBUG ===");
-        
         return result;
     }
 } 
