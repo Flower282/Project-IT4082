@@ -67,7 +67,6 @@ public class CanHoServiceImpl implements CanHoService {
     public CanHoChiTietDto getCanHoChiTiet(CanHoDto canHoDto) {
         // Clear entity manager cache to ensure fresh data
         entityManager.clear();
-        System.out.println("=== DEBUG: getCanHoChiTiet called for apartment: " + canHoDto.getMaCanHo() + " ===");
         
         // Sử dụng fetch join để load căn hộ cùng với tất cả cư dân
         String jpql = "SELECT DISTINCT c FROM CanHo c LEFT JOIN FETCH c.cuDanList cd WHERE c.maCanHo = :maCanHo";
@@ -75,26 +74,18 @@ public class CanHoServiceImpl implements CanHoService {
             .setParameter("maCanHo", canHoDto.getMaCanHo())
             .getResultList();
         
-        System.out.println("=== DEBUG: Fetch join query results ===");
-        System.out.println("Apartment: " + canHoDto.getMaCanHo());
-        System.out.println("Query results count: " + canHoResults.size());
         
         CanHo canHo = canHoResults.isEmpty() ? null : canHoResults.get(0);
         
         if (canHo != null) {
             // Debug: Check all residents loaded by fetch join
-            System.out.println("=== DEBUG: All residents loaded by fetch join ===");
-            System.out.println("Number of residents found: " + (canHo.getCuDanList() != null ? canHo.getCuDanList().size() : 0));
             if (canHo.getCuDanList() != null) {
                 for (CuDan cuDan : canHo.getCuDanList()) {
-                    System.out.println("- Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ") - Status: " + cuDan.getTrangThaiCuTru() + " - NgayChuyenDi: " + cuDan.getNgayChuyenDi());
                 }
             }
-            System.out.println("=== END DEBUG fetch join ===");
             
             // Lấy danh sách phương tiện active
             List<PhuongTien> activePhuongTiens = phuongTienRepository.findActiveByCanHo_MaCanHo(canHoDto.getMaCanHo());
-            System.out.println("Number of active vehicles: " + activePhuongTiens.size());
             
             // Sử dụng mapper để chuyển đổi
             CanHoChiTietDto dto = canHoMapper.toCanHoChiTietDto(canHo);
@@ -107,19 +98,14 @@ public class CanHoServiceImpl implements CanHoService {
             dto.setPhuongTienList(activePhuongTienDtos);
             
             // Debug: Check mapper results
-            System.out.println("=== DEBUG: Mapper results ===");
-            System.out.println("DTO cuDanList size: " + (dto.getCuDanList() != null ? dto.getCuDanList().size() : "NULL"));
             if (dto.getCuDanList() != null) {
                 for (io.github.ktpm.bluemoonmanagement.model.dto.cuDan.CuDanTrongCanHoDto cuDan : dto.getCuDanList()) {
-                    System.out.println("- DTO Resident: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ") - Status: " + cuDan.getTrangThaiCuTru() + " - NgayChuyenDi: " + cuDan.getNgayChuyenDi());
                 }
             }
-            System.out.println("=== END DEBUG mapper ===");
             
             return dto;
         }
         
-        System.out.println("=== DEBUG: Apartment not found: " + canHoDto.getMaCanHo() + " ===");
         return null;
     }
 
@@ -169,24 +155,20 @@ public class CanHoServiceImpl implements CanHoService {
                     entityManager.flush(); // Đảm bảo cư dân được lưu vào DB
                     
                     chuHoCuDan = cuDanMoi;
-                    System.out.println("=== DEBUG: Đã tạo cư dân mới: " + cuDanMoi.getHoVaTen() + " (" + maDinhDanh + ") ===");
                 } else {
                     // Chỉ có mã định danh, cư dân chưa tồn tại
                     return new ResponseDto(false, "Cư dân với mã định danh '" + maDinhDanh + "' không tồn tại trong hệ thống. Vui lòng tạo cư dân trước hoặc kiểm tra lại mã định danh.");
                 }
             } else {
-                System.out.println("Đã tìm thấy cư dân với mã định danh: " + maDinhDanh);
                 chuHoCuDan = cuDanRepository.findById(maDinhDanh).orElse(null);
                 
                 // Nếu cư dân đang ở trạng thái "Chuyển đi", chuyển thành "Cư trú"
                 if (chuHoCuDan != null && "Chuyển đi".equals(chuHoCuDan.getTrangThaiCuTru())) {
-                    System.out.println("=== DEBUG: Cư dân đang ở trạng thái 'Chuyển đi', tự động chuyển thành 'Cư trú' ===");
                     chuHoCuDan.setTrangThaiCuTru("Cư trú");
                     chuHoCuDan.setNgayChuyenDen(LocalDate.now()); // Set ngày chuyển đến mới
                     chuHoCuDan.setNgayChuyenDi(null); // Clear ngày chuyển đi
                     cuDanRepository.save(chuHoCuDan);
                     entityManager.flush();
-                    System.out.println("=== DEBUG: Đã cập nhật trạng thái cư dân thành 'Cư trú' ===");
                 }
             }
         }
@@ -196,7 +178,6 @@ public class CanHoServiceImpl implements CanHoService {
         canHo.setChuHo(null); // Tạm thời không set chủ hộ
         canHoRepository.save(canHo);
         entityManager.flush(); // Đảm bảo căn hộ được lưu vào DB
-        System.out.println("=== DEBUG: Đã tạo căn hộ: " + canHoDto.getMaCanHo() + " ===");
         
         // Nếu có chủ hộ, cập nhật liên kết
         if (chuHoCuDan != null) {
@@ -208,10 +189,6 @@ public class CanHoServiceImpl implements CanHoService {
             canHo.setChuHo(chuHoCuDan);
             canHoRepository.save(canHo);
             
-            System.out.println("=== DEBUG: Đã join cư dân với căn hộ ===");
-            System.out.println("Cư dân: " + chuHoCuDan.getHoVaTen() + " (" + chuHoCuDan.getMaDinhDanh() + ")");
-            System.out.println("Căn hộ: " + canHoDto.getMaCanHo());
-            System.out.println("Foreign key ma_can_ho trong bảng cư dân: " + (chuHoCuDan.getCanHo() != null ? chuHoCuDan.getCanHo().getMaCanHo() : "NULL"));
         }
         
         return new ResponseDto(true, "Căn hộ đã được thêm thành công" + 
@@ -241,28 +218,23 @@ public class CanHoServiceImpl implements CanHoService {
         existingCanHo.setTrangThaiSuDung(canHoDto.getTrangThaiSuDung());
         
         // Xử lý cập nhật chủ hộ nếu có thay đổi
-        System.out.println("=== DEBUG: Bắt đầu cập nhật chủ hộ ===");
         CuDan oldChuHo = existingCanHo.getChuHo();
         String oldChuHoId = oldChuHo != null ? oldChuHo.getMaDinhDanh() : "null";
         String newChuHoId = (canHoDto.getChuHo() != null && canHoDto.getChuHo().getMaDinhDanh() != null) 
             ? canHoDto.getChuHo().getMaDinhDanh() : "null";
         
-        System.out.println("Chủ hộ cũ: " + oldChuHoId + " -> Chủ hộ mới: " + newChuHoId);
         
         if (canHoDto.getChuHo() != null && canHoDto.getChuHo().getMaDinhDanh() != null) {
             CuDan chuHo = cuDanRepository.findById(canHoDto.getChuHo().getMaDinhDanh()).orElse(null);
             if (chuHo != null) {
-                System.out.println("=== DEBUG: Tìm thấy cư dân chủ hộ mới: " + chuHo.getHoVaTen() + " (" + chuHo.getMaDinhDanh() + ") ===");
                 
                 // Nếu cư dân đang ở trạng thái "Chuyển đi", chuyển thành "Cư trú"
                 if ("Chuyển đi".equals(chuHo.getTrangThaiCuTru())) {
-                    System.out.println("=== DEBUG: Cư dân chủ hộ đang ở trạng thái 'Chuyển đi', tự động chuyển thành 'Cư trú' ===");
                     chuHo.setTrangThaiCuTru("Cư trú");
                     chuHo.setNgayChuyenDen(LocalDate.now()); // Set ngày chuyển đến mới
                     chuHo.setNgayChuyenDi(null); // Clear ngày chuyển đi
                     cuDanRepository.save(chuHo);
                     entityManager.flush();
-                    System.out.println("=== DEBUG: Đã cập nhật trạng thái cư dân chủ hộ thành 'Cư trú' ===");
                 }
                 
                 // Set căn hộ cho cư dân
@@ -271,12 +243,9 @@ public class CanHoServiceImpl implements CanHoService {
                 
                 // Set chủ hộ cho căn hộ
                 existingCanHo.setChuHo(chuHo);
-                System.out.println("=== DEBUG: Đã set chủ hộ mới cho căn hộ ===");
             } else {
-                System.out.println("=== WARNING: Không tìm thấy cư dân với mã: " + canHoDto.getChuHo().getMaDinhDanh() + " ===");
             }
         } else {
-            System.out.println("=== DEBUG: Xóa chủ hộ khỏi căn hộ ===");
             existingCanHo.setChuHo(null);
         }
         
@@ -289,14 +258,8 @@ public class CanHoServiceImpl implements CanHoService {
         
         // Verify update thành công
         CanHo verifyCanHo = canHoRepository.findById(canHoDto.getMaCanHo()).orElse(null);
-        if (verifyCanHo != null && verifyCanHo.getChuHo() != null) {
-            System.out.println("=== DEBUG: Verification - Chủ hộ sau khi cập nhật: " + 
-                verifyCanHo.getChuHo().getHoVaTen() + " (" + verifyCanHo.getChuHo().getMaDinhDanh() + ") ===");
-        } else {
-            System.out.println("=== DEBUG: Verification - Không có chủ hộ sau khi cập nhật ===");
-        }
+
         
-        System.out.println("DEBUG: Updated apartment " + canHoDto.getMaCanHo() + " successfully");
         
         return new ResponseDto(true, "Căn hộ đã được cập nhật thành công");
     }
@@ -310,8 +273,6 @@ public class CanHoServiceImpl implements CanHoService {
         
         try {
             String maCanHo = canHoDto.getMaCanHo();
-            System.out.println("=== DEBUG: Bắt đầu xóa căn hộ và dữ liệu liên quan ===");
-            System.out.println("Mã căn hộ: " + maCanHo);
             
             // Tìm căn hộ trước để đảm bảo nó tồn tại
             CanHo canHo = canHoRepository.findById(maCanHo).orElse(null);
@@ -321,7 +282,6 @@ public class CanHoServiceImpl implements CanHoService {
             
             // 1. Trước tiên, xóa reference từ căn hộ đến chủ hộ để tránh constraint violation
             if (canHo.getChuHo() != null) {
-                System.out.println("DEBUG: Xóa reference chủ hộ khỏi căn hộ");
                 canHo.setChuHo(null);
                 canHoRepository.save(canHo);
                 entityManager.flush();
@@ -333,10 +293,8 @@ public class CanHoServiceImpl implements CanHoService {
                 .collect(java.util.stream.Collectors.toList());
             
             if (!hoaDonList.isEmpty()) {
-                System.out.println("DEBUG: Tìm thấy " + hoaDonList.size() + " hóa đơn cần xóa");
                 hoaDonRepository.deleteAll(hoaDonList);
                 entityManager.flush();
-                System.out.println("DEBUG: Đã xóa tất cả hóa đơn");
             }
 
             // 3. Xóa tất cả phương tiện của căn hộ
@@ -346,10 +304,8 @@ public class CanHoServiceImpl implements CanHoService {
                     .collect(java.util.stream.Collectors.toList());
             
             if (!allPhuongTienList.isEmpty()) {
-                System.out.println("DEBUG: Tìm thấy " + allPhuongTienList.size() + " phương tiện cần xóa");
                 phuongTienRepository.deleteAll(allPhuongTienList);
                 entityManager.flush();
-                System.out.println("DEBUG: Đã xóa tất cả phương tiện");
             }
             
             // 4. Cập nhật trạng thái cư dân thành "Đã chuyển đi" và xóa reference căn hộ
@@ -360,9 +316,7 @@ public class CanHoServiceImpl implements CanHoService {
                     .collect(java.util.stream.Collectors.toList());
             
             if (!allCuDanList.isEmpty()) {
-                System.out.println("DEBUG: Tìm thấy " + allCuDanList.size() + " cư dân cần cập nhật trạng thái 'Đã chuyển đi'");
                 for (io.github.ktpm.bluemoonmanagement.model.entity.CuDan cuDan : allCuDanList) {
-                    System.out.println("DEBUG: Cập nhật cư dân: " + cuDan.getHoVaTen() + " (" + cuDan.getMaDinhDanh() + ")");
                     
                     // Cập nhật trạng thái thành "Đã chuyển đi"
                     cuDan.setTrangThaiCuTru("Đã chuyển đi");
@@ -372,19 +326,15 @@ public class CanHoServiceImpl implements CanHoService {
                     // Xóa reference căn hộ
                     cuDan.setCanHo(null);
                     
-                    System.out.println("DEBUG: -> Trạng thái mới: 'Đã chuyển đi', Ngày chuyển đi: " + java.time.LocalDate.now());
                 }
                 cuDanRepository.saveAll(allCuDanList);
                 entityManager.flush();
-                System.out.println("DEBUG: Đã cập nhật trạng thái tất cả cư dân thành 'Đã chuyển đi'");
             }
             
             // 5. Cuối cùng, xóa căn hộ
-            System.out.println("DEBUG: Bắt đầu xóa căn hộ...");
             canHoRepository.deleteById(maCanHo);
             entityManager.flush();
             
-            System.out.println("DEBUG: Đã xóa căn hộ thành công! Cư dân được giữ lại.");
             return new ResponseDto(true, "Căn hộ đã được xóa thành công. Cư dân và hóa đơn, phương tiện liên quan đã được xử lý.");
             
         } catch (Exception e) {
@@ -408,11 +358,9 @@ public class CanHoServiceImpl implements CanHoService {
                 try {
                     // Skip header row (row index 0)
                     if (row.getRowNum() == 0) {
-                        System.out.println("DEBUG: Skipping header row");
                         return null;
                     }
                     
-                    System.out.println("DEBUG: Processing row " + row.getRowNum());
                     CanHoDto canHoDto = new CanHoDto();
                     
                     // Đọc mã căn hộ (column 0)
@@ -425,7 +373,6 @@ public class CanHoServiceImpl implements CanHoService {
                         }
                     }
                     canHoDto.setMaCanHo(maCanHo);
-                    System.out.println("DEBUG: Mã căn hộ: " + maCanHo);
                     
                     // Đọc tòa nhà (column 1)  
                     String toaNha = "";
@@ -510,7 +457,6 @@ public class CanHoServiceImpl implements CanHoService {
                     }
                     canHoDto.setTrangThaiSuDung(trangThaiSuDung);
                     
-                    System.out.println("DEBUG: Successfully parsed row " + row.getRowNum() + " - " + maCanHo);
                     return canHoDto;
                 } catch (Exception e) {
                     System.err.println("ERROR: Lỗi khi đọc dòng Excel căn hộ row " + row.getRowNum() + ": " + e.getMessage());

@@ -167,7 +167,6 @@ public class KhungController implements Initializable{
         
         // Auto-refresh invoice data when switching to History tab
         if (centerController != null) {
-            System.out.println("🔄 Auto-refreshing invoice data when switching to History tab...");
             centerController.refreshHoaDonData();
         }
     }

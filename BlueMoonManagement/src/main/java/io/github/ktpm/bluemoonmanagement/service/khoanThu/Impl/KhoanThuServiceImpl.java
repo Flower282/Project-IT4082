@@ -65,13 +65,7 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         // Tạo mã khoản thu tự động theo định dạng cũ: TN/BB-YYYYMM-XXX (13 ký tự)
         String maKhoanThu = generateMaKhoanThu(khoanThuDto);
         
-        // DEBUG: In ra thông tin chi tiết
-        System.out.println("DEBUG: Generated maKhoanThu = '" + maKhoanThu + "' (length: " + maKhoanThu.length() + ")");
-        System.out.println("DEBUG: tenKhoanThu = '" + khoanThuDto.getTenKhoanThu() + "' (length: " + (khoanThuDto.getTenKhoanThu() != null ? khoanThuDto.getTenKhoanThu().length() : "null") + ")");
-        System.out.println("DEBUG: donViTinh = '" + khoanThuDto.getDonViTinh() + "' (length: " + (khoanThuDto.getDonViTinh() != null ? khoanThuDto.getDonViTinh().length() : "null") + ")");
-        System.out.println("DEBUG: phamVi = '" + khoanThuDto.getPhamVi() + "' (length: " + (khoanThuDto.getPhamVi() != null ? khoanThuDto.getPhamVi().length() : "null") + ")");
-        System.out.println("DEBUG: ghiChu = '" + khoanThuDto.getGhiChu() + "' (length: " + (khoanThuDto.getGhiChu() != null ? khoanThuDto.getGhiChu().length() : "null") + ")");
-        
+
         // Kiểm tra mã khoản thu đã tồn tại
         if (khoanThuRepository.existsById(maKhoanThu)) {
             return new ResponseDto(false, "Mã khoản thu đã tồn tại. Vui lòng thử lại.");
@@ -79,9 +73,7 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         
         // Đảm bảo mã khoản thu có đúng 15 ký tự (database constraint)
         if (maKhoanThu.length() > 15) {
-            System.out.println("WARNING: Generated maKhoanThu '" + maKhoanThu + "' is " + maKhoanThu.length() + " characters, truncating to 15");
             maKhoanThu = maKhoanThu.substring(0, 15);
-            System.out.println("DEBUG: Truncated maKhoanThu to '" + maKhoanThu + "' (length: " + maKhoanThu.length() + ")");
         }
         
         // Gán mã khoản thu mới vào DTO
@@ -92,27 +84,22 @@ public class KhoanThuServiceImpl implements KhoanThuService {
             String originalDonViTinh = khoanThuDto.getDonViTinh();
             String truncatedDonViTinh = khoanThuDto.getDonViTinh().substring(0, 15);
             khoanThuDto.setDonViTinh(truncatedDonViTinh);
-            System.out.println("DEBUG: Truncated donViTinh from '" + originalDonViTinh + "' to '" + truncatedDonViTinh + "'");
         }
         
         // BƯỚC 1: Lưu khoản thu trước (không bao gồm phiGuiXeList)
-        System.out.println("DEBUG: 📝 STEP 1: Saving KhoanThu to khoan_thu table...");
-        
+
         // Tạm thời lưu phiGuiXeList
         var phiGuiXeListTemp = khoanThuDto.getPhiGuiXeList();
         khoanThuDto.setPhiGuiXeList(new ArrayList<>()); // Đặt empty để không lưu cùng lúc
         
         // Chuyển đổi DTO thành entity và lưu vào bảng khoan_thu
         KhoanThu khoanThu = khoanThuMapper.fromKhoanThuDto(khoanThuDto);
-        System.out.println("DEBUG: About to save KhoanThu entity with maKhoanThu = '" + khoanThu.getMaKhoanThu() + "'");
-        
+
         khoanThuRepository.save(khoanThu);
-        System.out.println("DEBUG: ✅ KhoanThu saved successfully to khoan_thu table");
-        
+
         // BƯỚC 2: Lưu phí xe vào bảng phi_gui_xe (nếu có)
         if (phiGuiXeListTemp != null && !phiGuiXeListTemp.isEmpty()) {
-            System.out.println("DEBUG: 🚗 STEP 2: Saving " + phiGuiXeListTemp.size() + " vehicle fees to phi_gui_xe table...");
-            
+
             // Tạo thông báo hiển thị các đơn giá xe
             StringBuilder vehiclePriceMessage = new StringBuilder();
             vehiclePriceMessage.append("Thêm khoản thu phương tiện thành công với các đơn giá:\n");
@@ -134,15 +121,12 @@ public class KhoanThuServiceImpl implements KhoanThuService {
                                   .append(": ").append(String.format("%,d", phiGuiXeDto.getSoTien()))
                                   .append(" VND\n");
                 
-                System.out.println("DEBUG: ✅ Saved vehicle fee: " + phiGuiXeDto.getLoaiXe() + " = " + phiGuiXeDto.getSoTien() + " VND (maKhoanThu: " + phiGuiXeDto.getMaKhoanThu() + ")");
             }
             
-            System.out.println("DEBUG: ✅ All vehicle fees saved successfully to phi_gui_xe table");
-            
+
             // Trả về thông báo với chi tiết các đơn giá xe
             return new ResponseDto(true, vehiclePriceMessage.toString().trim());
         } else {
-            System.out.println("DEBUG: ℹ️  No vehicle fees to save (non-vehicle fee type)");
             // Thông báo bình thường cho khoản thu không phải phương tiện
             return new ResponseDto(true, "Thêm khoản thu thành công");
         }
@@ -177,8 +161,7 @@ public class KhoanThuServiceImpl implements KhoanThuService {
     @Override
     @Transactional
     public ResponseDto updateKhoanThu(KhoanThuDto khoanThuDto) {
-        System.out.println("DEBUG: 🔄 Starting updateKhoanThu for maKhoanThu: " + khoanThuDto.getMaKhoanThu());
-        
+
         if (Session.getCurrentUser() == null || !"Kế toán".equals(Session.getCurrentUser().getVaiTro())) {
             return new ResponseDto(false, "Bạn không có quyền cập nhật khoản thu. Chỉ Kế toán mới được phép.");
         }
@@ -195,8 +178,7 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         }
 
         // BƯỚC 1: Cập nhật thông tin khoản thu trong bảng khoan_thu
-        System.out.println("DEBUG: 📝 STEP 1: Updating KhoanThu in khoan_thu table...");
-        
+
         // Tạm thời lưu danh sách phí xe mới
         var newPhiGuiXeList = khoanThuDto.getPhiGuiXeList();
         khoanThuDto.setPhiGuiXeList(new ArrayList<>()); // Đặt empty để không lưu cùng lúc
@@ -205,21 +187,16 @@ public class KhoanThuServiceImpl implements KhoanThuService {
         KhoanThu updatedKhoanThu = khoanThuMapper.fromKhoanThuDto(khoanThuDto);
         updatedKhoanThu.setTaoHoaDon(existingKhoanThu.isTaoHoaDon()); // Giữ nguyên trạng thái tạo hóa đơn
         khoanThuRepository.save(updatedKhoanThu);
-        System.out.println("DEBUG: ✅ KhoanThu updated successfully in khoan_thu table");
 
         // BƯỚC 2: Cập nhật phí xe trong bảng phi_gui_xe (nếu là khoản thu phương tiện)
         if ("Phương tiện".equals(khoanThuDto.getDonViTinh())) {
-            System.out.println("DEBUG: 🚗 STEP 2: Updating vehicle fees in phi_gui_xe table...");
-            
+
             // Xóa tất cả phí xe cũ của khoản thu này
-            System.out.println("DEBUG: 🗑️  Deleting old vehicle fees for maKhoanThu: " + khoanThuDto.getMaKhoanThu());
             phiGuiXeRepository.deleteByKhoanThu_MaKhoanThu(khoanThuDto.getMaKhoanThu());
-            System.out.println("DEBUG: ✅ Old vehicle fees deleted");
-            
+
             // Thêm phí xe mới (nếu có)
             if (newPhiGuiXeList != null && !newPhiGuiXeList.isEmpty()) {
-                System.out.println("DEBUG: 💰 Adding " + newPhiGuiXeList.size() + " new vehicle fees...");
-                
+
                 StringBuilder vehiclePriceMessage = new StringBuilder();
                 vehiclePriceMessage.append("Cập nhật khoản thu phương tiện thành công với các đơn giá mới:\n");
                 
@@ -240,19 +217,15 @@ public class KhoanThuServiceImpl implements KhoanThuService {
                                       .append(": ").append(String.format("%,d", phiGuiXeDto.getSoTien()))
                                       .append(" VND\n");
                     
-                    System.out.println("DEBUG: ✅ Saved updated vehicle fee: " + phiGuiXeDto.getLoaiXe() + " = " + phiGuiXeDto.getSoTien() + " VND");
                 }
                 
-                System.out.println("DEBUG: ✅ All vehicle fees updated successfully in phi_gui_xe table");
-                
+
                 // Trả về thông báo với chi tiết các đơn giá xe mới
                 return new ResponseDto(true, vehiclePriceMessage.toString().trim());
             } else {
-                System.out.println("DEBUG: ⚠️  No new vehicle fees provided - all old fees deleted");
                 return new ResponseDto(true, "Cập nhật khoản thu phương tiện thành công - đã xóa tất cả phí xe cũ");
             }
         } else {
-            System.out.println("DEBUG: ℹ️  Non-vehicle fee type - no vehicle fee update needed");
             return new ResponseDto(true, "Cập nhật khoản thu thành công");
         }
     }
@@ -309,13 +282,11 @@ public class KhoanThuServiceImpl implements KhoanThuService {
     }
     @Override
     public long countKhoanThuByBatBuoc(boolean batBuoc) {
-        System.out.println("📊 Querying count of fees with batBuoc = " + batBuoc);
         return khoanThuRepository.countByBatBuoc(batBuoc);
     }
 
     @Override 
     public long sumAmountByBatBuoc(boolean batBuoc) {
-        System.out.println("💰 Querying sum of amounts with batBuoc = " + batBuoc);
         Long sum = khoanThuRepository.sumSoTienByBatBuoc(batBuoc);
         return sum != null ? sum : 0L;
     }
