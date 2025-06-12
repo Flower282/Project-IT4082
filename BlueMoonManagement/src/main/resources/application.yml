@@ -33,5 +33,12 @@ spring:
 logging:
   level:
     root: INFO
-    org.springframework: INFO
-    io.github.ktpm.bluemoonmanagement: INFO  # Changed from DEBUG to INFO
+    org.springframework: OFF
+    org.hibernate: OFF
+    org.springframework.web: OFF
+    org.springframework.boot.autoconfigure: OFF
+    org.springframework.context: OFF
+    org.springframework.jdbc: OFF
+    org.springframework.orm.jpa: OFF
+    org.springframework.transaction: OFF
+    org.springframework.security: OFF
