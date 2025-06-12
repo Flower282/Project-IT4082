@@ -25,8 +25,7 @@ public class PieChartDataUtil {
                 return null;
             }
             
-            System.out.println("📊 Querying fee data directly from database via mapper...");
-            
+
             // Query trực tiếp từ database để đếm khoản thu bắt buộc
             long totalBatBuoc = khoanThuService.countKhoanThuByBatBuoc(true);
             long totalAmountBatBuoc = khoanThuService.sumAmountByBatBuoc(true);
@@ -35,11 +34,6 @@ public class PieChartDataUtil {
             long totalTuNguyen = khoanThuService.countKhoanThuByBatBuoc(false);
             long totalAmountTuNguyen = khoanThuService.sumAmountByBatBuoc(false);
             
-            // 🔍 DEBUG: In ra dữ liệu thực tế
-            System.out.println("🔍 DEBUG - Database raw data:");
-            System.out.println("  ➤ Bắt buộc (batBuoc=true): " + totalBatBuoc + " khoản, " + totalAmountBatBuoc + " VNĐ");
-            System.out.println("  ➤ Tự nguyện (batBuoc=false): " + totalTuNguyen + " khoản, " + totalAmountTuNguyen + " VNĐ");
-            
             Map<String, Integer> feeTypeCount = new HashMap<>();
             
             // Tạo label có thông tin chi tiết
@@ -47,9 +41,7 @@ public class PieChartDataUtil {
                 String labelBatBuoc = String.format("Bắt buộc (%d khoản - %,d VNĐ)", 
                     totalBatBuoc, totalAmountBatBuoc);
                 feeTypeCount.put(labelBatBuoc, (int)totalBatBuoc);
-                System.out.println("🔍 DEBUG Label: Added 'Bắt buộc' → '" + labelBatBuoc + "'");
-            } else {
-                System.out.println("🔍 DEBUG Label: No 'Bắt buộc' data (totalBatBuoc = 0)");
+
             }
             
             if (totalTuNguyen > 0) {
