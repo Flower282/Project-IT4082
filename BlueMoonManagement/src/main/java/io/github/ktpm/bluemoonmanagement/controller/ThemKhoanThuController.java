@@ -1,5 +1,11 @@
 package io.github.ktpm.bluemoonmanagement.controller;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon;
 import io.github.ktpm.bluemoonmanagement.model.dto.ResponseDto;
 import io.github.ktpm.bluemoonmanagement.model.dto.khoanThu.KhoanThuDto;
@@ -16,11 +22,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Component
 public class ThemKhoanThuController {
@@ -879,8 +880,8 @@ public class ThemKhoanThuController {
                 gotoKhoanThuMethod.setAccessible(true);
                 gotoKhoanThuMethod.invoke(homeListController, (javafx.event.ActionEvent) null);
                 
-                // Refresh fee data (now public method)
-                homeListController.refreshKhoanThuData();
+                // Refresh all data including charts
+                homeListController.refreshAllDataIncludingCharts();
                 
                 System.out.println("✅ Fee data refreshed successfully");
                 return;
@@ -1335,8 +1336,8 @@ public class ThemKhoanThuController {
                 gotoKhoanThuMethod.setAccessible(true);
                 gotoKhoanThuMethod.invoke(homeListController, (javafx.event.ActionEvent) null);
                 
-                // Then refresh fee data 
-                homeListController.refreshKhoanThuData();
+                // Then refresh all data including charts
+                homeListController.refreshAllDataIncludingCharts();
                 
                 System.out.println("✅ Fee data refreshed successfully and switched to KhoanThu tab");
                 return;
@@ -1684,9 +1685,9 @@ public class ThemKhoanThuController {
                         
                         // 5. Hiển thị thông báo thành công sau khi đã refresh
                         ThongBaoController.showSuccess("🎉 Tạo hóa đơn thành công!", 
-                            "✅ Đã tạo hóa đơn thành công cho khoản thu: " + currentKhoanThu.getTenKhoanThu() + "\n\n" +
-                            "🔄 Trạng thái khoản thu đã được cập nhật thành 'Đã tạo'\n" +
-                            "💡 Kiểm tra tab 'Lịch sử thu' để xem hóa đơn mới được tạo");
+                            " Đã tạo hóa đơn thành công cho khoản thu: " + currentKhoanThu.getTenKhoanThu() + "\n\n" +
+                            " Trạng thái khoản thu đã được cập nhật thành 'Đã tạo'\n" +
+                            " Kiểm tra tab 'Lịch sử thu' để xem hóa đơn mới được tạo");
                         
                         // 6. Đóng form hiện tại
                         javafx.stage.Stage currentStage = (javafx.stage.Stage) buttonTaoHoaDon.getScene().getWindow();

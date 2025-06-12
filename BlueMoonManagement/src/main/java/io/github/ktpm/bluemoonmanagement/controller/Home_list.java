@@ -3,7 +3,9 @@ package io.github.ktpm.bluemoonmanagement.controller;
 import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +20,10 @@ import io.github.ktpm.bluemoonmanagement.model.dto.taiKhoan.ThongTinTaiKhoanDto;
 import io.github.ktpm.bluemoonmanagement.service.canHo.CanHoService;
 import io.github.ktpm.bluemoonmanagement.service.taiKhoan.QuanLyTaiKhoanService;
 import io.github.ktpm.bluemoonmanagement.session.Session;
+import io.github.ktpm.bluemoonmanagement.util.FileMultipartUtil;
 import io.github.ktpm.bluemoonmanagement.util.FxView;
 import io.github.ktpm.bluemoonmanagement.util.FxViewLoader;
-import io.github.ktpm.bluemoonmanagement.util.FileMultipartUtil;
+import io.github.ktpm.bluemoonmanagement.util.PieChartDataUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -1124,8 +1127,9 @@ public class Home_list implements Initializable {
             System.out.println("DEBUG: CanHo data set successfully");
             
             javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             stage.setTitle("Chi tiết căn hộ - " + chiTiet.getMaCanHo());
-            stage.setScene(new javafx.scene.Scene(root, 1000, 700));
+            stage.setScene(new javafx.scene.Scene(root, 720, 450));
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.initOwner(tabelViewCanHo.getScene().getWindow());
             System.out.println("DEBUG: About to show stage");
@@ -1458,6 +1462,7 @@ public class Home_list implements Initializable {
             controller.setTaiKhoanData(taiKhoanDto);
             // Tạo cửa sổ mới
             Stage stage = new Stage();
+            stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             stage.setTitle("Chi tiết tài khoản - " + taiKhoanDto.getEmail());
             stage.setScene(new Scene(root, 800, 600));
             stage.initModality(Modality.WINDOW_MODAL);
@@ -1517,6 +1522,7 @@ public class Home_list implements Initializable {
             
             // Tạo cửa sổ mới
             Stage stage = new Stage();
+            stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             stage.setTitle("Chỉnh sửa tài khoản - " + taiKhoanDto.getEmail());
             stage.setScene(new Scene(root, 800, 600));
             stage.initModality(Modality.WINDOW_MODAL);
@@ -1573,6 +1579,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Thêm tài khoản");
 
@@ -1598,6 +1605,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Đổi mật khẩu");
 
@@ -1623,6 +1631,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Thêm khoản thu");
 
@@ -1652,6 +1661,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Thêm cư dân");
 
@@ -1788,6 +1798,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Chỉnh sửa cư dân - " + cuDan.getHoVaTen());
 
@@ -2610,6 +2621,20 @@ public class Home_list implements Initializable {
         loadKhoanThuData();
         System.out.println("✅ Fee data refreshed");
     }
+
+    /**
+     * Refresh toàn bộ dữ liệu bao gồm cả charts - được gọi từ ThemKhoanThuController
+     */
+    public void refreshAllDataIncludingCharts() {
+        System.out.println("🔄 Starting refreshAllDataIncludingCharts()...");
+        try {
+            refreshAllDataForHomepage();
+            System.out.println("✅ refreshAllDataIncludingCharts() completed successfully");
+        } catch (Exception e) {
+            System.err.println("❌ Error in refreshAllDataIncludingCharts(): " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     
     /**
      * Private method for internal refresh fee data
@@ -2911,6 +2936,7 @@ public class Home_list implements Initializable {
 
             // Tạo cửa sổ mới
             Stage newStage = new Stage();
+            newStage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             newStage.setScene(new Scene(fxView.getView()));
             newStage.setTitle("Chỉnh sửa khoản thu - " + rowData.getTenKhoanThu());
 
@@ -3217,13 +3243,13 @@ public class Home_list implements Initializable {
             pieChartKhoanThu.getData().clear();
             
             // Lấy dữ liệu thực từ database thay vì sử dụng dữ liệu mẫu
-            java.util.Map<String, Integer> feeTypeCount = getRealKhoanThuDataForPieChart();
+            Map<String, Integer> feeTypeCount = PieChartDataUtil.getKhoanThuDataFromDatabase(khoanThuService);
             
             if (feeTypeCount != null && !feeTypeCount.isEmpty()) {
                 // Tạo dữ liệu cho PieChart từ database thực
                 for (java.util.Map.Entry<String, Integer> entry : feeTypeCount.entrySet()) {
                     javafx.scene.chart.PieChart.Data slice = new javafx.scene.chart.PieChart.Data(
-                        entry.getKey() + " (" + entry.getValue() + ")", 
+                        entry.getKey(), // Đã có label chi tiết rồi, không cần thêm nữa
                         entry.getValue()
                     );
                     pieChartKhoanThu.getData().add(slice);
@@ -3231,8 +3257,9 @@ public class Home_list implements Initializable {
                 
                 System.out.println("📊 PieChart data loaded from database: " + feeTypeCount.size() + " categories");
             } else {
-                // Nếu không có dữ liệu, hiển thị thông báo
-                javafx.scene.chart.PieChart.Data emptySlice = new javafx.scene.chart.PieChart.Data("Không có dữ liệu", 1);
+                // Nếu không có dữ liệu, hiển thị thông báo với style đẹp hơn
+                javafx.scene.chart.PieChart.Data emptySlice = new javafx.scene.chart.PieChart.Data(
+                    "Chưa có khoản thu nào", 1);
                 pieChartKhoanThu.getData().add(emptySlice);
                 
                 System.out.println("📊 No real data found in database for PieChart");
@@ -3244,26 +3271,20 @@ public class Home_list implements Initializable {
             pieChartKhoanThu.setLabelsVisible(false); // Ẩn label trên từng slice để gọn gàng hơn
             pieChartKhoanThu.setTitle("");
             
-            // Đổi màu thành các tone xanh cho PieChart
+   
             javafx.application.Platform.runLater(() -> {
                 try {
-                    String[] blueColors = {
-                        "#1976D2", // Xanh đậm
-                        "#2196F3", // Xanh vừa
-                        "#42A5F5", // Xanh nhạt
-                        "#64B5F6", // Xanh rất nhạt
-                        "#90CAF9"  // Xanh pastel
-                    };
-                    
                     int colorIndex = 0;
                     for (javafx.scene.chart.PieChart.Data data : pieChartKhoanThu.getData()) {
                         javafx.scene.Node node = data.getNode();
                         if (node != null) {
-                            String color = blueColors[colorIndex % blueColors.length];
+                            String color = PieChartDataUtil.getSliceColor(data.getName(), colorIndex);
                             node.setStyle("-fx-pie-color: " + color + ";");
                             colorIndex++;
                         }
                     }
+                    
+                    System.out.println("🎨 Applied custom colors to pie chart slices");
                 } catch (Exception e) {
                     System.err.println("Error setting pie chart colors: " + e.getMessage());
                 }
@@ -3553,10 +3574,13 @@ public class Home_list implements Initializable {
             loadKhoanThuData();   // Load fee data
             loadHoaDonData();     // Load invoice data
             
+            // ⭐ Refresh charts (bao gồm PieChart)
+            loadChartData();      // Load chart data including PieChart
+            
             // Update total statistics after loading data
             updateTotalStatistics();
             
-            System.out.println("✅ Homepage data refreshed successfully");
+            System.out.println("✅ Homepage data refreshed successfully (including charts)");
             
         } catch (Exception e) {
             System.err.println("❌ Error refreshing homepage data: " + e.getMessage());
@@ -3943,39 +3967,6 @@ public class Home_list implements Initializable {
         }
     }
 
-    /**
-     * Lấy dữ liệu khoản thu thực từ database cho PieChart
-     */
-    private java.util.Map<String, Integer> getRealKhoanThuDataForPieChart() {
-        try {
-            if (khoanThuService != null) {
-                // Lấy tất cả khoản thu từ database
-                List<KhoanThuDto> allKhoanThu = khoanThuService.getAllKhoanThu();
-                
-                if (allKhoanThu == null || allKhoanThu.isEmpty()) {
-                    System.out.println("⚠️ No fee data found in database");
-                    return null;
-                }
-                
-                // Đếm số lượng khoản thu theo loại
-                java.util.Map<String, Integer> feeTypeCount = new java.util.HashMap<>();
-                
-                for (KhoanThuDto dto : allKhoanThu) {
-                    String type = dto.isBatBuoc() ? "Bắt buộc" : "Tự nguyện";
-                    feeTypeCount.put(type, feeTypeCount.getOrDefault(type, 0) + 1);
-                }
-                
-                System.out.println("📊 Real fee data retrieved: " + feeTypeCount);
-                return feeTypeCount;
-                
-            } else {
-                System.err.println("⚠️ KhoanThuService is null, cannot get real data");
-                return null;
-            }
-        } catch (Exception e) {
-            System.err.println("❌ Error getting real fee data: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
+
+    
 }

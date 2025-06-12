@@ -493,7 +493,6 @@ public class ChinhSuaCanHoController implements Initializable {
             
             // Check if service is available
             if (canHoService == null) {
-                System.err.println("ERROR: CanHoService is null");
                 showError("Lỗi", "Service chưa sẵn sàng. Vui lòng thử lại.");
                 return;
             }
@@ -518,13 +517,10 @@ public class ChinhSuaCanHoController implements Initializable {
                     showError("Lỗi", response.getMessage());
                 }
             } else {
-                System.err.println("ERROR: Service returned null response");
                 showError("Lỗi", "Không nhận được phản hồi từ hệ thống");
             }
             
         } catch (Exception e) {
-            System.err.println("ERROR: Exception in handleLuuThongTin: " + e.getMessage());
-            e.printStackTrace();
             showError("Lỗi", "Không thể lưu thông tin: " + e.getMessage());
         }
     }
@@ -849,6 +845,7 @@ public class ChinhSuaCanHoController implements Initializable {
             }
             
             javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Bỏ khung cửa sổ hệ điều hành
             stage.setTitle("Chỉnh sửa căn hộ - " + canHoData.getMaCanHo());
             stage.setScene(new javafx.scene.Scene(root, 1000, 700));
             stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
@@ -860,9 +857,6 @@ public class ChinhSuaCanHoController implements Initializable {
 
             
         } catch (Exception e) {
-            System.err.println("ERROR: Cannot open edit apartment form: " + e.getMessage());
-            e.printStackTrace();
-
             ThongBaoController.showError("Không thể mở form chỉnh sửa", "Chi tiết: " + e.getMessage());
         }
     }
@@ -886,7 +880,6 @@ public class ChinhSuaCanHoController implements Initializable {
                     showError("Lỗi", "Không thể tải lại dữ liệu căn hộ");
                 }
             } catch (Exception e) {
-                System.err.println("ERROR: Cannot refresh data: " + e.getMessage());
                 showError("Lỗi", "Không thể tải lại dữ liệu: " + e.getMessage());
             }
         }
