@@ -3163,22 +3163,12 @@ public class Home_list implements Initializable {
                 List<CudanDto> allCuDan = cuDanService.getAllCuDan();
 
                 if (allCuDan == null || allCuDan.isEmpty()) {
-                    // Return test data để biểu đồ có thể hiển thị
-                    return getTestDataForMonth(month);
+                    return 0; // Trả về 0 thay vì test data
                 }
 
                 // Đếm số cư dân có ngày chuyển đến <= tháng được yêu cầu
                 // và chưa chuyển đi (hoặc chuyển đi sau tháng được yêu cầu)
                 java.time.LocalDate endOfMonth = month.withDayOfMonth(month.lengthOfMonth());
-
-                // Đếm tất cả cư dân đang hoạt động trước
-                long allActiveCount = allCuDan.stream()
-                    .filter(cuDan -> {
-                        String trangThai = cuDan.getTrangThaiCuTru();
-                        return trangThai != null && !trangThai.trim().isEmpty();
-                    })
-                    .count();
-
 
                 // Logic đếm linh hoạt hơn
                 long count = allCuDan.stream()
@@ -3187,7 +3177,7 @@ public class Home_list implements Initializable {
                         if (cuDan.getNgayChuyenDen() != null) {
                             return !cuDan.getNgayChuyenDen().isAfter(endOfMonth);
                         }
-                        return true; // Nếu không có ngày chuyển đến thì vẫn tính để có dữ liệu
+                        return true; // Nếu không có ngày chuyển đến thì vẫn tính
                     })
                     .filter(cuDan -> {
                         // Kiểm tra trạng thái cư trú linh hoạt hơn
@@ -3205,28 +3195,16 @@ public class Home_list implements Initializable {
                     })
                     .count();
 
-
-                // Nếu vẫn không có dữ liệu, dùng test data
-                if (count == 0) {
-                    return getTestDataForMonth(month);
-                }
-
-                return (int) count;
+                return (int) count; // Trả về số lượng thực tế, có thể là 0
 
             } else {
-                System.err.println("⚠️ CuDanService is null, using fallback data");
-                // Fallback: sử dụng dữ liệu hiện tại hoặc test data
-                if (cuDanList != null && !cuDanList.isEmpty()) {
-                    return cuDanList.size();
-                } else {
-                    return getTestDataForMonth(month);
-                }
+                System.err.println("⚠️ CuDanService is null");
+                return 0; // Trả về 0 thay vì fallback data
             }
         } catch (Exception e) {
             System.err.println("❌ Error getting resident count for month " + month + ": " + e.getMessage());
             e.printStackTrace();
-            // Fallback: sử dụng test data
-            return getTestDataForMonth(month);
+            return 0; // Trả về 0 thay vì test data
         }
     }
 

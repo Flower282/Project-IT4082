@@ -850,18 +850,13 @@ public class HoaDonServiceImpl implements HoaDonService {
             
             // Create success message with details
             StringBuilder successMsg = new StringBuilder();
-            successMsg.append("✅ Đã import thành công ").append(hoaDonList.size()).append(" hóa đơn!\n");
-            successMsg.append("📋 Cập nhật trạng thái ").append(updatedKhoanThuIds.size()).append(" khoản thu → 'Đã tạo hóa đơn'\n\n");
+            successMsg.append(" Đã import thành công ").append(hoaDonList.size()).append(" hóa đơn!\n");
             
             if (!invalidApartments.isEmpty()) {
                 successMsg.append("⚠️ Bỏ qua ").append(invalidApartments.size()).append(" hóa đơn do mã căn hộ không hợp lệ:\n");
                 successMsg.append("   ").append(String.join(", ", invalidApartments)).append("\n\n");
             }
-            
-            successMsg.append("💡 Kiểm tra:\n");
-            successMsg.append("   • Tab 'Lịch sử thu' → xem hóa đơn đã tạo\n");
-            successMsg.append("   • Tab 'Khoản thu' → trạng thái đã chuyển thành 'Đã tạo'");
-            
+                        
             return new ResponseDto(true, successMsg.toString());
         } catch (Exception e) {
             System.err.println("ERROR: Import hóa đơn từ Excel thất bại: " + e.getMessage());
@@ -951,7 +946,7 @@ public class HoaDonServiceImpl implements HoaDonService {
             // Tạo thông báo kết quả
             StringBuilder message = new StringBuilder();
             message.append("Thu phí thành công cho căn hộ ").append(maCanHo).append("\n");
-            message.append("📊 Tổng kết:\n");
+            message.append(" Tổng kết:\n");
             message.append("  • Đã thu: ").append(successCount).append(" hóa đơn\n");
             message.append("  • Tổng tiền: ").append(String.format("%,d", totalAmount)).append(" VNĐ\n");
             

@@ -1579,7 +1579,7 @@ public class ThemKhoanThuController {
                         updateButtonVisibilityAfterInvoiceCreation();
                         
                         // 5. Hiển thị thông báo thành công sau khi đã refresh
-                        ThongBaoController.showSuccess("🎉 Tạo hóa đơn thành công!", 
+                        ThongBaoController.showSuccess(" Tạo hóa đơn thành công!", 
                             " Đã tạo hóa đơn thành công cho khoản thu: " + currentKhoanThu.getTenKhoanThu() + "\n\n" +
                             " Trạng thái khoản thu đã được cập nhật thành 'Đã tạo'\n" +
                             " Kiểm tra tab 'Lịch sử thu' để xem hóa đơn mới được tạo");
